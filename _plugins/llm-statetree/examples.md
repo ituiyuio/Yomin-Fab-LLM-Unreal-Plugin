@@ -73,10 +73,10 @@ Stealth AI with hide, sneak, detect, and escape states.
 **States:** Idle → Sneak → Detected → Escape → Hide → Idle
 
 **Parameters:**
-- `DetectionThreshold` (float) - Alert level to trigger detection
-- `SafeZoneRadius` (float) - Distance to safe hiding spot
-- `SneakSpeed` (float) - Movement speed while sneaking
-- `EscapeSpeed` (float) - Movement speed while escaping
+- `DetectionThreshold` (float) - Alert level to trigger detection (default: 0.7)
+- `SafeZoneRadius` (float) - Distance to safe hiding spot (default: 300.0)
+- `SneakSpeed` (float) - Movement speed while sneaking (default: 150.0)
+- `EscapeSpeed` (float) - Movement speed while escaping (default: 600.0)
 
 ---
 
@@ -88,12 +88,21 @@ Boss AI with multiple phases based on health thresholds.
 
 **States:** Phase1 → Phase2 → Phase3 → Enraged (loops)
 
+**Phase Details:**
+
+| Phase | States | Attack Pattern |
+|-------|--------|----------------|
+| Phase1 | Phase1_Attack, Phase1_Wait | Basic attack, 2s cooldown |
+| Phase2 | Phase2_Attack, Phase2_Move | Faster attack, 1.5s cooldown |
+| Phase3 | Phase3_RageAttack, Phase3_Slam, Phase3_Recovery | Combo attack, 0.8s cooldown |
+| Enraged | Enraged | Continuous attack, 0.3s cooldown |
+
 **Parameters:**
-- `Phase2HealthThreshold` (float) - Health % to trigger Phase 2 (default: 66%)
-- `Phase3HealthThreshold` (float) - Health % to trigger Phase 3 (default: 33%)
-- `EnrageDuration` (float) - Time before boss becomes enraged
-- `Phase2AttackCooldown` (float) - Attack cooldown in Phase 2 (1.5s)
-- `Phase3AttackCooldown` (float) - Attack cooldown in Phase 3 (0.8s)
+- `Phase2HealthThreshold` (float) - Health % to trigger Phase 2 (default: 0.66)
+- `Phase3HealthThreshold` (float) - Health % to trigger Phase 3 (default: 0.33)
+- `EnrageDuration` (float) - Time before boss becomes enraged (default: 10.0s)
+- `Phase2AttackCooldown` (float) - Attack cooldown in Phase 2 (default: 1.5s)
+- `Phase3AttackCooldown` (float) - Attack cooldown in Phase 3 (default: 0.8s)
 
 ---
 

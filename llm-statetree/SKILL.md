@@ -19,7 +19,9 @@ StateTree definition files use the `.llmstate` extension (LLM StateTree DSL), fo
 
 ## Reference Files
 
-**Examples Directory**: `Plugins/LLMStateTree/Config/Examples/` - Contains complete AI behavior example `.llmstate` files
+**Schema File**: `Config/Schemas/StateTreeNodeSchema.llmstateschema` - Contains complete node type definitions discovered from UE reflection
+
+**Examples Directory**: `Config/Examples/` - Contains complete AI behavior example `.llmstate` files
 
 **Samples**:
 - `SimpleAI.llmstate` - Basic AI with Idle, Patrol, Chase, Attack states
@@ -33,9 +35,10 @@ StateTree definition files use the `.llmstate` extension (LLM StateTree DSL), fo
 ```json
 {
   "name": "MyAI",
+  "version": "1.0",
   "parameters": [
-    { "name": "PatrolRadius", "type": "float", "defaultValue": 500.0 },
-    { "name": "ChaseSpeed", "type": "float", "defaultValue": 600.0 }
+    { "name": "PatrolRadius", "type": "float", "default": 500.0 },
+    { "name": "ChaseSpeed", "type": "float", "default": 600.0 }
   ],
   "states": [
     {
@@ -50,12 +53,16 @@ StateTree definition files use the `.llmstate` extension (LLM StateTree DSL), fo
     },
     {
       "name": "Patrol",
-      "type": "State",
-      "tasks": [
-        { "type": "StateTreeMoveToTask", "properties": { "AcceptableRadius": 100.0 } }
-      ],
-      "transitions": [
-        { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Idle" }
+      "type": "Group",
+      "selectionBehavior": "TrySelectChildrenInOrder",
+      "children": [
+        {
+          "name": "Patrol_Move",
+          "type": "State",
+          "tasks": [
+            { "type": "StateTreeDelayTask", "properties": { "Duration": 0.0 } }
+          ]
+        }
       ]
     }
   ]
@@ -126,11 +133,12 @@ Wait for a specified duration before succeeding.
 | Property | Type | Description |
 |----------|------|-------------|
 | `Duration` | float | Time to wait in seconds |
-| `RandomVariance` | float | Random deviation range |
+| `RandomDeviation` | float | Random deviation range |
+| `bRunForever` | bool | Run indefinitely |
 
 ### StateTreeMoveToTask
 
-Move to a target location.
+Move to a target location (from GameplayStateTree module).
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -143,6 +151,7 @@ Run another StateTree in parallel.
 | Property | Type | Description |
 |----------|------|-------------|
 | `StateTree` | object | Reference to another StateTree asset |
+| `PropertyOverrides` | array | Property override bindings |
 
 ### StateTreeDebugTextTask
 
@@ -153,6 +162,8 @@ Draw debug text on HUD.
 | `Text` | string | Debug text to display |
 | `TextColor` | color | Text color |
 | `FontScale` | float | Font scale |
+| `Offset` | vector | Screen offset |
+| `ReferenceActor` | object | Actor to attach text to |
 
 ## Conditions
 
@@ -164,7 +175,7 @@ Compare two integers.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `Operator` | enum | Less, LessOrEqual, Equal, etc. |
+| `Operator` | enum | Less, LessOrEqual, Equal, NotEqual, GreaterOrEqual, Greater, IsTrue |
 | `Left` | int | Left operand |
 | `Right` | int | Right operand |
 
@@ -174,7 +185,7 @@ Compare two floats.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `Operator` | enum | Less, LessOrEqual, Equal, etc. |
+| `Operator` | enum | Less, LessOrEqual, Equal, NotEqual, GreaterOrEqual, Greater, IsTrue |
 | `Left` | float | Left operand |
 | `Right` | float | Right operand |
 
@@ -182,16 +193,47 @@ Compare two floats.
 
 Compare two booleans.
 
+| Property | Type | Description |
+|----------|------|-------------|
+| `bLeft` | bool | Left operand |
+| `bRight` | bool | Right operand |
+
+### StateTreeCompareEnumCondition
+
+Compare two enum values.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `Value` | enum | Enum value to compare |
+| `Enum` | object | Enum type reference |
+
+### StateTreeCompareNameCondition
+
+Compare two FName values.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `Left` | name | Left operand |
+| `Right` | name | Right operand |
+
 ### StateTreeCompareDistanceCondition
 
 Compare distance between two vectors.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `Operator` | enum | Less, LessOrEqual, etc. |
+| `Operator` | enum | Less, LessOrEqual, Equal, NotEqual, GreaterOrEqual, Greater |
 | `Source` | vector | Source location |
 | `Target` | vector | Target location |
 | `Distance` | float | Distance to compare against |
+
+### StateTreeRandomCondition
+
+Random chance condition.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `Threshold` | float | Probability threshold (0-1) |
 
 ### GameplayTagMatchCondition
 
@@ -200,7 +242,47 @@ Check if actor has a gameplay tag.
 | Property | Type | Description |
 |----------|------|-------------|
 | `Tag` | gameplaytag | Tag to check |
+| `GameplayTags` | array | Tag container |
 | `bExactMatch` | bool | Require exact match |
+
+### GameplayTagContainerMatchCondition
+
+Check tag container against another container.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `MatchType` | enum | Any or All |
+| `GameplayTags` | array | Tags to match against |
+
+### GameplayTagQueryCondition
+
+Check against a Tag Query expression.
+
+### StateTreeObjectIsValidCondition
+
+Check if an object is valid.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `Object` | object | Object to check |
+
+### StateTreeObjectEqualsCondition
+
+Check if two objects are the same.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `Left` | object | Left object |
+| `Right` | object | Right object |
+
+### StateTreeObjectIsChildOfClassCondition
+
+Check if object is of a specific class.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `Object` | object | Object to check |
+| `Class` | object | Class to check against |
 
 ## Considerations
 
@@ -224,6 +306,11 @@ Score based on float input with response curve.
 | `Min` | float | Minimum input |
 | `Max` | float | Maximum input |
 | `DefaultValue` | float | Default when out of range |
+| `Keys` | array | Response curve keys |
+
+### StateTreeEnumInputConsideration
+
+Enum-based consideration for Utility AI.
 
 ## Transitions
 
@@ -263,9 +350,9 @@ Define parameters that can be set when assigning the StateTree to an AI characte
 ```json
 {
   "parameters": [
-    { "name": "PatrolRadius", "type": "float", "defaultValue": 500.0 },
-    { "name": "ChaseSpeed", "type": "float", "defaultValue": 600.0 },
-    { "name": "AlertRadius", "type": "float", "defaultValue": 1000.0 }
+    { "name": "PatrolRadius", "type": "float", "default": 500.0 },
+    { "name": "ChaseSpeed", "type": "float", "default": 600.0 },
+    { "name": "AlertRadius", "type": "float", "default": 1000.0 }
   ]
 }
 ```
@@ -296,7 +383,7 @@ Define parameters that can be set when assigning the StateTree to an AI characte
 {
   "name": "SimplePatrol",
   "parameters": [
-    { "name": "PatrolRadius", "type": "float", "defaultValue": 500.0 }
+    { "name": "PatrolRadius", "type": "float", "default": 500.0 }
   ],
   "states": [
     {
@@ -311,9 +398,29 @@ Define parameters that can be set when assigning the StateTree to an AI characte
     },
     {
       "name": "Patrol",
-      "type": "State",
-      "tasks": [
-        { "type": "StateTreeMoveToTask", "properties": { "AcceptableRadius": 100.0 } }
+      "type": "Group",
+      "selectionBehavior": "TrySelectChildrenInOrder",
+      "children": [
+        {
+          "name": "Patrol_Move",
+          "type": "State",
+          "tasks": [
+            { "type": "StateTreeDelayTask", "properties": { "Duration": 0.0 } }
+          ],
+          "transitions": [
+            { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Patrol_Wait" }
+          ]
+        },
+        {
+          "name": "Patrol_Wait",
+          "type": "State",
+          "tasks": [
+            { "type": "StateTreeDelayTask", "properties": { "Duration": 1.0, "RandomVariance": 0.3 } }
+          ],
+          "transitions": [
+            { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Patrol_Move" }
+          ]
+        }
       ],
       "transitions": [
         { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Idle" }
@@ -328,10 +435,20 @@ Define parameters that can be set when assigning the StateTree to an AI characte
 {
   "name": "UtilityAI",
   "parameters": [
-    { "name": "MaxHealth", "type": "float", "defaultValue": 100.0 },
-    { "name": "LowHealthThreshold", "type": "float", "defaultValue": 30.0 }
+    { "name": "MaxHealth", "type": "float", "default": 100.0 },
+    { "name": "LowHealthThreshold", "type": "float", "default": 30.0 }
   ],
   "states": [
+    {
+      "name": "Idle",
+      "type": "State",
+      "tasks": [
+        { "type": "StateTreeDelayTask", "properties": { "Duration": 0.5 } }
+      ],
+      "transitions": [
+        { "trigger": "OnStateCompleted", "type": "GotoState", "target": "SelectAction" }
+      ]
+    },
     {
       "name": "SelectAction",
       "type": "Selector",
@@ -344,12 +461,17 @@ Define parameters that can be set when assigning the StateTree to an AI characte
             {
               "type": "StateTreeFloatInputConsideration",
               "properties": {
-                "Input": "${Param.Health}",
                 "Min": 0.0,
-                "Max": "${Param.MaxHealth}",
-                "DefaultValue": 0.0
+                "Max": 100.0,
+                "DefaultValue": 50.0
               }
             }
+          ],
+          "tasks": [
+            { "type": "StateTreeDelayTask", "properties": { "Duration": 2.0 } }
+          ],
+          "transitions": [
+            { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Idle" }
           ]
         },
         {
@@ -357,11 +479,17 @@ Define parameters that can be set when assigning the StateTree to an AI characte
           "type": "State",
           "considerations": [
             { "type": "StateTreeConstantConsideration", "properties": { "Constant": 0.8 } }
+          ],
+          "tasks": [
+            { "type": "StateTreeDelayTask", "properties": { "Duration": 0.5 } }
+          ],
+          "transitions": [
+            { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Idle" }
           ]
         }
       ],
       "transitions": [
-        { "trigger": "OnStateCompleted", "type": "GotoState", "target": "SelectAction" }
+        { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Idle" }
       ]
     }
   ]
@@ -373,31 +501,25 @@ Define parameters that can be set when assigning the StateTree to an AI characte
 {
   "name": "GuardAI",
   "parameters": [
-    { "name": "AlertRadius", "type": "float", "defaultValue": 1000.0 },
-    { "name": "VisionAngle", "type": "float", "defaultValue": 90.0 }
+    { "name": "AlertRadius", "type": "float", "default": 800.0 },
+    { "name": "VisionAngle", "type": "float", "default": 90.0 }
   ],
   "states": [
     {
-      "name": "Patrol",
+      "name": "Idle",
       "type": "State",
-      "tasks": [...],
+      "tasks": [
+        { "type": "StateTreeDelayTask", "properties": { "Duration": 3.0, "RandomVariance": 1.0 } }
+      ],
       "transitions": [
-        {
-          "trigger": "OnEvent",
-          "type": "EvaluateConditions",
-          "conditions": [
-            {
-              "type": "StateTreeCompareDistanceCondition",
-              "properties": {
-                "Operator": "Less",
-                "Source": "${Context.Target.Location}",
-                "Target": "${Context.Owner.Location}",
-                "Distance": "${Param.AlertRadius}"
-              }
-            }
-          ]
-        }
+        { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Patrol" }
       ]
+    },
+    {
+      "name": "Patrol",
+      "type": "Group",
+      "selectionBehavior": "TrySelectChildrenInOrder",
+      "children": [...]
     }
   ]
 }
@@ -405,10 +527,11 @@ Define parameters that can be set when assigning the StateTree to an AI characte
 
 ## Editor Workflow
 
-1. Open the LLMStateTree Editor Panel: Window → LLMStateTree Panel
-2. Click "Load File" and navigate to `.llmstate` file
-3. Click "Generate StateTree" to create the StateTree Blueprint asset
-4. Assign the generated StateTree to your AI Controller or Character
+1. Enable required engine plugins: StateTree, GameplayStateTree, EditorScriptingUtilities
+2. Open the LLMStateTree Editor Panel: Window → LLMStateTree Panel
+3. Click "Load File" and navigate to `.llmstate` file
+4. Click "Generate StateTree" to create the StateTree Blueprint asset
+5. Assign the generated StateTree to your AI Controller or Character
 
 ## File Location
 
@@ -420,5 +543,16 @@ YourProject/
     └── Examples/
         ├── SimpleAI.llmstate
         ├── GuardAI.llmstate
+        ├── UtilityAI.llmstate
+        ├── StealthAI.llmstate
+        ├── BossAI.llmstate
         └── MyAI.llmstate
 ```
+
+## Dependencies
+
+| Plugin | Type | Required |
+|--------|------|----------|
+| StateTree | Engine | Yes |
+| GameplayStateTree | Engine | Yes |
+| EditorScriptingUtilities | Engine | Yes (Editor only) |

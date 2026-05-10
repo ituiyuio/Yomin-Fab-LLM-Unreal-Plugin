@@ -7,7 +7,7 @@ nav_order: 3
 
 # LLM StateTree
 
-JSON-driven StateTree Asset Generator for Unreal Engine 5.
+JSON-Driven StateTree Asset Generator for Unreal Engine 5.
 
 Generate complete StateTree Blueprint assets from JSON (`.llmstate` files) with schema auto-inference and live preview — no manual StateTree editor work required.
 
@@ -20,8 +20,9 @@ Generate complete StateTree Blueprint assets from JSON (`.llmstate` files) with 
 - **Schema Auto-Inference** — Automatically discovers StateTree node types from UE reflection
 - **Editor Panel** — Browse and preview generated StateTree structure
 - **Parameter Binding** — Support for `${Param.Name}` and `${Context.Property}` binding expressions
-- **Multiple State Types** — State, Group, Selector, Sequencer, Conditional Branch
+- **Utility AI** — Considerations with response curves for action selection
 - **5 Example Files** — SimpleAI, GuardAI, UtilityAI, StealthAI, BossAI included
+- **14+ Node Types** — Tasks, Conditions, Considerations fully documented
 
 ---
 
@@ -45,6 +46,9 @@ Generate complete StateTree Blueprint assets from JSON (`.llmstate` files) with 
       "type": "State",
       "tasks": [
         { "type": "StateTreeDelayTask", "properties": { "Duration": 2.0 } }
+      ],
+      "transitions": [
+        { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Patrol" }
       ]
     }
   ]
@@ -61,3 +65,4 @@ Generate complete StateTree Blueprint assets from JSON (`.llmstate` files) with 
 | Engine | UE 5.7+ |
 | Modules | LLMStateTree (Runtime), LLMStateTreeEditor (Editor) |
 | Publisher | YominUnreal |
+| Required Plugins | StateTree, GameplayStateTree, EditorScriptingUtilities |

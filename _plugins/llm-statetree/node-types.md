@@ -9,6 +9,8 @@ nav_order: 3
 
 LLMStateTree supports the following StateTree node types. All node types are automatically discovered from UE reflection via the schema system.
 
+**Schema File:** `Config/Schemas/StateTreeNodeSchema.llmstateschema`
+
 ---
 
 ## State Types
@@ -77,15 +79,12 @@ Wait for a specified duration before succeeding.
 | Property | Type | Description |
 |----------|------|-------------|
 | `Duration` | float | Time to wait in seconds |
-| `RandomVariance` | float | Random deviation range |
+| `RandomDeviation` | float | Random deviation range |
+| `bRunForever` | bool | Run indefinitely |
 
 ### StateTreeMoveToTask
 
-Move to a target location.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `AcceptableRadius` | float | Distance to consider arrival |
+Move to a target location (from GameplayStateTree module).
 
 ### StateTreeRunParallelStateTreeTask
 
@@ -94,6 +93,7 @@ Run another StateTree in parallel.
 | Property | Type | Description |
 |----------|------|-------------|
 | `StateTree` | object | Reference to another StateTree asset |
+| `PropertyOverrides` | array | Property override bindings |
 
 ### StateTreeDebugTextTask
 
@@ -104,6 +104,8 @@ Draw debug text on HUD.
 | `Text` | string | Debug text to display |
 | `TextColor` | color | Text color |
 | `FontScale` | float | Font scale |
+| `Offset` | vector | Screen offset |
+| `ReferenceActor` | object | Actor to attach text to |
 
 ---
 
@@ -117,7 +119,7 @@ Compare two integers.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `Operator` | enum | Less, LessOrEqual, Equal, etc. |
+| `Operator` | enum | Less, LessOrEqual, Equal, NotEqual, GreaterOrEqual, Greater, IsTrue |
 | `Left` | int | Left operand |
 | `Right` | int | Right operand |
 
@@ -127,7 +129,7 @@ Compare two floats.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `Operator` | enum | Less, LessOrEqual, Equal, etc. |
+| `Operator` | enum | Less, LessOrEqual, Equal, NotEqual, GreaterOrEqual, Greater, IsTrue |
 | `Left` | float | Left operand |
 | `Right` | float | Right operand |
 
@@ -135,16 +137,47 @@ Compare two floats.
 
 Compare two booleans.
 
+| Property | Type | Description |
+|----------|------|-------------|
+| `bLeft` | bool | Left operand |
+| `bRight` | bool | Right operand |
+
+### StateTreeCompareEnumCondition
+
+Compare two enum values.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `Value` | enum | Enum value to compare |
+| `Enum` | object | Enum type reference |
+
+### StateTreeCompareNameCondition
+
+Compare two FName values.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `Left` | name | Left operand |
+| `Right` | name | Right operand |
+
 ### StateTreeCompareDistanceCondition
 
 Compare distance between two vectors.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `Operator` | enum | Less, LessOrEqual, etc. |
+| `Operator` | enum | Less, LessOrEqual, Equal, NotEqual, GreaterOrEqual, Greater |
 | `Source` | vector | Source location |
 | `Target` | vector | Target location |
 | `Distance` | float | Distance to compare against |
+
+### StateTreeRandomCondition
+
+Random chance condition.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `Threshold` | float | Probability threshold (0-1) |
 
 ### GameplayTagMatchCondition
 
@@ -153,7 +186,47 @@ Check if actor has a gameplay tag.
 | Property | Type | Description |
 |----------|------|-------------|
 | `Tag` | gameplaytag | Tag to check |
+| `GameplayTags` | array | Tag container |
 | `bExactMatch` | bool | Require exact match |
+
+### GameplayTagContainerMatchCondition
+
+Check tag container against another container.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `MatchType` | enum | Any or All |
+| `GameplayTags` | array | Tags to match against |
+
+### GameplayTagQueryCondition
+
+Check against a Tag Query expression.
+
+### StateTreeObjectIsValidCondition
+
+Check if an object is valid.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `Object` | object | Object to check |
+
+### StateTreeObjectEqualsCondition
+
+Check if two objects are the same.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `Left` | object | Left object |
+| `Right` | object | Right object |
+
+### StateTreeObjectIsChildOfClassCondition
+
+Check if object is of a specific class.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `Object` | object | Object to check |
+| `Class` | object | Class to check against |
 
 ---
 
@@ -179,6 +252,11 @@ Score based on float input with response curve.
 | `Min` | float | Minimum input |
 | `Max` | float | Maximum input |
 | `DefaultValue` | float | Default when out of range |
+| `Keys` | array | Response curve keys |
+
+### StateTreeEnumInputConsideration
+
+Enum-based consideration for Utility AI.
 
 ---
 
