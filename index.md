@@ -32,3 +32,9 @@ JSON-driven StateTree Asset Generator for Unreal Engine 5.
 
 Generate StateTree Blueprint assets from JSON with schema auto-inference and live preview for AI behavior trees.
 
+### LLM MetaSound
+
+JSON-driven MetaSound Audio Asset Generator for Unreal Engine 5.
+
+Generate UMetaSoundSource and UMetaSoundPatch assets from JSON with auto-connected nodes and type-safe edges.
+

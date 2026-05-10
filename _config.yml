@@ -44,6 +44,9 @@ collections:
   llm_statetree:
     output: true
     permalink: /plugins/llm-statetree/:path/
+  llm_metasound:
+    output: true
+    permalink: /plugins/llm-metasound/:path/
 
 # ---------------------------------------------------------------------------
 # 默认 front matter
@@ -73,6 +76,14 @@ defaults:
       has_children: true
       parent: "LLM StateTree"
       nav_order: 3
+  - scope:
+      path: "_plugins/llm-metasound"
+      type: llm_metasound
+    values:
+      layout: page
+      has_children: true
+      parent: "LLM MetaSound"
+      nav_order: 4
 
 # ---------------------------------------------------------------------------
 # Jekyll 插件
