@@ -2,7 +2,7 @@
 # YominUnreal Plugins — Jekyll Configuration
 # =============================================================================
 # Theme: just-the-docs (使用 remote_theme 通过 jekyll-remote-theme 插件加载)
-# 架构：Monorepo 支持，未来新增插件只需在 collections 下加声明、在 _plugins/ 下加子目录即可。
+# 架构：Monorepo 支持，未来新增插件只需在 collections 下加声明、在 docs/ 下新建 _<plugin-name> 目录即可。
 # =============================================================================
 
 title: "YominUnreal Plugins"
@@ -10,9 +10,6 @@ description: "AI-powered Unreal Engine development tools — UI, Material, VFX, 
 url: "https://ituiyuio.github.io"
 baseurl: "/Yomin-Fab-LLM-Unreal-Pluagin-Skill"
 repository: ituiyuio/Yomin-Fab-LLM-Unreal-Pluagin-Skill
-
-# Jekyll 集合目录（Monorepo: 所有插件文档集中在 docs/_plugins/ 下）
-collections_dir: _plugins
 
 # just-the-docs 主题（使用 remote_theme 以兼容 GitHub Pages）
 remote_theme: just-the-docs/just-the-docs@v0.12.0
@@ -37,8 +34,8 @@ just_the_docs:
 # ---------------------------------------------------------------------------
 # Jekyll Collections — 插件文档
 # ---------------------------------------------------------------------------
-# 当前只有 LLMDynamicUI。未来新增插件：
-#   1. 在 _plugins/<plugin-name>/ 下新建目录，放入 .md 文件
+# 未来新增插件：
+#   1. 在 docs/ 下新建目录 _<plugin-name>/，放入 .md 文件
 #   2. 在 collections 下加一行：  <plugin_name>:
 #   3. 每个 .md 文件顶部 front matter 写 title/description
 #   4. 在 just_the_docs.collections 下加条目
@@ -62,7 +59,7 @@ collections:
 # ---------------------------------------------------------------------------
 defaults:
   - scope:
-      path: "_plugins/llm-dynamic-ui"
+      path: "llm-dynamic-ui"
       type: llm_dynamic_ui
     values:
       layout: page
@@ -70,7 +67,7 @@ defaults:
       parent: "LLM Dynamic UI"
       nav_order: 1
   - scope:
-      path: "_plugins/llm-material"
+      path: "llm-material"
       type: llm_material
     values:
       layout: page
@@ -78,7 +75,7 @@ defaults:
       parent: "LLM Material"
       nav_order: 2
   - scope:
-      path: "_plugins/llm-statetree"
+      path: "llm-statetree"
       type: llm_statetree
     values:
       layout: page
@@ -86,7 +83,7 @@ defaults:
       parent: "LLM StateTree"
       nav_order: 3
   - scope:
-      path: "_plugins/llm-metasound"
+      path: "llm-metasound"
       type: llm_metasound
     values:
       layout: page
