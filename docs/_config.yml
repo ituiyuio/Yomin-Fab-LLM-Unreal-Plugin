@@ -59,7 +59,7 @@ collections:
 # ---------------------------------------------------------------------------
 defaults:
   - scope:
-      path: "llm-dynamic-ui"
+      path: "llm_dynamic_ui"
       type: llm_dynamic_ui
     values:
       layout: page
@@ -67,7 +67,7 @@ defaults:
       parent: "LLM Dynamic UI"
       nav_order: 1
   - scope:
-      path: "llm-material"
+      path: "llm_material"
       type: llm_material
     values:
       layout: page
@@ -75,7 +75,7 @@ defaults:
       parent: "LLM Material"
       nav_order: 2
   - scope:
-      path: "llm-statetree"
+      path: "llm_statetree"
       type: llm_statetree
     values:
       layout: page
@@ -83,7 +83,7 @@ defaults:
       parent: "LLM StateTree"
       nav_order: 3
   - scope:
-      path: "llm-metasound"
+      path: "llm_metasound"
       type: llm_metasound
     values:
       layout: page
