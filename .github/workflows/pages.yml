@@ -36,6 +36,9 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
 
+      - name: Install dependencies
+        run: cd docs && bundle install
+
       - name: Build with Jekyll
         run: cd docs && bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
         env:
