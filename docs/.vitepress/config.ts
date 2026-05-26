@@ -74,7 +74,7 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/yomin-unreal' }
+      { icon: 'github', link: 'https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin-Skill' }
     ],
 
     search: {
@@ -82,13 +82,13 @@ export default defineConfig({
     },
 
     editLink: {
-      pattern: 'https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Pluagin-Skill/edit/main/docs/:path',
+      pattern: 'https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin-Skill/edit/main/docs/:path',
       text: 'Edit this page on GitHub'
     },
 
     footer: {
-      message: 'Powered by VitePress & YominUnreal',
-      copyright: 'Copyright © 2024-present YominUnreal'
+      message: 'Powered by VitePress',
+      copyright: 'Copyright © 2026 Yiming Wang &lt;yomin_noahwang@foxmail.com&gt;. All rights reserved.'
     }
   }
 })
