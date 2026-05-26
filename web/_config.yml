@@ -11,7 +11,7 @@ url: "https://ituiyuio.github.io"
 baseurl: "/Yomin-Fab-LLM-Unreal-Pluagin-Skill"
 repository: ituiyuio/Yomin-Fab-LLM-Unreal-Pluagin-Skill
 
-# Jekyll 集合目录（Monorepo: 所有插件文档集中在 _plugins/ 下）
+# Jekyll 集合目录（Monorepo: 所有插件文档集中在 web/_plugins/ 下）
 collections_dir: _plugins
 
 # just-the-docs 主题（使用 remote_theme 以兼容 GitHub Pages）
