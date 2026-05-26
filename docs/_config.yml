@@ -26,13 +26,13 @@ just_the_docs:
       - "https://github.com/yomin-unreal"
   collections:
     llm_dynamic_ui:
-      link: /plugins/llm-dynamic-ui/
+      nav_exclude: false
     llm_material:
-      link: /plugins/llm-material/
+      nav_exclude: false
     llm_statetree:
-      link: /plugins/llm-statetree/
+      nav_exclude: false
     llm_metasound:
-      link: /plugins/llm-metasound/
+      nav_exclude: false
 
 # ---------------------------------------------------------------------------
 # Jekyll Collections — 插件文档
