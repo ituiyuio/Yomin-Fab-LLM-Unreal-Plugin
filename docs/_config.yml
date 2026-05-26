@@ -24,6 +24,15 @@ just_the_docs:
   aux_links:
     "YominUnreal on GitHub":
       - "https://github.com/yomin-unreal"
+  collections:
+    llm_dynamic_ui:
+      link: /plugins/llm-dynamic-ui/
+    llm_material:
+      link: /plugins/llm-material/
+    llm_statetree:
+      link: /plugins/llm-statetree/
+    llm_metasound:
+      link: /plugins/llm-metasound/
 
 # ---------------------------------------------------------------------------
 # Jekyll Collections — 插件文档
