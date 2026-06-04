@@ -8,8 +8,8 @@
 title: "YominUnreal Plugins"
 description: "AI-powered Unreal Engine development tools — UI, Material, VFX, AI"
 url: "https://ituiyuio.github.io"
-baseurl: "/Yomin-Fab-LLM-Unreal-Pluagin-Skill"
-repository: ituiyuio/Yomin-Fab-LLM-Unreal-Pluagin-Skill
+baseurl: "/Yomin-Fab-LLM-Unreal-Plugin"
+repository: ituiyuio/Yomin-Fab-LLM-Unreal-Plugin
 
 # just-the-docs 主题（使用 remote_theme 以兼容 GitHub Pages）
 remote_theme: just-the-docs/just-the-docs@v0.12.0
