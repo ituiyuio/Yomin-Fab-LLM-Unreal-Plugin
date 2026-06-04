@@ -6,7 +6,7 @@ export default defineConfig({
   lang: 'zh-CN',
   cleanUrls: true,
   srcDir: '.',
-  base: '/Yomin-Fab-LLM-Unreal-Plugin-Skill/',
+  base: '/Yomin-Fab-LLM-Unreal-Plugin/',
 
   head: [
     ['link', { rel: 'icon', href: '/favicon.ico' }]
@@ -75,7 +75,7 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin-Skill' }
+      { icon: 'github', link: 'https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin' }
     ],
 
     search: {
@@ -83,7 +83,7 @@ export default defineConfig({
     },
 
     editLink: {
-      pattern: 'https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin-Skill/edit/main/docs/:path',
+      pattern: 'https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin/edit/main/docs/:path',
       text: 'Edit this page on GitHub'
     },
 
