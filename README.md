@@ -57,6 +57,21 @@ Every plugin ships with:
 
 ---
 
+## 🤖 AI Agent Skills
+
+Each plugin ships with a structured **AI agent skill** under the [`skills/`](./skills/) directory — drop-in instructions that LLM-powered coding assistants (Claude Code, Cursor, Codex, etc.) can load to author assets in the correct DSL:
+
+| Plugin | Skill File |
+|--------|-----------|
+| 🎨 LLM Dynamic UI  | [`skills/llm-dynamic-ui/SKILL.md`](./skills/llm-dynamic-ui/SKILL.md) |
+| 🎭 LLM Material    | [`skills/llm-material/SKILL.md`](./skills/llm-material/SKILL.md) |
+| 🌲 LLM StateTree   | [`skills/llm-statetree/SKILL.md`](./skills/llm-statetree/SKILL.md) |
+| 🔊 LLM MetaSound   | [`skills/llm-metasound/SKILL.md`](./skills/llm-metasound/SKILL.md) |
+
+Point your agent at the right `SKILL.md` and it will know the full DSL schema, supported widgets / nodes, and authoring patterns — no editor scraping required. Skills are intentionally consolidated under one folder for easy discovery and version pinning.
+
+---
+
 ## See It In Action
 
 A `.llmui` login panel → a real UMG Widget Blueprint:
