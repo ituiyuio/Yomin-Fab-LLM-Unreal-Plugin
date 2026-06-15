@@ -59,7 +59,9 @@ Every plugin ships with:
 
 ## 🤖 AI Agent Skills
 
-Each plugin ships with a structured **AI agent skill** under the [`skills/`](./skills/) directory — drop-in instructions that LLM-powered coding assistants (Claude Code, Cursor, Codex, etc.) can load to author assets in the correct DSL:
+Six **AI agent skills** live under the [`skills/`](./skills/) directory — drop-in instructions that LLM-powered coding assistants (Claude Code, Cursor, Codex, OpenCode, etc.) can load to author assets or drive the editor. Point your agent at the right `SKILL.md` and it knows the full DSL schema, supported nodes, and authoring patterns — no editor scraping required.
+
+### 🎨 Asset Authoring Skills (write JSON → editor compiles to asset)
 
 | Plugin | Skill File |
 |--------|-----------|
@@ -68,7 +70,14 @@ Each plugin ships with a structured **AI agent skill** under the [`skills/`](./s
 | 🌲 LLM StateTree   | [`skills/llm-statetree/SKILL.md`](./skills/llm-statetree/SKILL.md) |
 | 🔊 LLM MetaSound   | [`skills/llm-metasound/SKILL.md`](./skills/llm-metasound/SKILL.md) |
 
-Point your agent at the right `SKILL.md` and it will know the full DSL schema, supported widgets / nodes, and authoring patterns — no editor scraping required. Skills are intentionally consolidated under one folder for easy discovery and version pinning.
+### 🛠️ Editor Control Skills (drive a running UE editor from the CLI)
+
+| Plugin | Skill File | What it does |
+|--------|-----------|--------------|
+| 🛠️ LLM Easy Shell      | [`skills/llm-easy-shell/SKILL.md`](./skills/llm-easy-shell/SKILL.md)         | 27 native commands + 25+ Python sub-commands — spawn actors, edit properties, call blueprint functions, trigger Live Coding, take screenshots |
+| 🛠️ LLM Easy Shell Lite | [`skills/llm-easy-shell-lite/SKILL.md`](./skills/llm-easy-shell-lite/SKILL.md) | Read-only subset — 9 safe exploration commands for browsing scenes and assets without risk |
+
+**How to install:** drop the skill folders into your project's `<tool>/skills/` directory (e.g. `<your-ue-project>/.claude/skills/` for Claude Code). See the [full installation guide →](https://ituiyuio.github.io/Yomin-Fab-LLM-Unreal-Plugin/skills/installation).
 
 ---
 
@@ -113,6 +122,8 @@ Full guides, schema references and example projects:
 | [Get Started →](./docs/llm-dynamic-ui/getting-started.md) | [Get Started →](./docs/llm-material/getting-started.md) |
 | 🌲 **LLM StateTree**<br>AI behavior from JSON | 🔊 **LLM MetaSound**<br>Audio graphs from JSON |
 | [Get Started →](./docs/llm-statetree/getting-started.md) | [Get Started →](./docs/llm-metasound/getting-started.md) |
+| 🤖 **AI Agent Skills**<br>How to load skills into Claude Code / OpenCode / Cursor / Codex | |
+| [Skills Guide →](./docs/skills/index.md) | |
 
 ---
 
