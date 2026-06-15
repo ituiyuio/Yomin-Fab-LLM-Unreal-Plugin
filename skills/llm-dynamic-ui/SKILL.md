@@ -1,33 +1,34 @@
 ---
 name: llm-dynamic-ui
 description: |
-  LLM Dynamic UI is a DSL-driven UE5 UMG interface generation system. Use this skill when users need to:
-  (1) Create or design UE5 UMG interfaces (login pages, menus, HUDs, dialogs, etc.)
-  (2) Convert interface descriptions into generatable DSL format
-  (3) Understand or modify existing UI DSL definitions
-  (4) Learn about supported Widget types, layout systems, and animation systems
-  (5) Query animatable property lists and animation creation methods
+  LLM Dynamic UI 是一个 DSL 驱动的 UE5 UMG 界面生成系统。当用户需要：
+  (1) 创建或设计 UE5 UMG 界面（登录页、菜单、HUD、对话框等）
+  (2) 将界面描述转换为可生成的 DSL 格式
+  (3) 理解或修改现有的 UI DSL 定义
+  (4) 需要了解支持的 Widget 类型、布局系统、动画系统
+  (5) 查询可动画属性列表和动画创建方式
+  请使用此技能。
 ---
 
 # LLM Dynamic UI - DSL Schema Guide
 
-### **Composition Over Inheritance**
+### **组合优于继承**
 
 ## File Format
 
-UI definition files use the `.llmui` extension (LLM UI DSL), formatted as JSON.
+UI 定义文件使用 `.llmui` 扩展名（LLM UI DSL），格式为 JSON。
 
 ## Reference Files
 
-**UMG Property Dictionary**: `Plugins/LLMDynamicUI/Content/Schemas/PropertySchema.llmschema` - Contains complete property definitions for all UMG Widgets
+**UMG 属性字典**: `Plugins/LLMDynamicUI/Content/Schemas/PropertySchema.llmschema` - 包含所有 UMG Widget 的完整属性定义
 
-**CommonUI Schema**: `Plugins/LLMDynamicUI/Content/Schemas/CommonUISchema.llmschema` - CommonUI control definitions, supporting game menus, gamepad navigation, and InputAction binding
+**CommonUI Schema**: `Plugins/LLMDynamicUI/Content/Schemas/CommonUISchema.llmschema` - CommonUI 控件定义，支持游戏菜单、手柄导航、InputAction 绑定
 
-**Animation Property Dictionary**: `Plugins/LLMDynamicUI/Content/Schemas/AnimPropertySchema.llmschema` - Contains definitions for all animatable properties (Track types, value types, usage examples)
+**动画属性字典**: `Plugins/LLMDynamicUI/Content/Schemas/AnimPropertySchema.llmschema` - 包含所有可动画属性的定义（Track类型、值类型、使用示例）
 
-**SDF Effect Dictionary**: `Plugins/LLMDynamicUI/Content/Schemas/SDFSchema.llmschema` - Contains complete definitions for SDF visual effects (shadows, glows, borders, gradients)
+**SDF 效果字典**: `Plugins/LLMDynamicUI/Content/Schemas/SDFSchema.llmschema` - 包含 SDF 视觉效果（阴影、发光、边框、渐变）的完整定义
 
-**Samples Directory**: `Plugins/LLMDynamicUI/Content/Samples/` - Contains complete UI example `.llmui` files
+**示例目录**: `Plugins/LLMDynamicUI/Content/Samples/` - 包含完整的 UI 示例 `.llmui` 文件
 
 ## Quick Start
 
@@ -63,26 +64,26 @@ UI definition files use the `.llmui` extension (LLM UI DSL), formatted as JSON.
 }
 ```
 
-## Color Formats
+## Color Formats (颜色格式)
 
-Multiple color formats are supported:
+支持多种颜色格式：
 
-| Format | Example | Description |
-|--------|---------|-------------|
-| Hex 6-digit | `"#FF8800"` | RRGGBB |
-| Hex 8-digit | `"#FF880088"` | RRGGBBAA (with alpha) |
-| Hex 3-digit | `"#F80"` | RGB short format |
-| RGB | `"rgb(255, 136, 0)"` | 0-255 range |
-| RGBA | `"rgba(255, 136, 0, 0.8)"` | With alpha |
-| Named | `"white"`, `"cyan"`, `"transparent"` | Named colors |
+| 格式 | 示例 | 说明 |
+|------|------|------|
+| Hex 6位 | `"#FF8800"` | RRGGBB |
+| Hex 8位 | `"#FF880088"` | RRGGBBAA (带透明度) |
+| Hex 3位 | `"#F80"` | RGB 短格式 |
+| RGB | `"rgb(255, 136, 0)"` | 0-255 范围 |
+| RGBA | `"rgba(255, 136, 0, 0.8)"` | 带透明度 |
+| Named | `"white"`, `"cyan"`, `"transparent"` | 命名颜色 |
 
-**Named Colors List**: `white`, `black`, `red`, `green`, `blue`, `yellow`, `cyan`, `magenta`, `orange`, `gray`, `transparent`
+**命名颜色列表**: `white`, `black`, `red`, `green`, `blue`, `yellow`, `cyan`, `magenta`, `orange`, `gray`, `transparent`
 
-## Simplified Style - Recommended
+## Simplified Style (简化样式) - 推荐
 
-**Use inline styles directly on Widgets. The system automatically hashes and deduplicates to generate reusable Style assets:**
+**直接在 Widget 上使用内联样式，系统自动哈希去重，生成复用的 Style 资产：**
 
-### CommonButton Inline Style
+### CommonButton 内联样式
 ```json
 {
   "type": "CommonButton",
@@ -97,7 +98,7 @@ Multiple color formats are supported:
 }
 ```
 
-### CommonText Inline Style
+### CommonText 内联样式
 ```json
 {
   "type": "CommonText",
@@ -110,7 +111,7 @@ Multiple color formats are supported:
 }
 ```
 
-### Standard Widget Style
+### 普通 Widget 样式
 ```json
 {
   "type": "Text",
@@ -122,71 +123,71 @@ Multiple color formats are supported:
 }
 ```
 
-**Text Style Properties**:
-- `fontSize` - Font size
-- `fontWeight` - Font weight: `"Light"`, `"Regular"`, `"Medium"`, `"Bold"`
-- `fontFamily` - Font path
-- `color` - Text color
+**文本样式属性**:
+- `fontSize` - 字体大小
+- `fontWeight` - 字重: `"Light"`, `"Regular"`, `"Medium"`, `"Bold"`
+- `fontFamily` - 字体路径
+- `color` - 文字颜色
 
-**Button Style Properties**:
-- `normalColor` - Normal state color
-- `hoveredColor` - Hover state color
-- `pressedColor` - Pressed state color
-- `textColor` - Text color
-- `cornerRadius` - Corner radius
-- `minWidth` / `minHeight` - Minimum dimensions
+**按钮样式属性**:
+- `normalColor` - 正常状态颜色
+- `hoveredColor` - 悬停状态颜色
+- `pressedColor` - 按下状态颜色
+- `textColor` - 文字颜色
+- `cornerRadius` - 圆角半径
+- `minWidth` / `minHeight` - 最小尺寸
 
-**Auto-Deduplication Mechanism**: Identical style definitions automatically generate the same Style asset, no manual management needed.
+**自动去重机制**: 相同的样式定义会自动生成同一个 Style 资产，无需手动管理。
 
 ## Widget Types
 
 ### Layout Containers
 | Type | UE Class | Description |
 |------|----------|-------------|
-| `VerticalBox` | UVerticalBox | Arranges children vertically |
-| `HorizontalBox` | UHorizontalBox | Arranges children horizontally |
-| `Canvas` | UCanvasPanel | Absolute positioning with anchor support (alias: `CanvasPanel`) |
-| `Overlay` | UOverlay | Stacked layout |
-| `Border` | UBorder | Container with background |
-| `ScrollBox` | UScrollBox | Scrollable container |
-| `SizeBox` | USizeBox | Fixed-size container |
-| `ScaleBox` | UScaleBox | Scaling container |
-| `WrapBox` | UWrapBox | Auto-wrap layout |
-| `GridPanel` | UGridPanel | Grid layout |
-| `UniformGridPanel` | UUniformGridPanel | Uniform grid |
-| `WidgetSwitcher` | UWidgetSwitcher | Switches between child widgets |
+| `VerticalBox` | UVerticalBox | 垂直排列子元素 |
+| `HorizontalBox` | UHorizontalBox | 水平排列子元素 |
+| `Canvas` | UCanvasPanel | 绝对定位，支持锚点 (别名: `CanvasPanel`) |
+| `Overlay` | UOverlay | 层叠布局 |
+| `Border` | UBorder | 带背景的容器 |
+| `ScrollBox` | UScrollBox | 可滚动容器 |
+| `SizeBox` | USizeBox | 固定尺寸容器 |
+| `ScaleBox` | UScaleBox | 缩放容器 |
+| `WrapBox` | UWrapBox | 自动换行布局 |
+| `GridPanel` | UGridPanel | 网格布局 |
+| `UniformGridPanel` | UUniformGridPanel | 均匀网格 |
+| `WidgetSwitcher` | UWidgetSwitcher | 切换显示子控件 |
 
 ### Leaf Widgets
 | Type | UE Class | Description |
 |------|----------|-------------|
-| `Text` | UTextBlock | Text display |
-| `Button` | UButton | Button |
-| `Image` | UImage | Image |
-| `InputField` | UEditableText | Input field (alias: `EditableText`) |
-| `ProgressBar` | UProgressBar | Progress bar |
-| `Slider` | USlider | Slider |
-| `CheckBox` | UCheckBox | Checkbox |
-| `ComboBox` | UComboBoxString | Dropdown |
-| `Spacer` | USpacer | Spacer |
+| `Text` | UTextBlock | 文本显示 |
+| `Button` | UButton | 按钮 |
+| `Image` | UImage | 图片 |
+| `InputField` | UEditableText | 输入框 (别名: `EditableText`) |
+| `ProgressBar` | UProgressBar | 进度条 |
+| `Slider` | USlider | 滑动条 |
+| `CheckBox` | UCheckBox | 复选框 |
+| `ComboBox` | UComboBoxString | 下拉框 |
+| `Spacer` | USpacer | 占位空间 |
 
 ### Effects Widgets
 | Type | UE Class | Description |
 |------|----------|-------------|
-| `SDFBox` | USDFBoxWidgetPure | SDF effect container, supports shadow/glow/border/gradient, can contain a single child widget |
+| `SDFBox` | USDFBoxWidgetPure | SDF 效果容器，支持阴影/发光/边框/渐变，可包含单个子控件 |
 
-### CommonUI Widgets (requires CommonUI plugin)
+### CommonUI Widgets (需要 CommonUI 插件)
 | Type | UE Class | Description |
 |------|----------|-------------|
-| `CommonButton` | UCommonButton | CommonUI button, supports input actions |
-| `CommonText` | UCommonText | CommonUI text, supports style assets |
-| `CommonBorder` | UCommonBorder | CommonUI border, supports style assets |
-| `CommonImage` | UCommonImage | CommonUI image |
+| `CommonButton` | UCommonButton | CommonUI 按钮，支持输入动作 |
+| `CommonText` | UCommonText | CommonUI 文本，支持样式资源 |
+| `CommonBorder` | UCommonBorder | CommonUI 边框，支持样式资源 |
+| `CommonImage` | UCommonImage | CommonUI 图片 |
 
-## styleRef (Expert Mode)
+## styleRef (专家模式)
 
-> **Note**: Inline styles `buttonStyle`/`textStyle` are recommended. The following is only for referencing manually pre-created Style assets.
+> **注意**: 推荐 使用内联样式 `buttonStyle`/`textStyle`。以下仅用于引用人工预先创建的 Style 资产。
 
-If you need to share a manually created Style asset across multiple UI files:
+如果需要在多个 UI 文件间共享同一个手动创建的 Style 资产：
 
 ```json
 {
@@ -197,17 +198,17 @@ If you need to share a manually created Style asset across multiple UI files:
 }
 ```
 
-**Applicable Scenarios:**
-- Referencing manually created Style Blueprints by artists/designers
-- Need to share styles across independent UI files
+**适用场景:**
+- 引用美术/设计师手动创建的 Style Blueprint
+- 需要在多个独立 UI 文件间共享样式
 
-**Not Applicable:**
-- LLM-generated UI (inline styles suffice)
-- Reusing styles within the same file (auto-deduplication handles this)
+**不适用:**
+- LLM 生成的 UI（使用内联样式即可）
+- 同一文件内复用样式（自动去重机制已处理）
 
-## Configuration
+## Configuration (配置选项)
 
-Set generation configuration at the document root level:
+在文档根级别设置生成配置：
 
 ```json
 {
@@ -222,12 +223,12 @@ Set generation configuration at the document root level:
 }
 ```
 
-**Configuration Options:**
-- `bUseCommonUI`: Whether to use `UCommonActivatableWidget` as parent class (default: false)
-- `commonUILayer`: CommonUI layer, options: `Game`, `Menu`, `Popup`, `Dialog`, `Modal`
-- `commonUIInputMode`: Input mode, options: `Game`, `UI`, `All`
+**配置项说明:**
+- `bUseCommonUI`: 是否使用 `UCommonActivatableWidget` 作为父类 (默认: false)
+- `commonUILayer`: CommonUI 层级，可选值: `Game`, `Menu`, `Popup`, `Dialog`, `Modal`
+- `commonUIInputMode`: 输入模式，可选值: `Game`, `UI`, `All`
 
-## Slot Properties
+## Slot Properties (布局属性)
 
 ### Box Slots (VerticalBox/HorizontalBox)
 ```json
@@ -240,20 +241,20 @@ Set generation configuration at the document root level:
 }
 ```
 
-- `padding`: Inner padding (FMargin)
-- `fill`: Fill weight, 0=auto size, >0=proportional fill
-- `size.width`: Fixed width (px), mutually exclusive with fill
-- `size.height`: Fixed height (px), mutually exclusive with fill
-- `size.fill`: Equivalent to fill, for complex size definitions
+- `padding`: 内边距 (FMargin)
+- `fill`: 填充权重，0=自动大小，>0=按比例填充
+- `size.width`: 固定宽度 (px)，与 fill 互斥
+- `size.height`: 固定高度 (px)，与 fill 互斥
+- `size.fill`: 等同于 fill，用于复杂尺寸定义
 - `hAlignment`: "Left" | "Center" | "Right" | "Fill"
 - `vAlignment`: "Top" | "Center" | "Bottom" | "Fill"
 
-**Size Priority:**
-1. `size.width/height` → Fixed size
-2. `fill` or `size.fill` → Fill by weight
-3. Default → Auto size
+**尺寸优先级:**
+1. `size.width/height` → 固定尺寸
+2. `fill` 或 `size.fill` → 按权重填充
+3. 默认 → 自动大小
 
-### Canvas Slot (Absolute Positioning)
+### Canvas Slot (绝对定位)
 ```json
 "slot": {
   "anchors": {
@@ -266,31 +267,31 @@ Set generation configuration at the document root level:
 }
 ```
 
-**Anchor System:**
-- `minimum/maximum`: 0-1 normalized coordinates, (0,0)=top-left, (1,1)=bottom-right
-- **Point Anchor**: minimum=maximum, widget positioned relative to a single anchor point
-- **Stretch Anchor**: minimum≠maximum, widget stretched between anchor rectangle
+**锚点系统:**
+- `minimum/maximum`: 0-1 归一化坐标，(0,0)=左上, (1,1)=右下
+- **Point Anchor**: minimum=maximum，widget 相对于单个锚点定位
+- **Stretch Anchor**: minimum≠maximum，widget 在锚点矩形间拉伸
 
 **Point Anchor (minimum=maximum):**
-- `offsets.left, offsets.top` = position of widget's top-left corner relative to anchor point
-- widget size = `(right - left, bottom - top)`
-- Example: anchor(0.5,0.5), offsets(-100,-50,100,50) = centered 200×100 widget
+- `offsets.left, offsets.top` = widget 左上角相对于锚点的位置 (position)
+- widget 尺寸 = `(right - left, bottom - top)`
+- 例：锚点(0.5,0.5)，offsets(-100,-50,100,50) = 居中200×100的widget
 
 **Stretch Anchor (minimum≠maximum):**
-- `offsets` defines margins relative to anchor rectangle
-- Positive values = inset, negative values = outset
+- `offsets` 定义相对于锚点矩形的边距
+- 正值=向内缩进，负值=向外扩展
 
 ## Editor Workflow
 
-### JSON → UMG (Generation)
-1. Enter JSON in the editor panel
-2. Click "Generate UMG Widget"
-3. The generated Widget Blueprint opens automatically
+### JSON → UMG (生成)
+1. 在编辑器面板输入 JSON
+2. 点击 "Generate UMG Widget"
+3. 生成的 Widget Blueprint 会自动打开
 
-### UMG → JSON (Export)
-1. Click "Export UMG to JSON"
-2. Select the Widget Blueprint to export
-3. JSON displays in the editor panel for modification and regeneration
+### UMG → JSON (导出)
+1. 点击 "Export UMG to JSON"
+2. 选择要导出的 Widget Blueprint
+3. JSON 会显示在编辑器面板中，可用于修改和重新生成
 
 ### Overlay Slot
 ```json
@@ -301,12 +302,12 @@ Set generation configuration at the document root level:
 }
 ```
 
-## Content Properties
+## Content Properties (内容属性)
 
 ```json
 "content": {
-  "text": "Display Text",
-  "placeholder": "Input Hint",
+  "text": "显示文本",
+  "placeholder": "输入提示",
   "isPassword": false,
   "progress": 0.75,
   "sliderValue": 0.5,
@@ -316,20 +317,20 @@ Set generation configuration at the document root level:
 }
 ```
 
-- `text`: Text content for Text/Button
-- `placeholder`: Hint text for InputField
-- `isPassword`: Whether it's a password input field
-- `progress`: ProgressBar progress (0-1)
-- `sliderValue`: Slider value (0-1)
-- `isChecked`: Whether CheckBox is checked
-- `wrapping`: Text wrap mode: 0=NoWrap, 1=Wrap, 2=AutoWrap (default)
-- `justification`: Text alignment: "Left", "Center", "Right"
+- `text`: Text/Button 的文本内容
+- `placeholder`: InputField 的提示文本
+- `isPassword`: 是否为密码输入框
+- `progress`: ProgressBar 进度 (0-1)
+- `sliderValue`: Slider 值 (0-1)
+- `isChecked`: CheckBox 是否选中
+- `wrapping`: 文本换行模式: 0=NoWrap, 1=Wrap, 2=AutoWrap (默认)
+- `justification`: 文本对齐: "Left", "Center", "Right"
 
-**Note**: Font styles (fontSize, color, fontWeight) should be in the `style` field, not in `content`.
+**注意**: 字体样式（fontSize, color, fontWeight）应放在 `style` 字段中，不在 `content` 中。
 
-## CommonUI Properties
+## CommonUI Properties (CommonUI 属性)
 
-When using CommonUI Widgets, setting `parentClass` automatically enables CommonUI mode:
+当使用 CommonUI Widget 时，设置 `parentClass` 即可自动启用 CommonUI 模式：
 
 ```json
 {
@@ -352,15 +353,15 @@ When using CommonUI Widgets, setting `parentClass` automatically enables CommonU
 }
 ```
 
-**parentClass Options:**
-- `"CommonActivatableWidget"` - Game menus/popups (recommended)
-- `"CommonUserWidget"` - Embedded UI components
+**parentClass 选项:**
+- `"CommonActivatableWidget"` - 游戏菜单/弹窗（推荐）
+- `"CommonUserWidget"` - 嵌入式 UI 组件
 
-**Auto Type Inference:**
-- When `parentClass` is CommonUI, `Text` → `CommonText`, `Button` → `CommonButton`
-- Styles automatically apply to corresponding CommonUI controls
+**自动类型推断:**
+- `parentClass` 为 CommonUI 时，`Text` → `CommonText`，`Button` → `CommonButton`
+- 样式自动应用到对应 CommonUI 控件
 
-## Style Properties
+## Style Properties (样式属性)
 
 ```json
 "style": {
@@ -376,32 +377,32 @@ When using CommonUI Widgets, setting `parentClass` automatically enables CommonU
 }
 ```
 
-**Layout Styles**:
-- `width` / `height` - Fixed dimensions
-- `padding` - Inner padding
-- `margin` - Outer margin
+**布局样式**:
+- `width` / `height` - 固定尺寸
+- `padding` - 内边距
+- `margin` - 外边距
 
-**Visual Styles**:
-- `backgroundColor` - Background color (container widgets)
-- `borderColor` / `borderWidth` / `borderRadius` - Border
-- `opacity` - Opacity (0-1)
-- `visibility` - Visibility: `"Visible"`, `"Hidden"`, `"Collapsed"`
+**视觉样式**:
+- `backgroundColor` - 背景颜色（容器类控件）
+- `borderColor` / `borderWidth` / `borderRadius` - 边框
+- `opacity` - 透明度 (0-1)
+- `visibility` - 可见性: `"Visible"`, `"Hidden"`, `"Collapsed"`
 
-**Text Styles** (Text widget):
-- `fontSize` - Font size
-- `fontWeight` - Font weight: `"Light"`, `"Regular"`, `"Medium"`, `"Bold"`
-- `fontFamily` - Font resource path
-- `color` - Text color
+**文本样式** (Text 控件):
+- `fontSize` - 字体大小
+- `fontWeight` - 字重: `"Light"`, `"Regular"`, `"Medium"`, `"Bold"`
+- `fontFamily` - 字体资源路径
+- `color` - 文字颜色
 
-**Button Styles** (Button widget):
-- `normalColor` / `hoveredColor` / `pressedColor` - State colors
-- `textColor` - Text color
-- `cornerRadius` - Corner radius
-- `minWidth` / `minHeight` - Minimum dimensions
+**按钮样式** (Button 控件):
+- `normalColor` / `hoveredColor` / `pressedColor` - 状态颜色
+- `textColor` - 文字颜色
+- `cornerRadius` - 圆角
+- `minWidth` / `minHeight` - 最小尺寸
 
-## Animation System
+## Animation System (动画系统)
 
-### Basic Animation Format
+### 基础动画格式
 
 ```json
 "animations": [
@@ -419,20 +420,20 @@ When using CommonUI Widgets, setting `parentClass` automatically enables CommonU
 ]
 ```
 
-### Supported Animation Properties
+### 支持的动画属性
 
-| Property Name | Value Type | Description |
-|---------------|------------|-------------|
-| `RenderOpacity` | Float (0-1) | Opacity |
-| `RenderTranslation` | Vector2D | Translation (X, Y) |
-| `RenderScale` | Vector2D | Scale (X, Y) |
-| `RenderRotation` | Float | Rotation angle |
-| `BackgroundColor` | Color | Background color (Border/Button) |
-| `TintColor` / `ColorAndOpacity` | Color | Tint (Image) |
-| `WidgetWidth` | Float | Width |
-| `WidgetHeight` | Float | Height |
+| 属性名 | 值类型 | 说明 |
+|--------|--------|------|
+| `RenderOpacity` | Float (0-1) | 透明度 |
+| `RenderTranslation` | Vector2D | 位移 (X, Y) |
+| `RenderScale` | Vector2D | 缩放 (X, Y) |
+| `RenderRotation` | Float | 旋转角度 |
+| `BackgroundColor` | Color | 背景颜色 (Border/Button) |
+| `TintColor` / `ColorAndOpacity` | Color | 着色 (Image) |
+| `WidgetWidth` | Float | 宽度 |
+| `WidgetHeight` | Float | 高度 |
 
-### Vector2D Animation
+### Vector2D 动画
 
 ```json
 "animations": [
@@ -455,7 +456,7 @@ When using CommonUI Widgets, setting `parentClass` automatically enables CommonU
 ]
 ```
 
-### Color Animation
+### 颜色动画
 
 ```json
 "animations": [
@@ -472,7 +473,7 @@ When using CommonUI Widgets, setting `parentClass` automatically enables CommonU
 ]
 ```
 
-### Keyframe Animation
+### 关键帧动画
 
 ```json
 "animations": [
@@ -492,25 +493,25 @@ When using CommonUI Widgets, setting `parentClass` automatically enables CommonU
 
 ### Easing Types
 
-- `Linear` - Linear
-- `EaseIn`, `EaseOut`, `EaseInOut` - Basic easing
-- `InQuad`, `OutQuad`, `InOutQuad` - Quadratic
-- `InCubic`, `OutCubic`, `InOutCubic` - Cubic
-- `InElastic`, `OutElastic` - Elastic
-- `InBounce`, `OutBounce` - Bounce
-- `InBack`, `OutBack` - Back
+- `Linear` - 线性
+- `EaseIn`, `EaseOut`, `EaseInOut` - 基础缓动
+- `InQuad`, `OutQuad`, `InOutQuad` - 二次方
+- `InCubic`, `OutCubic`, `InOutCubic` - 三次方
+- `InElastic`, `OutElastic` - 弹性
+- `InBounce`, `OutBounce` - 弹跳
+- `InBack`, `OutBack` - 回弹
 
-### Extended Animation Properties
+### 扩展动画属性
 
-The system uses an **Animation Property Registry** that supports dynamic extension of new animatable properties. View the complete property list:
+系统使用**动画属性注册表**，支持动态扩展新的可动画属性。查看完整属性列表：
 
 ```
 Plugins/LLMDynamicUI/Content/Schemas/AnimPropertySchema.llmschema
 ```
 
-Or click **"Export Anim Props"** in the editor to export the latest dictionary.
+或在编辑器中点击 **"Export Anim Props"** 按钮导出最新字典。
 
-## Events
+## Events (事件绑定)
 
 ```json
 "events": {
@@ -526,8 +527,8 @@ Or click **"Export Anim Props"** in the editor to export the latest dictionary.
 
 ## Common Patterns
 
-### SDFBox Effect Container
-SDFBox is a container widget supporting SDF effects, can contain a single child widget:
+### SDFBox 效果容器
+SDFBox 是一个支持 SDF 效果的容器控件，可包含单个子控件：
 
 ```json
 {
@@ -552,14 +553,14 @@ SDFBox is a container widget supporting SDF effects, can contain a single child 
 }
 ```
 
-**SDFBox Features:**
-- Supports `children` array (maximum one child widget)
-- `padding` property controls child widget padding
-- Auto sizing: SDF size expands to accommodate child widget + padding
-- Can replace `Overlay + SDFBox` combination, cleaner structure
+**SDFBox 特性:**
+- 支持 `children` 数组（最多一个子控件）
+- `padding` 属性控制子控件内边距
+- 自动尺寸：SDF 尺寸会扩展以容纳子控件 + padding
+- 可替代 `Overlay + SDFBox` 组合，结构更简洁
 
-### visionOS Liquid Glass Style (BackdropBlur)
-SDFBox supports `backdropBlur` property for background blur effect, system automatically combines `BackgroundBlur` widget:
+### visionOS Liquid Glass 风格 (BackdropBlur)
+SDFBox 支持 `backdropBlur` 属性实现背景模糊效果，系统自动组合 `BackgroundBlur` 控件：
 
 ```json
 {
@@ -579,19 +580,19 @@ SDFBox supports `backdropBlur` property for background blur effect, system autom
 }
 ```
 
-**BackdropBlur Parameters:**
-- `enabled`: Whether to enable background blur
-- `strength`: Blur strength (0-100, default 64)
-- `saturation`: Saturation boost (1.0=original, 2.0=CSS saturate(200%))
+**BackdropBlur 参数:**
+- `enabled`: 是否启用背景模糊
+- `strength`: 模糊强度 (0-100, 默认64)
+- `saturation`: 饱和度增强 (1.0=原始, 2.0=CSS saturate(200%))
 
-**Preset Values:**
-- `Glass(64)`: visionOS default glass effect
-- `Subtle(32)`: Subtle blur
-- `Frosted(80)`: Strong frosted effect
+**预设值:**
+- `Glass(64)`: visionOS 默认玻璃效果
+- `Subtle(32)`: 轻微模糊
+- `Frosted(80)`: 强磨砂效果
 
-Detailed property reference: `Plugins/LLMDynamicUI/Content/Schemas/SDFSchema.llmschema`
+详细属性参考: `Plugins/LLMDynamicUI/Content/Schemas/SDFSchema.llmschema`
 
-### Fixed Height Row (Input/Button)
+### 固定高度行 (输入框/按钮)
 ```json
 {
   "id": "inputRow",
@@ -601,7 +602,7 @@ Detailed property reference: `Plugins/LLMDynamicUI/Content/Schemas/SDFSchema.llm
 }
 ```
 
-### Fill Remaining Space
+### 填充剩余空间
 ```json
 {
   "id": "spacer",
@@ -610,7 +611,7 @@ Detailed property reference: `Plugins/LLMDynamicUI/Content/Schemas/SDFSchema.llm
 }
 ```
 
-### Centered Popup
+### 居中弹窗
 ```json
 {
   "id": "dialog",
@@ -623,7 +624,7 @@ Detailed property reference: `Plugins/LLMDynamicUI/Content/Schemas/SDFSchema.llm
 }
 ```
 
-### Fullscreen Stretched Background
+### 全屏拉伸背景
 ```json
 {
   "id": "background",
@@ -636,7 +637,7 @@ Detailed property reference: `Plugins/LLMDynamicUI/Content/Schemas/SDFSchema.llm
 }
 ```
 
-### Equal Width Button Row
+### 等宽按钮行
 ```json
 {
   "type": "HorizontalBox",
@@ -647,7 +648,7 @@ Detailed property reference: `Plugins/LLMDynamicUI/Content/Schemas/SDFSchema.llm
 }
 ```
 
-### Animated Progress Bar
+### 带动画的进度条
 ```json
 {
   "type": "ProgressBar",
@@ -757,3 +758,66 @@ Detailed property reference: `Plugins/LLMDynamicUI/Content/Schemas/SDFSchema.llm
   }
 }
 ```
+
+## LLMEasyShellLite Support (Parallel Registration)
+
+`LLMDynamicUI` registers **two parallel abilities** named `ui` — one per shell — with **identical command set** (LLM-series plugins are allowed to register write operations in Lite, only the generic helper commands in LLMEasyShell itself are read-only by design):
+
+| Shell | CLI Binary | Ability | Commands Available |
+|-------|-----------|---------|--------------------|
+| `LLMEasyShell` (full) | `llmshell` | `ui` (full) | `generate` · `export` · `list-types` · `export-schema` |
+| `LLMEasyShellLite` | `llmshelllite` | `ui` (lite, full feature set) | `generate` · `export` · `list-types` · `export-schema` |
+
+### Lite Discovery Mechanism
+
+LLMDynamicUI does **not** use the Python Ability framework (`LLMShellAbilitiesLite`) — that path is exclusive to LLMEasyShell's own PyAbility runtime. Instead, it mirrors the same `RegisterAbilityJson` + `RegisterAbilityCommandHandler` C++ API that the full shell uses:
+
+```cpp
+// Compile-time: detected via CheckModuleExists("LLMEasyShellLite")
+#if WITH_LLMEASYSHELL_LITE
+    FCoreDelegates::OnAllModuleLoadingPhasesComplete.AddRaw(
+        this, &FLLMDynamicUIEditorModule::RegisterWithLLMEasyShellLite);
+#endif
+```
+
+At editor startup, the editor module checks for `/Script/LLMEasyShellLite.LLMEasyShellLiteSubsystem` and (if present) registers the `ui` ability with the **same 4 commands** as the full shell, reusing a single `ULLMDynamicUICommandHandler` instance whose `Execute` UFUNCTION bridges to `ExecuteWithResult`.
+
+### Why the Same Handler Works for Both Shells
+
+The two shells' command dispatchers look for different UFUNCTION names by default:
+- **Full** (`ULLMEasyShellSubsystem`) prefers `ExecuteWithResult`, falls back to `Execute`
+- **Lite** (`ULLMEasyShellLiteSubsystem`) only knows `Execute` (base class `ULLMEasyShellAbilityCommandObjectLite`)
+
+LLMDynamicUI's `ULLMDynamicUICommandHandler` exposes **both** UFUNCTIONs:
+```cpp
+UFUNCTION() FString ExecuteWithResult(const FString& Cmd, const FString& ArgsJson);
+UFUNCTION() FString Execute(const FString& Cmd, const FString& ArgsJson)
+    { return ExecuteWithResult(Cmd, ArgsJson); }
+```
+
+Both shells end up routing to the same `ExecuteWithResult` body — there is exactly one command-dispatch path.
+
+### Commands (identical in both shells)
+
+```bash
+# Generate a UMG Widget Blueprint from a .llmui file
+llmshelllite ui generate /Game/UI/MyWidget --from C:/Temp/ui.json
+
+# Export a UMG Widget Blueprint back to .llmui
+llmshelllite ui export /Game/UI/MyWidget --output C:/Temp/export.llmui
+
+# List available widget types grouped by category
+llmshelllite ui list-types
+llmshelllite ui list-types --category Layout
+
+# Export the widget-type schema to a JSON file
+llmshelllite ui export-schema --output C:/Temp/schema.json
+```
+
+### Compile-time Configuration
+
+`LLMDynamicUIEditor.Build.cs` detects each shell independently and defines a macro:
+- `WITH_LLMEASYSHELL=1` if `Plugins/LLMEasyShell/` exists
+- `WITH_LLMEASYSHELL_LITE=1` if `Plugins/LLMEasyShellLite/` exists
+
+Both can be 1 simultaneously (e.g. dev workstation with both shells installed). The two `ui` abilities are independent — each shell's CLI sees only its own registered commands.

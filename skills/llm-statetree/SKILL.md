@@ -1,43 +1,39 @@
 ---
 name: llm-statetree
 description: |
-  LLMStateTree is a DSL-driven UE5 StateTree asset generation system. Use this skill when users need to:
-  (1) Create or design UE5 StateTree AI behavior trees (idle, patrol, chase, attack, etc.)
-  (2) Convert AI behavior descriptions into generatable DSL format (.llmstate JSON)
-  (3) Understand or modify existing StateTree DSL definitions
-  (4) Learn about supported node types (State, Group, Selector, Sequencer, Tasks, Conditions, Considerations)
-  (5) Query binding expression syntax and context data references
+  StateTree DSL 生成技能。当用户需要：
+  (1) 创建 AI 行为树、状态机的 DSL 定义（.llmstate 文件）
+  (2) 将行为逻辑描述转换为 llmstate JSON 格式
+  (3) 理解 StateTree 节点类型（Task、Condition、Evaluator、Consideration）
+  (4) 需要 StateTree 代码示例（巡逻、追逐、攻击、技能等）
+  (5) 修改或扩展现有 llmstate 文件
+  请使用此技能。
 ---
 
 # LLM StateTree - DSL Schema Guide
 
-### **Composition Over Inheritance**
+### **组合优于继承**
 
 ## File Format
 
-StateTree definition files use the `.llmstate` extension (LLM StateTree DSL), formatted as JSON.
+StateTree 定义使用 `.llmstate` 扩展名，格式为 JSON。
 
 ## Reference Files
 
-**Schema File**: `Config/Schemas/StateTreeNodeSchema.llmstateschema` - Contains complete node type definitions discovered from UE reflection
+**Node Schema**: `Plugins/LLMStateTree/Config/Schemas/StateTreeNodeSchema.llmstateschema` - 包含所有 StateTree 节点类型的完整定义、属性类型、默认值
 
-**Examples Directory**: `Config/Examples/` - Contains complete AI behavior example `.llmstate` files
+**Examples**: `Plugins/LLMStateTree/Config/Examples/` - 包含完整的 AI 示例文件
 
-**Samples**:
-- `SimpleAI.llmstate` - Basic AI with Idle, Patrol, Chase, Attack states
-- `GuardAI.llmstate` - Guard NPC with patrol, investigate, chase, return home
-- `UtilityAI.llmstate` - Utility AI with considerations for action selection
-- `StealthAI.llmstate` - Stealth AI with hide, sneak, detect, escape states
-- `BossAI.llmstate` - Boss AI with multiple phases based on health thresholds
+**导出 Schema**: 在编辑器中点击 "Generate Schema" 按钮生成最新节点定义
 
 ## Quick Start
 
 ```json
 {
-  "name": "MyAI",
+  "name": "SimpleAI",
   "version": "1.0",
   "parameters": [
-    { "name": "PatrolRadius", "type": "float", "default": 500.0 },
+    { "name": "IdleDuration", "type": "float", "default": 2.0 },
     { "name": "ChaseSpeed", "type": "float", "default": 600.0 }
   ],
   "states": [
@@ -45,35 +41,69 @@ StateTree definition files use the `.llmstate` extension (LLM StateTree DSL), fo
       "name": "Idle",
       "type": "State",
       "tasks": [
-        { "type": "StateTreeDelayTask", "properties": { "Duration": 2.0 } }
+        { "type": "StateTreeDelayTask", "name": "Wait", "properties": { "Duration": "${Param.IdleDuration}" } }
       ],
       "transitions": [
-        { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Patrol" }
+        { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Chase" }
       ]
     },
     {
-      "name": "Patrol",
-      "type": "Group",
-      "selectionBehavior": "TrySelectChildrenInOrder",
-      "children": [
-        {
-          "name": "Patrol_Move",
-          "type": "State",
-          "tasks": [
-            { "type": "StateTreeDelayTask", "properties": { "Duration": 0.0 } }
-          ]
-        }
+      "name": "Chase",
+      "type": "State",
+      "tasks": [
+        { "type": "StateTreeMoveToTask", "name": "MoveToTarget", "properties": { "AcceptableRadius": 50.0 } }
+      ],
+      "transitions": [
+        { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Attack" }
+      ]
+    },
+    {
+      "name": "Attack",
+      "type": "State",
+      "tasks": [
+        { "type": "StateTreeDelayTask", "name": "AttackCD", "properties": { "Duration": 0.5 } }
+      ],
+      "transitions": [
+        { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Chase" }
       ]
     }
   ]
 }
 ```
 
-## State Types
+## Core Concepts
 
-### State
+### Parameters
 
-Basic state that executes tasks and transitions to other states.
+StateTree 全局参数，可在 Task 中通过 `${Param.Name}` 绑定：
+
+```json
+"parameters": [
+  { "name": "PatrolRadius", "type": "float", "default": 500.0 },
+  { "name": "ChaseSpeed", "type": "float", "default": 600.0 },
+  { "name": "CanAttack", "type": "bool", "default": true }
+]
+```
+
+**Types:** `float`, `int`, `bool`, `string`, `vector`, `rotator`
+
+### Evaluators
+
+在 StateTree 启动时评估的节点，每帧提供上下文数据：
+
+```json
+"evaluators": [
+  {
+    "type": "StateTreeEvaluatorBase",
+    "name": "DistanceToTarget",
+    "properties": { "TargetKey": "TargetActor" }
+  }
+]
+```
+
+### States
+
+StateTree 的核心，定义 AI 状态和转换：
 
 ```json
 {
@@ -84,313 +114,279 @@ Basic state that executes tasks and transitions to other states.
 }
 ```
 
-### Group
+**State Types:**
+| Type | Description |
+|------|-------------|
+| `State` | 普通状态，可包含 Tasks |
+| `Group` | 状态组，可包含子状态，用于选择行为 |
+| `Linked` | 链接到外部 StateTree |
 
-Container state that manages child states with a selection behavior.
+**Selection Behaviors (用于 Group):**
+| Behavior | Description |
+|----------|-------------|
+| `TrySelectChildrenInOrder` | 按顺序尝试选择子状态 |
+| `SelectBehaviorChildWithHighestUtility` | 选择效用最高的子状态 |
 
+## Node Types
+
+### Tasks
+
+在状态下执行的 Actions：
+
+| Type | Description |
+|------|-------------|
+| `StateTreeDelayTask` | 延迟等待 |
+| `StateTreeMoveToTask` | 移动到目标/位置 |
+| `StateTreeDebugTextTask` | 绘制调试文本 |
+| `StateTreeRunParallelStateTreeTask` | 并行运行另一个 StateTree |
+
+**Common Task Properties:**
+```json
+{
+  "type": "StateTreeDelayTask",
+  "name": "Wait",
+  "properties": {
+    "Duration": 2.0,
+    "RandomDeviation": 0.5
+  }
+}
+```
+
+### Conditions
+
+状态转换条件判断：
+
+| Type | Description |
+|------|-------------|
+| `StateTreeCompareFloatCondition` | 浮点数比较 |
+| `StateTreeCompareIntCondition` | 整数比较 |
+| `StateTreeCompareBoolCondition` | 布尔比较 |
+| `StateTreeCompareDistanceCondition` | 距离比较 |
+| `GameplayTagMatchCondition` | GameplayTag 匹配 |
+| `GameplayTagContainerMatchCondition` | Tag 容器匹配 |
+| `StateTreeObjectIsValidCondition` | 对象有效性检查 |
+| `StateTreeObjectEqualsCondition` | 对象相等检查 |
+| `StateTreeObjectIsChildOfClassCondition` | 类继承检查 |
+| `StateTreeRandomCondition` | 随机条件 |
+
+**Condition Operators:** `Less`, `LessOrEqual`, `Equal`, `NotEqual`, `GreaterOrEqual`, `Greater`, `IsTrue`
+
+**Example:**
+```json
+{
+  "type": "StateTreeCompareDistanceCondition",
+  "properties": {
+    "Distance": 500.0,
+    "Operator": "Less"
+  }
+}
+```
+
+### Considerations
+
+Utility AI 效用计算因子：
+
+| Type | Description |
+|------|-------------|
+| `StateTreeConstantConsideration` | 常量考虑因素 |
+| `StateTreeFloatInputConsideration` | 浮点数输入效用曲线 |
+| `StateTreeEnumInputConsideration` | 枚举输入效用曲线 |
+
+## Transitions
+
+状态转换定义：
+
+```json
+"transitions": [
+  {
+    "trigger": "OnStateCompleted",
+    "type": "GotoState",
+    "target": "Patrol"
+  },
+  {
+    "trigger": "OnCondition",
+    "type": "GotoState",
+    "target": "Chase",
+    "condition": {
+      "type": "StateTreeCompareDistanceCondition",
+      "properties": { "Operator": "Less", "Distance": 500.0 }
+    }
+  }
+]
+```
+
+**Transition Triggers:**
+| Trigger | Description |
+|---------|-------------|
+| `OnStateCompleted` | 状态完成时 |
+| `OnCondition` | 条件满足时 |
+| `OnSucceeded` | Task 成功时 |
+| `OnFailed` | Task 失败时 |
+
+**Transition Types:**
+| Type | Description |
+|------|-------------|
+| `GotoState` | 跳转到指定状态 |
+| `SelectChildren` | 选择子状态（用于 Group） |
+| `Restart` | 重新开始当前状态 |
+| `Stop` | 停止 StateTree |
+
+## Property Binding
+
+使用 `${Scope.Name.Property}` 语法绑定属性：
+
+```json
+"properties": {
+  "Duration": "${Param.IdleDuration}",
+  "AcceptableRadius": 100.0,
+  "MovementSpeed": "${Param.ChaseSpeed}"
+}
+```
+
+**Binding Scopes:**
+| Scope | Example |
+|-------|---------|
+| `${Param.Name}` | 全局参数 |
+| `${Evaluators.Name.Property}` | Evaluator 属性 |
+| `${Context.Name}` | Context 属性（由 Schema 定义） |
+
+## Common Patterns
+
+### 巡逻循环 (Patrol Loop)
 ```json
 {
   "name": "Patrol",
   "type": "Group",
   "selectionBehavior": "TrySelectChildrenInOrder",
-  "children": [...]
-}
-```
-
-### Selector
-
-Utility AI selector - evaluates children and selects highest utility.
-
-```json
-{
-  "name": "SelectAction",
-  "type": "Selector",
-  "selectionBehavior": "UtilityMax",
-  "children": [...]
-}
-```
-
-### Sequencer
-
-Executes children in sequence, succeeds when all complete.
-
-```json
-{
-  "name": "AttackSequence",
-  "type": "Sequencer",
-  "children": [...]
-}
-```
-
-## Tasks
-
-Tasks are behaviors executed within a state.
-
-### StateTreeDelayTask
-
-Wait for a specified duration before succeeding.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `Duration` | float | Time to wait in seconds |
-| `RandomDeviation` | float | Random deviation range |
-| `bRunForever` | bool | Run indefinitely |
-
-### StateTreeMoveToTask
-
-Move to a target location (from GameplayStateTree module).
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `AcceptableRadius` | float | Distance to consider arrival |
-
-### StateTreeRunParallelStateTreeTask
-
-Run another StateTree in parallel.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `StateTree` | object | Reference to another StateTree asset |
-| `PropertyOverrides` | array | Property override bindings |
-
-### StateTreeDebugTextTask
-
-Draw debug text on HUD.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `Text` | string | Debug text to display |
-| `TextColor` | color | Text color |
-| `FontScale` | float | Font scale |
-| `Offset` | vector | Screen offset |
-| `ReferenceActor` | object | Actor to attach text to |
-
-## Conditions
-
-Conditions are boolean checks for transitions.
-
-### StateTreeCompareIntCondition
-
-Compare two integers.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `Operator` | enum | Less, LessOrEqual, Equal, NotEqual, GreaterOrEqual, Greater, IsTrue |
-| `Left` | int | Left operand |
-| `Right` | int | Right operand |
-
-### StateTreeCompareFloatCondition
-
-Compare two floats.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `Operator` | enum | Less, LessOrEqual, Equal, NotEqual, GreaterOrEqual, Greater, IsTrue |
-| `Left` | float | Left operand |
-| `Right` | float | Right operand |
-
-### StateTreeCompareBoolCondition
-
-Compare two booleans.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `bLeft` | bool | Left operand |
-| `bRight` | bool | Right operand |
-
-### StateTreeCompareEnumCondition
-
-Compare two enum values.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `Value` | enum | Enum value to compare |
-| `Enum` | object | Enum type reference |
-
-### StateTreeCompareNameCondition
-
-Compare two FName values.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `Left` | name | Left operand |
-| `Right` | name | Right operand |
-
-### StateTreeCompareDistanceCondition
-
-Compare distance between two vectors.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `Operator` | enum | Less, LessOrEqual, Equal, NotEqual, GreaterOrEqual, Greater |
-| `Source` | vector | Source location |
-| `Target` | vector | Target location |
-| `Distance` | float | Distance to compare against |
-
-### StateTreeRandomCondition
-
-Random chance condition.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `Threshold` | float | Probability threshold (0-1) |
-
-### GameplayTagMatchCondition
-
-Check if actor has a gameplay tag.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `Tag` | gameplaytag | Tag to check |
-| `GameplayTags` | array | Tag container |
-| `bExactMatch` | bool | Require exact match |
-
-### GameplayTagContainerMatchCondition
-
-Check tag container against another container.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `MatchType` | enum | Any or All |
-| `GameplayTags` | array | Tags to match against |
-
-### GameplayTagQueryCondition
-
-Check against a Tag Query expression.
-
-### StateTreeObjectIsValidCondition
-
-Check if an object is valid.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `Object` | object | Object to check |
-
-### StateTreeObjectEqualsCondition
-
-Check if two objects are the same.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `Left` | object | Left object |
-| `Right` | object | Right object |
-
-### StateTreeObjectIsChildOfClassCondition
-
-Check if object is of a specific class.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `Object` | object | Object to check |
-| `Class` | object | Class to check against |
-
-## Considerations
-
-Considerations are utility AI factors that produce a score.
-
-### StateTreeConstantConsideration
-
-Constant score.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `Constant` | float | Fixed score value |
-
-### StateTreeFloatInputConsideration
-
-Score based on float input with response curve.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `Input` | float | Raw input value |
-| `Min` | float | Minimum input |
-| `Max` | float | Maximum input |
-| `DefaultValue` | float | Default when out of range |
-| `Keys` | array | Response curve keys |
-
-### StateTreeEnumInputConsideration
-
-Enum-based consideration for Utility AI.
-
-## Transitions
-
-Transitions define how the AI moves between states.
-
-```json
-{
-  "trigger": "OnStateCompleted",
-  "type": "GotoState",
-  "target": "Patrol"
-}
-```
-
-### Trigger Types
-
-- `OnStateCompleted` - State finished executing
-- `OnStateFailed` - State reported failure
-- `OnEvent` - Custom event received
-
-### Transition Types
-
-- `GotoState` - Move to specified state
-- `EvaluateConditions` - Evaluate conditions before transition
-
-## Binding Expressions
-
-Use `${}` syntax to reference parameters and context data:
-
-- `${Param.Speed}` - Reference a parameter
-- `${Context.Target.Location}` - Reference context property
-- `${Param.IdleDuration * 2}` - Expressions supported
-
-## Parameters
-
-Define parameters that can be set when assigning the StateTree to an AI character:
-
-```json
-{
-  "parameters": [
-    { "name": "PatrolRadius", "type": "float", "default": 500.0 },
-    { "name": "ChaseSpeed", "type": "float", "default": 600.0 },
-    { "name": "AlertRadius", "type": "float", "default": 1000.0 }
+  "children": [
+    {
+      "name": "Patrol_Move",
+      "type": "State",
+      "tasks": [
+        { "type": "StateTreeMoveToTask", "name": "Move", "properties": { "AcceptableRadius": 100.0 } }
+      ],
+      "transitions": [
+        { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Patrol_Wait" }
+      ]
+    },
+    {
+      "name": "Patrol_Wait",
+      "type": "State",
+      "tasks": [
+        { "type": "StateTreeDelayTask", "name": "Wait", "properties": { "Duration": 1.0 } }
+      ],
+      "transitions": [
+        { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Patrol_Move" }
+      ]
+    }
   ]
 }
 ```
 
-**Supported Types**: `float`, `int`, `bool`, `vector`, `gameplaytag`
-
-## Selection Behaviors
-
-### Group Selection Behaviors
-
-| Behavior | Description |
-|----------|-------------|
-| `TrySelectChildrenInOrder` | Evaluate children in order, select first eligible |
-| `TrySelectChildrenInRandomOrder` | Evaluate children in random order |
-| `SelectMostDesirableChild` | Select child with highest priority |
-
-### Selector (Utility AI) Selection Behaviors
-
-| Behavior | Description |
-|----------|-------------|
-| `UtilityMax` | Select child with highest utility score |
-| `WeightedRandom` | Select child based on weighted random |
-
-## Common Patterns
-
-### Simple Patrol Loop
+### 追逐-攻击循环 (Chase-Attack Loop)
 ```json
 {
-  "name": "SimplePatrol",
+  "name": "Chase",
+  "type": "State",
+  "tasks": [
+    { "type": "StateTreeMoveToTask", "name": "ChaseTarget", "properties": { "AcceptableRadius": 50.0 } }
+  ],
+  "transitions": [
+    { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Attack" }
+  ]
+},
+{
+  "name": "Attack",
+  "type": "State",
+  "tasks": [
+    { "type": "StateTreeDelayTask", "name": "AttackCooldown", "properties": { "Duration": 0.5 } }
+  ],
+  "transitions": [
+    { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Chase" }
+  ]
+}
+```
+
+### 距离触发转换 (Distance-Triggered Transition)
+```json
+{
+  "trigger": "OnCondition",
+  "type": "GotoState",
+  "target": "Chase",
+  "condition": {
+    "type": "StateTreeCompareDistanceCondition",
+    "properties": {
+      "Distance": 500.0,
+      "Operator": "Less"
+    }
+  }
+}
+```
+
+### 带随机变量的延迟 (Delay with Random Variance)
+```json
+{
+  "type": "StateTreeDelayTask",
+  "name": "Wait",
+  "properties": {
+    "Duration": 2.0,
+    "RandomDeviation": 0.5
+  }
+}
+```
+
+### 待机-巡逻-追逐切换
+```json
+{
+  "name": "Root",
+  "type": "Group",
+  "selectionBehavior": "SelectBehaviorChildWithHighestUtility",
+  "children": [
+    {
+      "name": "Idle",
+      "type": "State",
+      "tasks": [{ "type": "StateTreeDelayTask", "name": "Wait", "properties": { "Duration": 1.0 } }],
+      "transitions": [{ "trigger": "OnStateCompleted", "type": "GotoState", "target": "Patrol" }]
+    },
+    {
+      "name": "Patrol",
+      "type": "State",
+      "tasks": [{ "type": "StateTreeMoveToTask", "name": "Move", "properties": {} }],
+      "transitions": [
+        { "trigger": "OnCondition", "type": "GotoState", "target": "Chase", "condition": { ... } }
+      ]
+    },
+    {
+      "name": "Chase",
+      "type": "State",
+      "tasks": [{ "type": "StateTreeMoveToTask", "name": "Chase", "properties": {} }],
+      "transitions": [
+        { "trigger": "OnCondition", "type": "GotoState", "target": "Patrol", "condition": { ... } }
+      ]
+    }
+  ]
+}
+```
+
+## Full Example: Guard AI
+
+```json
+{
+  "name": "GuardAI",
+  "version": "1.0",
+  "description": "Guard AI with patrol, chase, and attack states",
   "parameters": [
-    { "name": "PatrolRadius", "type": "float", "default": 500.0 }
+    { "name": "PatrolRadius", "type": "float", "default": 500.0 },
+    { "name": "ChaseSpeed", "type": "float", "default": 600.0 },
+    { "name": "DetectionRange", "type": "float", "default": 800.0 },
+    { "name": "AttackRange", "type": "float", "default": 150.0 }
   ],
   "states": [
     {
       "name": "Idle",
       "type": "State",
       "tasks": [
-        { "type": "StateTreeDelayTask", "properties": { "Duration": 2.0 } }
+        { "type": "StateTreeDelayTask", "name": "LookAround", "properties": { "Duration": 2.0, "RandomDeviation": 0.5 } }
       ],
       "transitions": [
         { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Patrol" }
@@ -405,7 +401,7 @@ Define parameters that can be set when assigning the StateTree to an AI characte
           "name": "Patrol_Move",
           "type": "State",
           "tasks": [
-            { "type": "StateTreeDelayTask", "properties": { "Duration": 0.0 } }
+            { "type": "StateTreeMoveToTask", "name": "MoveToPoint", "properties": { "AcceptableRadius": 100.0 } }
           ],
           "transitions": [
             { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Patrol_Wait" }
@@ -415,7 +411,7 @@ Define parameters that can be set when assigning the StateTree to an AI characte
           "name": "Patrol_Wait",
           "type": "State",
           "tasks": [
-            { "type": "StateTreeDelayTask", "properties": { "Duration": 1.0, "RandomVariance": 0.3 } }
+            { "type": "StateTreeDelayTask", "name": "Wait", "properties": { "Duration": 1.0, "RandomDeviation": 0.3 } }
           ],
           "transitions": [
             { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Patrol_Move" }
@@ -423,136 +419,78 @@ Define parameters that can be set when assigning the StateTree to an AI characte
         }
       ],
       "transitions": [
-        { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Idle" }
-      ]
-    }
-  ]
-}
-```
-
-### Utility AI with Considerations
-```json
-{
-  "name": "UtilityAI",
-  "parameters": [
-    { "name": "MaxHealth", "type": "float", "default": 100.0 },
-    { "name": "LowHealthThreshold", "type": "float", "default": 30.0 }
-  ],
-  "states": [
-    {
-      "name": "Idle",
-      "type": "State",
-      "tasks": [
-        { "type": "StateTreeDelayTask", "properties": { "Duration": 0.5 } }
-      ],
-      "transitions": [
-        { "trigger": "OnStateCompleted", "type": "GotoState", "target": "SelectAction" }
+        {
+          "trigger": "OnCondition",
+          "type": "GotoState",
+          "target": "Chase",
+          "condition": {
+            "type": "StateTreeCompareDistanceCondition",
+            "properties": { "Distance": "${Param.DetectionRange}", "Operator": "Less" }
+          }
+        }
       ]
     },
     {
-      "name": "SelectAction",
-      "type": "Selector",
-      "selectionBehavior": "UtilityMax",
-      "children": [
+      "name": "Chase",
+      "type": "State",
+      "tasks": [
         {
-          "name": "Flee",
-          "type": "State",
-          "considerations": [
-            {
-              "type": "StateTreeFloatInputConsideration",
-              "properties": {
-                "Min": 0.0,
-                "Max": 100.0,
-                "DefaultValue": 50.0
-              }
-            }
-          ],
-          "tasks": [
-            { "type": "StateTreeDelayTask", "properties": { "Duration": 2.0 } }
-          ],
-          "transitions": [
-            { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Idle" }
-          ]
-        },
-        {
-          "name": "Attack",
-          "type": "State",
-          "considerations": [
-            { "type": "StateTreeConstantConsideration", "properties": { "Constant": 0.8 } }
-          ],
-          "tasks": [
-            { "type": "StateTreeDelayTask", "properties": { "Duration": 0.5 } }
-          ],
-          "transitions": [
-            { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Idle" }
-          ]
+          "type": "StateTreeMoveToTask",
+          "name": "ChaseTarget",
+          "properties": {
+            "AcceptableRadius": 50.0,
+            "MovementSpeed": "${Param.ChaseSpeed}"
+          }
         }
       ],
       "transitions": [
-        { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Idle" }
-      ]
-    }
-  ]
-}
-```
-
-### Guard AI with Conditional Transitions
-```json
-{
-  "name": "GuardAI",
-  "parameters": [
-    { "name": "AlertRadius", "type": "float", "default": 800.0 },
-    { "name": "VisionAngle", "type": "float", "default": 90.0 }
-  ],
-  "states": [
-    {
-      "name": "Idle",
-      "type": "State",
-      "tasks": [
-        { "type": "StateTreeDelayTask", "properties": { "Duration": 3.0, "RandomVariance": 1.0 } }
-      ],
-      "transitions": [
-        { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Patrol" }
+        {
+          "trigger": "OnCondition",
+          "type": "GotoState",
+          "target": "Attack",
+          "condition": {
+            "type": "StateTreeCompareDistanceCondition",
+            "properties": { "Distance": "${Param.AttackRange}", "Operator": "Less" }
+          }
+        },
+        {
+          "trigger": "OnCondition",
+          "type": "GotoState",
+          "target": "Patrol",
+          "condition": {
+            "type": "StateTreeCompareDistanceCondition",
+            "properties": { "Distance": "${Param.DetectionRange}", "Operator": "Greater" }
+          }
+        }
       ]
     },
     {
-      "name": "Patrol",
-      "type": "Group",
-      "selectionBehavior": "TrySelectChildrenInOrder",
-      "children": [...]
+      "name": "Attack",
+      "type": "State",
+      "tasks": [
+        { "type": "StateTreeDelayTask", "name": "AttackCooldown", "properties": { "Duration": 0.8 } }
+      ],
+      "transitions": [
+        { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Chase" }
+      ]
     }
   ]
 }
 ```
 
-## Editor Workflow
+## CLI Commands
 
-1. Enable required engine plugins: StateTree, GameplayStateTree, EditorScriptingUtilities
-2. Open the LLMStateTree Editor Panel: Window → LLMStateTree Panel
-3. Click "Load File" and navigate to `.llmstate` file
-4. Click "Generate StateTree" to create the StateTree Blueprint asset
-5. Assign the generated StateTree to your AI Controller or Character
-
-## File Location
-
-Place `.llmstate` files in your project's `Config/Examples/` folder for easy access:
-
-```
-YourProject/
-└── Config/
-    └── Examples/
-        ├── SimpleAI.llmstate
-        ├── GuardAI.llmstate
-        ├── UtilityAI.llmstate
-        ├── StealthAI.llmstate
-        ├── BossAI.llmstate
-        └── MyAI.llmstate
+生成 StateTree:
+```bash
+statetree generate /Game/AI/GuardAI --from GuardAI.llmstate
 ```
 
-## Dependencies
+检查 StateTree:
+```bash
+statetree inspect /Game/AI/GuardAI --states
+```
 
-| Plugin | Type | Required |
-|--------|------|----------|
-| StateTree | Engine | Yes |
-| GameplayStateTree | Engine | Yes |
-| EditorScriptingUtilities | Engine | Yes (Editor only) |
+导出 StateTree:
+```bash
+statetree export /Game/AI/GuardAI --output C:/Temp/AI.llmstate
+```
