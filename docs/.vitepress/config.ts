@@ -20,7 +20,8 @@ export default defineConfig({
       { text: 'LLM Dynamic UI', link: '/llm-dynamic-ui/' },
       { text: 'LLM Material', link: '/llm-material/' },
       { text: 'LLM StateTree', link: '/llm-statetree/' },
-      { text: 'LLM MetaSound', link: '/llm-metasound/' }
+      { text: 'LLM MetaSound', link: '/llm-metasound/' },
+      { text: 'AI Agent Skills', link: '/skills/' }
     ],
 
     sidebar: {
@@ -69,6 +70,21 @@ export default defineConfig({
             { text: 'Getting Started', link: '/llm-metasound/getting-started' },
             { text: 'Node Types', link: '/llm-metasound/node-types' },
             { text: 'Examples', link: '/llm-metasound/examples' }
+          ]
+        }
+      ],
+      '/skills/': [
+        {
+          text: 'AI Agent Skills',
+          items: [
+            { text: 'Overview', link: '/skills/' },
+            { text: 'Installation', link: '/skills/installation' },
+            { text: 'LLM Dynamic UI', link: '/skills/llm-dynamic-ui' },
+            { text: 'LLM Material', link: '/skills/llm-material' },
+            { text: 'LLM StateTree', link: '/skills/llm-statetree' },
+            { text: 'LLM MetaSound', link: '/skills/llm-metasound' },
+            { text: 'LLM Easy Shell', link: '/skills/llm-easy-shell' },
+            { text: 'LLM Easy Shell Lite', link: '/skills/llm-easy-shell-lite' }
           ]
         }
       ]
