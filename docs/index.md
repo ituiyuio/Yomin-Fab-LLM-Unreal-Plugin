@@ -37,6 +37,18 @@ features:
     details: JSON-driven MetaSound Audio Asset Generator. Generate UMetaSoundSource and UMetaSoundPatch assets from JSON with auto-connected nodes.
     link: /llm-metasound/
     linkText: Explore
+
+  - icon: 💻
+    title: LLM Easy Shell
+    details: TCP shell interface for driving the Unreal Editor from any external client. 35+ editor commands, 25+ Python abilities, ports 15151–15200.
+    link: /llm-easy-shell/
+    linkText: Explore
+
+  - icon: 🔍
+    title: LLM Easy Shell Lite
+    details: Read-only TCP bridge between any LLM agent and the Unreal Editor. 9 commands, ports 15201–15250, 2 engine plugin deps, free.
+    link: /llm-easy-shell-lite/
+    linkText: Explore
 ---
 
 <div style="text-align: center; padding: 2rem 0; color: #888;">
