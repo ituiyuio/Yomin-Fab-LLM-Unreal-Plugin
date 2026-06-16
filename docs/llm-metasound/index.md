@@ -6,7 +6,7 @@ outline: [2, 3]
 
 JSON-Driven MetaSound Asset Generator for Unreal Engine 5.
 
-Generate complete UMetaSoundSource and UMetaSoundPatch assets from JSON (`.llmmetasound` files) with auto-connected nodes and type-safe edges — no manual MetaSound editor work required.
+Generate complete UMetaSoundSource and UMetaSoundPatch assets from JSON (`.llmmetasound` files, in `Plugins/LLMMetaSound/Examples/`) with auto-connected nodes and type-safe edges — no manual MetaSound editor work required.
 
 ---
 

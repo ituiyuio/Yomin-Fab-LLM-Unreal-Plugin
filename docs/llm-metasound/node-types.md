@@ -2,7 +2,7 @@
 
 LLMMetaSound supports all MetaSound node types discovered from the INodeClassRegistry.
 
-**Schema File:** `Config/Schemas/LLMMetaSoundSchema.llmmetasoundschema`
+**Schema File:** `Plugins/LLMMetaSound/Config/Schemas/LLMMetaSoundSchema.llmmetasoundschema`
 
 ---
 
@@ -22,9 +22,9 @@ UMetaSoundSource with transport (OnPlay trigger).
 }
 ```
 
-### MetasoundPatch
+### MetasoundGraph
 
-UMetaSoundPatch — pure DSP patch without transport.
+UMetaSoundPatch — pure DSP patch / subgraph without transport.
 
 ---
 

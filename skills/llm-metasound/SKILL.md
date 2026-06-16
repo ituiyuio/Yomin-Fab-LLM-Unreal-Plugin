@@ -1,25 +1,26 @@
 ---
 name: llm-metasound
 description: |
-  LLMMetaSound is a DSL-driven UE5 MetaSound audio asset generation system. Use this skill when users need to:
-  (1) Create or design UE5 MetaSound audio graphs (UMetaSoundSource / UMetaSoundPatch)
-  (2) Convert audio descriptions into generatable DSL format (.llmmetasound JSON)
-  (3) Understand or modify existing MetaSound JSON definitions
-  (4) Learn about supported node types (Oscillators, Filters, Envelopes, Mixers, etc.)
-  (5) Query node input/output ports, types, and default values
+  LLMMetaSound 是一个 DSL 驱动的 UE5 MetaSound 音频资产生成系统。当用户需要：
+  (1) 创建或设计 UE5 MetaSound 音频资产（UMetaSoundSource / UMetaSoundPatch）
+  (2) 将音频图描述转换为可生成的 DSL 格式（.llmmetasound JSON）
+  (3) 理解或修改现有的 MetaSound JSON 定义
+  (4) 需要了解支持的节点类型（Oscillator、Filter、Envelope、Mixer 等）
+  (5) 查询节点输入/输出端口、类型和默认值
+  请使用此技能。
 ---
 
 # LLMMetaSound - MetaSound Audio Asset DSL
 
 ## File Format
 
-MetaSound definitions use the `.llmmetasound` extension, formatted as LLM-friendly JSON.
+MetaSound 定义使用 `.llmmetasound` 扩展名，格式为 LLM-friendly JSON。
 
 ## Reference Files
 
-**Node Schema**: `Config/Schemas/LLMMetaSoundSchema.llmmetasoundschema` — Contains complete definitions for all available MetaSound node types
+**Node Schema**: `Plugins/LLMMetaSound/Config/Schemas/LLMMetaSoundSchema.llmmetasoundschema` — 包含所有可用 MetaSound 节点类型的完整定义（401 个节点）
 
-**Examples Directory**: `Examples/` — Contains `.llmmetasound` example files
+**示例目录**: `Plugins/LLMMetaSound/Examples/` — 包含 `.llmmetasound` 示例文件
 
 ## Quick Start
 
@@ -28,7 +29,7 @@ MetaSound definitions use the `.llmmetasound` extension, formatted as LLM-friend
   "Metadata": {
     "NodeName": "MySynth",
     "NodeType": "MetasoundSource",
-    "MetasoundDescription": "A simple synthesizer"
+    "MetasoundDescription": "A simple FM synthesizer"
   },
   "Inputs": [],
   "Outputs": [],
@@ -48,19 +49,19 @@ MetaSound definitions use the `.llmmetasound` extension, formatted as LLM-friend
 
 ```json
 "Metadata": {
-  "NodeName": "MySound",           // Asset name (required)
-  "NodeType": "MetasoundSource",  // or "MetasoundPatch"
-  "MetasoundDescription": "..."    // Description (optional)
+  "NodeName": "MySound",           // 资产名称（必需）
+  "NodeType": "MetasoundSource",  // 或 "MetasoundGraph"（子图/Patch）
+  "MetasoundDescription": "..."    // 描述（可选）
 }
 ```
 
-`NodeType` determines the asset type:
-- `MetasoundSource` → UMetaSoundSource (playable audio)
-- `MetasoundPatch` → UMetaSoundPatch (pure DSP subgraph)
+`NodeType` 决定资产类型：
+- `MetasoundSource` → UMetaSoundSource（可播放音频）
+- `MetasoundGraph` → UMetaSoundPatch（纯 DSP 子图）
 
 ### Inputs / Outputs
 
-Graph interface members (optional):
+图输入输出接口成员（可选）：
 
 ```json
 "Inputs": [
@@ -78,7 +79,7 @@ Graph interface members (optional):
 ]
 ```
 
-### LiteralValue Format
+### LiteralValue 格式
 
 ```json
 { "LiteralType": "Float",    "AsFloat": 440.0 }
@@ -88,7 +89,7 @@ Graph interface members (optional):
 { "LiteralType": "FloatArray", "AsFloatArray": [1.0, 2.0, 3.0] }
 ```
 
-**VertexID**: Port index on the node (0-based), determined by the node definition.
+**VertexID**：端口在节点上的索引顺序（从 0 开始），由节点定义决定。
 
 ### Nodes
 
@@ -96,160 +97,160 @@ Graph interface members (optional):
 "Nodes": [
   {
     "NodeID": 1,
-    "ClassName": "Input",         // Node class name (required)
-    "Name": "Freq",               // Display name (optional)
-    "TypeName": "Primitive:Float", // Required for Input/Output nodes
-    "InputDefaults": {             // Default values (optional)
+    "ClassName": "Input",         // 节点类名（必需）
+    "Name": "Freq",               // 显示名称（可选）
+    "TypeName": "Primitive:Float", // Input/Output 节点必须指定
+    "InputDefaults": {             // 默认值（可选）
       "Frequency": { "LiteralType": "Float", "AsFloat": 440.0 }
     }
   }
 ]
 ```
 
-**Interface nodes** (Input/Output):
-- `ClassName` must be `"Input"` or `"Output"`
-- `TypeName` must be specified, e.g., `"Primitive:Float"`, `"Audio:Buffer"`
+**Interface 节点**（Input/Output）：
+- `ClassName` 必须是 `"Input"` 或 `"Output"`
+- `TypeName` 必须指定，如 `"Primitive:Float"`、`"Audio:Buffer"`
 
-**External nodes** (Oscillator, Filter, etc.):
-- `ClassName` uses the registered class name
-- `TypeName` can be omitted for External nodes
+**External 节点**（Oscillator、Filter 等）：
+- `ClassName` 使用注册表中的类名
+- `TypeName` 对 External 节点可省略
 
 ### Edges
 
 ```json
 "Edges": [
   {
-    "FromNodeID": 1,     // Source node ID
-    "FromVertexID": 0,   // Source output port index
-    "ToNodeID": 2,       // Target node ID
-    "ToVertexID": 0       // Target input port index
+    "FromNodeID": 1,     // 源节点 ID
+    "FromVertexID": 0,   // 源输出端口索引
+    "ToNodeID": 2,       // 目标节点 ID
+    "ToVertexID": 0       // 目标输入端口索引
   }
 ]
 ```
 
-**Connection type rules**:
-- `Audio:Buffer` → `Audio:Buffer` (audio to audio)
-- `Primitive:Float` → `Primitive:Float` (float to float)
-- Audio cannot connect directly to float — use `ConversionAudioToFloat`
+**连接类型规则**：
+- `Audio:Buffer` → `Audio:Buffer`（音频接音频）
+- `Primitive:Float` → `Primitive:Float`（浮点接浮点）
+- 音频不能直接接到浮点，需通过 `ConversionAudioToFloat` 转换
 
 ## Node Categories
 
-### Generators
+### Generators（振荡器/声源）
 
-| ClassName | Description |
-|-----------|-------------|
-| `Sine` | Sine wave oscillator |
-| `Saw` | Sawtooth wave oscillator |
-| `Square` | Square wave oscillator |
-| `Triangle` | Triangle wave oscillator |
-| `Noise` | White noise |
-| `Perlin Noise (audio)` | Perlin noise (audio) |
-| `Perlin Noise (float)` | Perlin noise (float) |
-| `LFO` | Low frequency oscillator |
-| `Additive Synth` | Additive synthesizer |
-| `SuperOscillatorMono` | Super oscillator (mono) |
-| `SuperOscillatorStereo` | Super oscillator (stereo) |
-| `Subharmonizer` | Subharmonizer |
+| ClassName | 说明 |
+|-----------|------|
+| `Sine` | 正弦波振荡器 |
+| `Saw` | 锯齿波振荡器 |
+| `Square` | 方波振荡器 |
+| `Triangle` | 三角波振荡器 |
+| `Noise` | 白噪声 |
+| `Perlin Noise (audio)` | Perlin 噪声（音频） |
+| `Perlin Noise (float)` | Perlin 噪声（浮点） |
+| `LFO` | 低频振荡器 |
+| `Additive Synth` | 加法合成器 |
+| `SuperOscillatorMono` | 超级振荡器（单声道） |
+| `SuperOscillatorStereo` | 超级振荡器（立体声） |
+| `Subharmonizer` | 次谐波合成器 |
 
-### Filters
+### Filters（滤波器）
 
-| ClassName | Description |
-|-----------|-------------|
-| `Ladder Filter` | Moog-style ladder filter |
-| `Biquad Filter` | Biquad filter |
-| `State Variable Filter` | State variable filter |
-| `DynamicFilter` | Dynamic filter |
-| `Flanger` | Flanger effect |
-| `Bitcrusher` | Bitcrusher effect |
-| `WaveShaper` | Wave shaper |
-| `RingMod` | Ring modulator |
-| `One-Pole Low Pass Filter` | One-pole low pass |
-| `One-Pole High Pass Filter` | One-pole high pass |
+| ClassName | 说明 |
+|-----------|------|
+| `Ladder Filter` | Moog 风格梯形滤波器 |
+| `Biquad Filter` | 双二阶滤波器 |
+| `State Variable Filter` | 状态变量滤波器 |
+| `DynamicFilter` | 动态滤波器 |
+| `Flanger` | 镶边效果 |
+| `Bitcrusher` | 采样率降低效果 |
+| `WaveShaper` | 波形整形 |
+| `RingMod` | 环形调制 |
+| `One-Pole Low Pass Filter` | 单极低通 |
+| `One-Pole High Pass Filter` | 单极高通 |
 
-### Envelopes
+### Envelopes（包络）
 
-| ClassName | Description |
-|-----------|-------------|
-| `Envelope Follower` | Envelope follower |
-| `ADSR Envelope` | ADSR envelope |
-| `AD Envelope` | AD envelope |
-| `Fade` | Fade in/out |
+| ClassName | 说明 |
+|-----------|------|
+| `Envelope Follower` | 包络跟随器 |
+| `ADSR Envelope` | ADSR 包络 |
+| `AD Envelope` | AD 包络 |
+| `Fade` | 淡入淡出 |
 
-### Math
+### Math（数学运算）
 
-| ClassName | Description |
-|-----------|-------------|
-| `Add` | Addition |
-| `Subtract` | Subtraction |
-| `Multiply` | Multiplication |
-| `Divide` | Division |
-| `Clamp` | Clamp to range |
-| `MapRange` | Map range |
-| `Abs` | Absolute value |
-| `Max` | Maximum |
-| `Min` | Minimum |
-| `Power` | Power |
-| `InterpTo` | Interpolation |
+| ClassName | 说明 |
+|-----------|------|
+| `Add` | 加法 |
+| `Subtract` | 减法 |
+| `Multiply` | 乘法 |
+| `Divide` | 除法 |
+| `Clamp` | 范围限制 |
+| `MapRange` | 范围映射 |
+| `Abs` | 绝对值 |
+| `Max` | 最大值 |
+| `Min` | 最小值 |
+| `Power` | 幂运算 |
+| `InterpTo` | 插值 |
 
-### Triggers
+### Triggers（触发器）
 
-| ClassName | Description |
-|-----------|-------------|
-| `Trigger Delay` | Trigger delay |
-| `Trigger Once` | Single trigger |
-| `Trigger Select (N)` | N-way trigger select |
-| `Trigger Sequence (N)` | N-step trigger sequence |
-| `Trigger Route (Float, N)` | N-way float trigger route |
-| `Trigger Route (Audio, N)` | N-way audio trigger route |
-| `Trigger On Value Change` | Value change trigger |
-| `Trigger Toggle` | Trigger toggle |
-| `TriggerRepeat` | Repeat trigger |
+| ClassName | 说明 |
+|-----------|------|
+| `Trigger Delay` | 触发延迟 |
+| `Trigger Once` | 单次触发 |
+| `Trigger Select (N)` | N 路触发选择 |
+| `Trigger Sequence (N)` | N 步触发序列 |
+| `Trigger Route (Float, N)` | N 路浮点触发路由 |
+| `Trigger Route (Audio, N)` | N 路音频触发路由 |
+| `Trigger On Value Change` | 值变化触发 |
+| `Trigger Toggle` | 触发开关 |
+| `TriggerRepeat` | 重复触发 |
 
-### Delays
+### Delays（延迟/混响）
 
-| ClassName | Description |
-|-----------|-------------|
-| `Delay` | Delay |
-| `Stereo Delay` | Stereo delay |
-| `Delay Pitch Shift` | Pitch shift delay |
-| `Diffuser` | Diffuser |
-| `GrainDelayNode` | Grain delay |
-| `Plate Reverb` | Plate reverb |
+| ClassName | 说明 |
+|-----------|------|
+| `Delay` | 延迟 |
+| `Stereo Delay` | 立体声延迟 |
+| `Delay Pitch Shift` | 音高偏移延迟 |
+| `Diffuser` | 扩散器 |
+| `GrainDelayNode` | 颗粒延迟 |
+| `Plate Reverb` | 板式混响 |
 
-### Mix
+### Mix（混音）
 
-| ClassName | Description |
-|-----------|-------------|
-| `Audio Mixer (Mono, N)` | N-channel mono mixer |
-| `Audio Mixer (Stereo, N)` | N-channel stereo mixer |
+| ClassName | 说明 |
+|-----------|------|
+| `Audio Mixer (Mono, N)` | N 路单声道混音器 |
+| `Audio Mixer (Stereo, N)` | N 路立体声混音器 |
 
-### Wave Player
+### Wave Player（采样播放）
 
-| ClassName | Description |
-|-----------|-------------|
-| `Wave Player` | Sample player |
+| ClassName | 说明 |
+|-----------|------|
+| `Wave Player` | 采样播放器 |
 
-### External IO
+### External IO（外部音频）
 
-| ClassName | Description |
-|-----------|-------------|
-| `Audio Bus Reader (N)` | N-channel audio bus reader |
-| `Audio Bus Writer (N)` | N-channel audio bus writer |
-| `Wave Writer` | Sample writer |
+| ClassName | 说明 |
+|-----------|------|
+| `Audio Bus Reader (N)` | N 声道音频总线读取 |
+| `Audio Bus Writer (N)` | N 声道音频总线写入 |
+| `Wave Writer` | 采样写入器 |
 
-### Conversions
+### Conversions（类型转换）
 
-| ClassName | Description |
-|-----------|-------------|
-| `ConversionAudioToFloat` | Audio → Float |
-| `ConversionFloatToAudio` | Float → Audio |
-| `ConversionFloatToTime` | Float → Time |
-| `ConversionTimeToFloat` | Time → Float |
-| `BPMToSeconds` | BPM → Seconds |
+| ClassName | 说明 |
+|-----------|------|
+| `ConversionAudioToFloat` | 音频→浮点 |
+| `ConversionFloatToAudio` | 浮点→音频 |
+| `ConversionFloatToTime` | 浮点→时间 |
+| `ConversionTimeToFloat` | 时间→浮点 |
+| `BPMToSeconds` | BPM→秒 |
 
 ## Common Patterns
 
-### Oscillator → Filter → Envelope (Most Common Template)
+### 振荡器 → 滤波器 → 包络（最常用模板）
 
 ```json
 {
@@ -272,7 +273,7 @@ Graph interface members (optional):
 }
 ```
 
-### Synthesizer with Input Interface
+### 带输入接口的合成器
 
 ```json
 {
@@ -302,7 +303,7 @@ Graph interface members (optional):
 }
 ```
 
-### ADSR Envelope Template
+### ADSR 包络模板
 
 ```json
 {
@@ -327,50 +328,50 @@ Graph interface members (optional):
 
 ## Examples
 
-All example files are located in `Examples/`:
+所有示例文件位于 `Plugins/LLMMetaSound/Examples/`：
 
-| File | Structure | Description |
-|------|-----------|-------------|
-| `SquareBass.llmmetasound` | Square → Ladder Filter → Envelope Follower | Deep square bass |
-| `SawDiscord.llmmetasound` | Saw → Ladder Filter → Envelope Follower | Dissonant saw |
-| `TrianglePad.llmmetasound` | Triangle → Envelope Follower | Soft triangle pad |
-| `TriangleSub.llmmetasound` | Triangle → Envelope Follower | Triangle sub |
-| `NoiseBurst.llmmetasound` | Noise → Envelope Follower | Percussive noise |
-| `SquareLead.llmmetasound` | Square → Ladder Filter → Envelope Follower | Square lead |
+| 文件 | 结构 | 说明 |
+|------|------|------|
+| `SquareBass.llmmetasound` | Square → Ladder Filter → Envelope Follower | 方波贝斯 |
+| `SawDiscord.llmmetasound` | Saw → Ladder Filter → Envelope Follower | 锯齿波discord |
+| `TrianglePad.llmmetasound` | Triangle → Envelope Follower | 三角波垫音 |
+| `TriangleSub.llmmetasound` | Triangle → Envelope Follower | 三角波低音 |
+| `NoiseBurst.llmmetasound` | Noise → Envelope Follower | 噪声突发 |
+| `SquareLead.llmmetasound` | Square → Ladder Filter → Envelope Follower | 方波主音 |
 
-## VertexID Quick Reference
+## VertexID 速查
 
-When unsure about port indices, export an existing asset via the LLMMetaSound editor panel to see the correct VertexIDs.
+不确定端口索引时，可通过 LLMMetaSound 编辑器面板导出已有资产的 JSON 查看正确的 VertexID。
 
-Common node port indices (defined by registry, may vary by UE version):
+常见节点的端口索引（由注册表定义，可能因 UE 版本而异）：
 
-**Oscillators (Sine/Saw/Square/Triangle/Noise)**:
-- index 0 = Audio (output)
-- index 1 = Frequency (input)
-- index 2 = FM (input, optional)
+**Oscillators（Sine/Saw/Square/Triangle/Noise）**：
+- index 0 = Audio（输出）
+- index 1 = Frequency（输入）
+- index 2 = FM（输入，可选）
 
-**Ladder Filter**:
-- index 0 = Audio (output)
-- index 0 = Audio (input)
-- index 1 = Cutoff (input)
-- index 2 = Resonance (input)
+**Ladder Filter**：
+- index 0 = Audio（输出）
+- index 0 = Audio（输入）
+- index 1 = Cutoff（输入）
+- index 2 = Resonance（输入）
 
-**Envelope Follower**:
-- index 0 = Audio (output)
-- index 1 = Audio (input)
-- index 2 = Enable (input, boolean)
+**Envelope Follower**：
+- index 0 = Audio（输出）
+- index 1 = Audio（输入）
+- index 2 = Enable（输入，布尔）
 
 ## Troubleshooting
 
-1. **Node class name not found**: Use the `className` value from the Schema, not `displayName`
-2. **Connection failed**: Check if TypeName matches (`Audio:Buffer` cannot directly connect to `Primitive:Float`)
-3. **VertexID uncertain**: Export existing asset from editor panel to view, or look up the node's `inputs`/`outputs` order in the Schema
-4. **Input/Output nodes**: Each interface member needs a corresponding node with `ClassName="Input"/"Output"`
-5. **Default values not taking effect**: `InputDefaults` can only set Input ports, Output ports cannot have default values
+1. **节点类名找不到**: 使用 Schema 中的 `className` 字段值，而非 `displayName`
+2. **连接失败**: 检查 TypeName 是否匹配（`Audio:Buffer` 不能直接连 `Primitive:Float`）
+3. **VertexID 不确定**: 从编辑器面板导出已有资产查看，或在 Schema 中查找节点的 `inputs`/`outputs` 顺序
+4. **Input/Output 节点**: 每个接口成员需要有对应 `ClassName="Input"/"Output"` 的节点
+5. **默认值不生效**: `InputDefaults` 只能设置 Input 端口，Output 端口不能设置默认值
 
 ## Editor Workflow
 
-1. Open Editor → Window → LLMMetaSound Panel
-2. Paste or write `.llmmetasound` JSON in the panel
-3. Click Generate to create the MetaSound asset
-4. Export existing MetaSound to JSON via Export button for modification and regeneration
+1. 打开编辑器 → 窗口 → LLMMetaSound 面板
+2. 在面板中粘贴或编写 `.llmmetasound` JSON
+3. 点击 Generate 生成 MetaSound 资产
+4. 可通过 Export 将已有 MetaSound 导出为 JSON 进行修改和重新生成

@@ -1,6 +1,6 @@
 # Examples
 
-The `Examples/` folder in the plugin contains 6 complete `.llmmetasound` files demonstrating different audio synthesis patterns.
+The `Plugins/LLMMetaSound/Examples/` folder in the plugin contains 6 complete `.llmmetasound` files demonstrating different audio synthesis patterns.
 
 ---
 
@@ -8,7 +8,7 @@ The `Examples/` folder in the plugin contains 6 complete `.llmmetasound` files d
 
 Triangle wave with sub-octave character.
 
-**File:** `Examples/TriangleSub.llmmetasound`
+**File:** `Plugins/LLMMetaSound/Examples/TriangleSub.llmmetasound`
 
 **Nodes:** Triangle → Envelope Follower
 
@@ -20,7 +20,7 @@ Triangle wave with sub-octave character.
 
 Sawtooth wave with dissonant filter resonance.
 
-**File:** `Examples/SawDiscord.llmmetasound`
+**File:** `Plugins/LLMMetaSound/Examples/SawDiscord.llmmetasound`
 
 **Nodes:** Saw → Ladder Filter → Envelope Follower
 
@@ -32,7 +32,7 @@ Sawtooth wave with dissonant filter resonance.
 
 Deep square wave bass with filter and envelope.
 
-**File:** `Examples/SquareBass.llmmetasound`
+**File:** `Plugins/LLMMetaSound/Examples/SquareBass.llmmetasound`
 
 **Nodes:** Square → Ladder Filter → Envelope Follower
 
@@ -44,7 +44,7 @@ Deep square wave bass with filter and envelope.
 
 Square wave lead synth with filter and envelope.
 
-**File:** `Examples/SquareLead.llmmetasound`
+**File:** `Plugins/LLMMetaSound/Examples/SquareLead.llmmetasound`
 
 **Nodes:** Square → Ladder Filter → Envelope Follower
 
@@ -56,7 +56,7 @@ Square wave lead synth with filter and envelope.
 
 Soft triangle wave pad with gentle envelope.
 
-**File:** `Examples/TrianglePad.llmmetasound`
+**File:** `Plugins/LLMMetaSound/Examples/TrianglePad.llmmetasound`
 
 **Nodes:** Triangle → Envelope Follower
 
@@ -68,7 +68,7 @@ Soft triangle wave pad with gentle envelope.
 
 White noise burst with percussive envelope.
 
-**File:** `Examples/NoiseBurst.llmmetasound`
+**File:** `Plugins/LLMMetaSound/Examples/NoiseBurst.llmmetasound`
 
 **Nodes:** Noise → Envelope Follower
 
@@ -77,7 +77,7 @@ White noise burst with percussive envelope.
 ## Using Examples
 
 1. Open the LLM MetaSound Panel: Window → LLM MetaSound
-2. Click "Load File" and navigate to `Examples/`
+2. Click "Load File" and navigate to `Plugins/LLMMetaSound/Examples/`
 3. Select any `.llmmetasound` file
 4. Click "Generate MetaSound"
 5. The MetaSound asset is created in your project's Content folder
@@ -89,7 +89,7 @@ White noise burst with percussive envelope.
 | Field | Description |
 |-------|-------------|
 | `Metadata.NodeName` | Asset display name |
-| `Metadata.NodeType` | `"MetasoundSource"` or `"MetasoundPatch"` |
+| `Metadata.NodeType` | `"MetasoundSource"` or `"MetasoundGraph"` (subgraph/Patch) |
 | `Inputs[]` | Graph-level input interface |
 | `Outputs[]` | Graph-level output interface |
 | `Nodes[]` | Graph nodes |
