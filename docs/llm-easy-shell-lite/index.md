@@ -8,7 +8,7 @@ outline: [2, 3]
 > Co-exists with **LLM Easy Shell** (full read + write + automation, separate
 > TCP port range `15151–15200`).
 
-**Quick value:** 9 read-only commands · open PyAbility framework · ports
+**Quick value:** 9 read-only commands · open Python Ability framework · ports
 15201–15250 · 2 engine plugin dependencies · zero third-party libraries.
 
 > 🎯 **For full read + write + automation**, see
@@ -22,7 +22,7 @@ outline: [2, 3]
   Easy Shell's 15151–15200)
 - **9 built-in read-only commands** — `ls` / `cat` / `find` / `discover` /
   `info` / `help` / `gamestate` / `log` / `msglog`
-- **Open PyAbility framework** — full UE Python access via `python <name>`
+- **Open Python Ability framework** — full UE Python access via `python <name>`
 - **Niagara message-log capture** — pull validation messages for VFX work
 - **Multi-plugin C++ ability auto-registration** — `LLMMaterial`, `LLMVFX`,
   `LLMStateTree` etc. register their abilities here at startup
@@ -56,7 +56,7 @@ exploratory pipelines.
 
 **Features:** Read-only TCP server (port 15201–15250), 9 built-in read-only
 commands (`ls` / `cat` / `find` / `discover` / `info` / `help` / `gamestate`
-/ `log` / `msglog`), open PyAbility framework (full UE Python access),
+/ `log` / `msglog`), open Python Ability framework (full UE Python access),
 Niagara message-log capture, multi-plugin C++ ability auto-registration,
 AI-agent-first JSON protocol.
 
@@ -92,7 +92,7 @@ This plugin depends on two engine plugins that **must be enabled** in the
 host project before compilation. They are included with UE 5.7+ and do not
 need to be downloaded separately:
 
-- **PythonScriptPlugin** — Required to execute `.py` PyAbilities. Enable via
+- **PythonScriptPlugin** — Required to execute `.py` Python abilities. Enable via
   `Edit → Plugins → Python Editor Script Plugin`, or add to your `.uproject`:
   ```json
   "Plugins": [{ "Name": "PythonScriptPlugin", "Enabled": true }]
@@ -155,7 +155,7 @@ errors by many marketplace scanners).
         ▼                                     ▼
 ┌──────────────────────┐           ┌─────────────────────────────────┐
 │  C++ Commands         │           │  UPythonAbilityRegistryLite    │
-│  (ShellCommand_*.cpp) │           │  • Scan PyAbilities/.../abilities │
+│  (ShellCommand_*.cpp) │           │  • Scan Content/Python/.../abilities │
 │  ls/cat/find/discover │           │  • Dispatch to user .py        │
 │  info/help/gamestate/ │           │  • Inject UWorld auto          │
 │  log/msglog            │           └─────────────────────────────────┘
@@ -173,9 +173,9 @@ errors by many marketplace scanners).
 ### Threading Model
 
 - **TCP listener**: main thread; non-blocking `FSocket` accept loop driven by the `UEditorSubsystem` tick.
-- **Command execution**: synchronous on the game thread. All 9 built-in commands and PyAbility dispatches complete before the next TCP line is read.
+- **Command execution**: synchronous on the game thread. All 9 built-in commands and Python ability dispatches complete before the next TCP line is read.
 - **Python execution**: routed through `PythonScriptPlugin`'s `FPythonScriptExecution` (game thread, same as C++).
-- **Side-effect guarantee**: built-in commands are read-only by design; PyAbilities can do whatever the UE Python API allows.
+- **Side-effect guarantee**: built-in commands are read-only by design; Python abilities can do whatever the UE Python API allows.
 
 ---
 
@@ -261,19 +261,19 @@ reported as `{"ok": false, "error": "..."}`.
 - **Returns:** Whatever the ability's `main()` returns (must be
   JSON-serialisable).
 - **Notes:** the bundled `simple` ability echoes args; `reload` re-scans
-  `PyAbilities/.../abilities/`. See [PyAbility Extension API](#pyability-extension-api)
+  `Content/Python/.../abilities/`. See [Python Ability Extension API](#python-ability-extension-api)
   below.
 
 ---
 
-## PyAbility Extension API
+## Python Ability Extension API
 
 Lite exposes three Python base classes (re-exported from
 `LLMShellAbilitiesLite.registry`) and a discovery convention.
 
 ### Discovery Convention
 
-- A file in `PyAbilities/LLMShellAbilitiesLite/abilities/` whose name
+- A file in `Content/Python/LLMShellAbilitiesLite/abilities/` whose name
   **does not** start with `_` is auto-registered.
 - The file must define either:
   - A module-level
@@ -330,7 +330,7 @@ class Ability:
 
 Other plugins (e.g. `LLMMaterial`, `LLMVFX`, `LLMStateTree`) can register
 C++ abilities directly with `UPythonAbilityRegistryLite` at module startup;
-those abilities then appear alongside the PyAbilities under the same
+those abilities then appear alongside the Python abilities under the same
 dispatcher.
 
 ---
@@ -345,7 +345,7 @@ dispatcher.
 | `FCommandDispatcher` | `Private/CommandDispatcher.cpp` | Routes a command line to a `ShellCommand_*` handler or to `UPythonAbilityRegistryLite`. |
 | `FLLMEasyShellReflectionLite` | `Public/LLMEasyShellReflectionLite.h` | UClass / UFunction / UProperty reflection helpers for `discover` / `cat`. |
 | `FPropertyRouter` | `Public/PropertyRouter.h` | Property get/set routing for `cat` + `discover --props`. |
-| `UPythonAbilityRegistryLite` | `Public/PythonAbilityRegistryLite.h` | Scans `PyAbilities/.../abilities/`, dispatches Python `main()` / `Ability.execute()`. |
+| `UPythonAbilityRegistryLite` | `Public/PythonAbilityRegistryLite.h` | Scans `Content/Python/.../abilities/`, dispatches Python `main()` / `Ability.execute()`. |
 | `FCommandTraceLoggerLite` | `Public/CommandTraceLoggerLite.h` | In-memory ring buffer of recent commands + their JSON responses (for `log` / replay). |
 | `ShellCommand_Ls` … `ShellCommand_MessageLog` | `Private/ShellCommand_*.cpp` | One class per built-in command. |
 | `FLLMEasyShellLiteTypes` | `Public/LLMEasyShellLiteTypes.h` | Shared structs (`FCommandRequest`, `FCommandResponse`, `FPythonAbilityRecord`, JSON helpers). |
@@ -362,15 +362,16 @@ LLMEasyShellLite/
 ├── VERSION-NOTES.md                 Version history
 ├── Config/
 │   └── FilterPlugin.ini             Fab-packaged-file manifest
-├── PyAbilities/
-│   └── LLMShellAbilitiesLite/
-│       ├── __init__.py
-│       ├── registry.py
-│       └── abilities/
-│           ├── _base.py             Internal helpers
-│           ├── _unreal_helpers.py   Internal helpers
-│           ├── _example.py          Reference template
-│           └── simple.py            Demo ability (publisher code)
+├── Content/
+│   └── Python/
+│       └── LLMShellAbilitiesLite/
+│           ├── __init__.py
+│           ├── registry.py
+│           └── abilities/
+│               ├── _base.py             Internal helpers
+│               ├── _unreal_helpers.py   Internal helpers
+│               ├── _example.py          Reference template
+│               └── simple.py            Demo ability (publisher code)
 ├── Source/
 │   ├── ThirdParty/
 │   │   ├── README.md                "No third-party C++" declaration
@@ -388,8 +389,8 @@ LLMEasyShellLite/
 This plugin **uses no third-party C++ or Python libraries**. All C++ source
 under `Source/LLMEasyShellLite/` is original work by the publisher
 (YominUnreal). All Python under
-`PyAbilities/LLMShellAbilitiesLite/abilities/` is also original publisher
-code shipped as part of the plugin's open PyAbility framework — it is not a
+`Content/Python/LLMShellAbilitiesLite/abilities/` is also original publisher
+code shipped as part of the plugin's open Python Ability framework — it is not a
 third-party dependency and is not redistributed from any external source.
 
 The only engine-level dependencies are:

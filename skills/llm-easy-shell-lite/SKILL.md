@@ -68,7 +68,7 @@ msglog --niagara                    # 查看 Niagara 验证消息
 ### 3. PyAbility 执行框架（无内置内容）
 
 Lite 注册了 PyAbility 执行框架，但**没有内置任何 `.py` 文件**。
-如需注册自定义只读命令，在 `Plugins/LLMEasyShellLite/PyAbilities/LLMShellAbilitiesLite/abilities/` 下放 `.py` 文件即可。
+如需注册自定义只读命令，在 `Plugins/LLMEasyShellLite/Content/Python/LLMShellAbilitiesLite/abilities/` 下放 `.py` 文件即可。
 
 > **⚠️ 注意**：full 版本的 `python <name>` 25+ 子命令（material / blueprint / asset / vfx / scene / level / umg /
 > curve / datatable / editor / gameplay / reactive / hd3d...）**Lite 没有**。需要它们请用 full skill。
