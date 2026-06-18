@@ -244,12 +244,19 @@ all work for free).
 ### Top nav
 
 Append `"News"` to the right end of `themeConfig.nav` in
-`docs/.vitepress/config.ts`, separated visually by a thin border
-(distinct from the plugin cluster on the left).
+`docs/.vitepress/config.ts`, visually separated from the plugin
+cluster by a `1px` left border on the News item.
 
 ```
 [LLM Dynamic UI] [LLM Material] [LLM StateTree] [LLM MetaSound] [LLM Easy Shell] [AI Agent Skills] | [News]
 ```
+
+**Implementation note:** VitePress's nav config doesn't have a
+built-in "divider" field. The border is applied via a small CSS rule
+in `docs/.vitepress/theme/style.css` that targets the News item by
+its `text` content (e.g., `.VPNavBarMenuLink[href="/news/"]` with a
+`border-left: 1px solid var(--vp-c-divider); margin-left: 12px;
+padding-left: 12px;`).
 
 ### `/news/` sidebar
 
@@ -276,11 +283,11 @@ Unchanged — home page has no sidebar in the current theme.
 | Scenario                                          | Behavior                                                                 |
 |---------------------------------------------------|--------------------------------------------------------------------------|
 | `news/` directory empty                           | List page shows "暂无更新"; home page `<LatestNews>` renders nothing    |
-| Entry missing `date`                              | `useNews()` filters it out; Vite build emits a warning                  |
+| Entry missing `date`                              | `useNews()` filters it out and `console.warn`s with the file path; warning surfaces in dev server + build output |
 | Entry missing `tag`                               | Same as above                                                            |
-| `tag` not in controlled vocabulary               | Render with fallback grey pill + same build warning                      |
-| Duplicate `slug`                                  | Build errors, prompts merge                                              |
-| `date` not in `YYYY-MM-DD` format                 | Same as duplicate slug                                                   |
+| `tag` not in controlled vocabulary                | Render with fallback grey pill + same `console.warn`                    |
+| Duplicate `slug`                                  | `useNews()` throws on the first duplicate it encounters (build fails)  |
+| `date` not in `YYYY-MM-DD` format                 | Same — `useNews()` throws (date parse failure visible as `NaN` ordering) |
 | `count` > available entries                       | Render only what's available                                             |
 | Mobile width (≤ 768px)                            | Banner full-width; compact cards stack to 1 column; timeline rail narrows |
 
