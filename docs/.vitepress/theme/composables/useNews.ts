@@ -12,7 +12,7 @@
 
 export interface NewsEntry {
   title: string
-  date: string
+  date: string   // YYYY-MM-DD
   tag: string
   summary: string
   emoji?: string
@@ -24,8 +24,44 @@ export interface UseNewsResult {
   list: NewsEntry[]
 }
 
-interface NewsModule {
+interface NewsPageData {
+  title: string
+  description: string
   frontmatter: NewsEntry
+  headers: unknown[]
+  relativePath: string
+  filePath: string
+}
+
+interface NewsModule {
+  __pageData?: NewsPageData
+  frontmatter?: NewsEntry
+}
+
+/** Normalize a date value to YYYY-MM-DD string. */
+function normalizeDate(value: unknown): string {
+  if (value instanceof Date) {
+    // VitePress parses YYYY-MM-DD YAML dates into Date objects; restore the
+    // local-date string. toISOString would shift to UTC and possibly
+    // land on the previous day for users east of UTC.
+    const y = value.getFullYear()
+    const m = String(value.getMonth() + 1).padStart(2, '0')
+    const d = String(value.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }
+  if (typeof value === 'string') {
+    // Accept either "2026-06-19" or "2026-06-19T00:00:00.000Z" (already ISO).
+    return value.slice(0, 10)
+  }
+  return ''
+}
+
+function readEntry(mod: NewsModule): NewsEntry | null {
+  // VitePress 1.6 ships frontmatter on __pageData.frontmatter; some versions
+  // also expose a top-level `frontmatter` named export. Try both.
+  const fm = mod.frontmatter ?? mod.__pageData?.frontmatter
+  if (!fm) return null
+  return { ...fm, date: normalizeDate(fm.date) }
 }
 
 export function useNews(): UseNewsResult {
@@ -39,31 +75,31 @@ export function useNews(): UseNewsResult {
   for (const [path, mod] of Object.entries(modules)) {
     const filename = path.split('/').pop() ?? path
 
-    // Skip the index page — it's the list page, not an entry.
-    if (filename === 'index.md') continue
+    // Skip the index page (list page) and the maintainer guide.
+    if (filename === 'index.md' || filename === 'README.md') continue
 
-    const fm = mod.frontmatter
+    const entry = readEntry(mod)
 
-    if (!fm?.date) {
+    if (!entry?.date) {
       console.warn(`[news] ${filename}: missing front-matter "date" — skipping`)
       continue
     }
-    if (!fm?.tag) {
+    if (!entry.tag) {
       console.warn(`[news] ${filename}: missing front-matter "tag" — skipping`)
       continue
     }
-    if (!fm?.slug) {
+    if (!entry.slug) {
       console.warn(`[news] ${filename}: missing front-matter "slug" — skipping`)
       continue
     }
-    if (seenSlugs.has(fm.slug)) {
+    if (seenSlugs.has(entry.slug)) {
       throw new Error(
-        `[news] duplicate slug "${fm.slug}" in ${filename} — slugs must be unique`
+        `[news] duplicate slug "${entry.slug}" in ${filename} — slugs must be unique`
       )
     }
-    seenSlugs.add(fm.slug)
+    seenSlugs.add(entry.slug)
 
-    entries.push(fm)
+    entries.push(entry)
   }
 
   // Sort by date desc. Invalid dates sink to the end.

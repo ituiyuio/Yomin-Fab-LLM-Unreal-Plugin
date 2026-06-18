@@ -8,6 +8,10 @@ export default defineConfig({
   srcDir: '.',
   base: '/Yomin-Fab-LLM-Unreal-Plugin/',
 
+  // Internal brainstorming / planning artifacts — not user-facing docs.
+  // They contain example dev-server URLs and don't need to render as pages.
+  srcExclude: ['**/superpowers/**'],
+
   head: [
     ['link', { rel: 'icon', href: '/favicon.ico' }]
   ],
