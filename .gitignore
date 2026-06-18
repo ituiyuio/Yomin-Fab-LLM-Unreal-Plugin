@@ -1,6 +1,9 @@
 # Local LRH tool state — generated during sessions, not part of the project
 /.lrh/
 
+# Brainstorm session artifacts (visual companion mockups) — local to a session
+/.superpowers/
+
 # LLMEasyShell runtime state (port assignments, ready events, crash dumps, log)
 /skills/llm-easy-shell/llm-shell/.current_port
 /skills/llm-easy-shell/llm-shell/.ready_event
