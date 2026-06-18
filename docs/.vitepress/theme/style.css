@@ -107,9 +107,7 @@
    ========================================================================== */
 
 /* All selectors below are prefixed with .news-section to bump specificity
-   above VitePress's `.VPDoc a { color: var(--vp-c-brand-1) }` rule, which
-   would otherwise repaint our anchor text in brand-1 rose and make it
-   invisible on the rose→purple gradient banner. */
+   above VitePress's `.VPDoc a { color: var(--vp-c-brand-1) }` rule. */
 
 .news-section .news-section { padding: 0; /* avoid double-pad */ }
 .news-section {
@@ -118,142 +116,112 @@
   padding: 0 24px;
 }
 
+.news-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0 0 24px;
+}
+
 .news-section-title {
   font-size: 24px;
   font-weight: 700;
-  margin: 0 0 24px;
+  margin: 0;
   color: var(--vp-c-text-1);
 }
 
-/* Featured banner (latest entry) */
-.news-section .news-banner {
-  position: relative;
-  display: block;
-  padding: 32px 36px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #e06c75 0%, #c678dd 100%);
-  color: #fff;
+.news-section-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vp-c-text-2);
   text-decoration: none;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.news-section-link:hover {
+  color: var(--vp-c-brand-1);
+}
+
+/* Uniform 3-card grid */
+.news-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
 }
 
 /* Anchor inside .VPDoc normally gets color: var(--vp-c-brand-1). Re-pin
-   to white so the banner's gradient stays readable. */
-.news-section .news-banner,
-.news-section .news-banner:visited,
-.news-section .news-banner:hover {
-  color: #fff;
+   to theme text color so the card body reads naturally. */
+.news-section .news-card,
+.news-section .news-card:visited {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  color: var(--vp-c-text-1);
+  text-decoration: none;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.news-banner:hover {
+.news-section .news-card:hover {
+  border-color: var(--vp-c-brand-1);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(224, 108, 117, 0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
-.news-banner-emoji {
-  position: absolute;
-  top: 28px;
-  left: 36px;
-  font-size: 48px;
+.news-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.news-card-icon {
+  font-size: 18px;
   line-height: 1;
 }
 
-.news-banner-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0 0 8px 0;
-  font-size: 12px;
-  opacity: 0.9;
-}
-
-.news-banner-badge {
-  background: rgba(255, 255, 255, 0.18);
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.news-banner-date {
-  font-variant-numeric: tabular-nums;
-}
-
-.news-banner-title {
-  margin: 8px 0 8px;
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1.2;
-  /* Reserve room for the emoji on the left */
-  padding-left: 72px;
-  min-height: 48px;
-}
-
-.news-banner-summary {
-  margin: 0 0 16px;
-  font-size: 14px;
-  line-height: 1.6;
-  opacity: 0.9;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  padding-left: 72px;
-}
-
-.news-banner-cta {
-  font-size: 13px;
-  font-weight: 600;
-  padding-left: 72px;
-}
-
-/* Compact cards (entries 2..N) */
-.news-compact-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 12px;
-}
-
-.news-section .news-compact-card,
-.news-section .news-compact-card:visited {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  background: var(--vp-c-bg-soft);
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 8px;
-  color: var(--vp-c-text-1);
-  text-decoration: none;
-  transition: border-color 0.2s ease, transform 0.2s ease;
-}
-
-.news-compact-card:hover {
-  border-color: var(--vp-c-brand-1);
-  transform: translateY(-2px);
-}
-
-.news-compact-date {
+.news-card-date {
+  margin-left: auto;
   font-size: 12px;
   color: var(--vp-c-text-3);
   font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
 }
 
-.news-compact-title {
-  flex: 1;
-  font-size: 14px;
+.news-card-new {
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--vp-c-brand-1);
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+
+.news-card-title {
+  margin: 0 0 8px;
+  font-size: 17px;
   font-weight: 600;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.3;
+  color: var(--vp-c-text-1);
 }
 
-.news-compact-arrow {
+.news-card-summary {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.news-card-cta {
+  font-size: 13px;
+  font-weight: 600;
   color: var(--vp-c-brand-4);
-  flex-shrink: 0;
 }
 
 /* ==========================================================================
@@ -441,36 +409,28 @@
 }
 
 /* ==========================================================================
-   Mobile responsive (≤ 768px)
+   Mobile responsive (≤ 900px / ≤ 640px / ≤ 768px)
    ========================================================================== */
+
+@media (max-width: 900px) {
+  .news-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .news-grid {
+    grid-template-columns: 1fr;
+  }
+}
 
 @media (max-width: 768px) {
   .news-section {
     padding: 0 16px;
   }
 
-  .news-banner {
-    padding: 24px 20px;
-  }
-
-  .news-banner-emoji {
-    font-size: 36px;
-    top: 20px;
-    left: 20px;
-  }
-
-  .news-banner-title,
-  .news-banner-summary,
-  .news-banner-cta {
-    padding-left: 56px;
-  }
-
-  .news-banner-title {
-    font-size: 22px;
-  }
-
-  .news-compact-grid {
-    grid-template-columns: 1fr;
+  .shell-section {
+    padding: 0 16px;
   }
 
   .news-entry-header {
