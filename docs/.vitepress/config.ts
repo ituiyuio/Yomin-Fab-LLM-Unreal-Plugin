@@ -194,8 +194,32 @@ export default defineConfig({
   // They contain example dev-server URLs and don't need to render as pages.
   srcExclude: ['**/superpowers/**'],
 
+  // -----------------------------------------------------------------------
+  // Auto language preference. GitHub Pages is static — there's no server to
+  // read Accept-Language and 302. So we run a tiny inline script in <head>
+  // before Vue hydrates:
+  //
+  //   - On a locale ROOT (e.g. /repo/ or /repo/en/): redirect based on
+  //     localStorage preference, falling back to navigator.language.
+  //   - On any other page under a locale: silently record the current
+  //     locale as the user's preference, but do not redirect (avoids
+  //     stealing the user away from a deep link).
+  //
+  // Once the user clicks the in-page language switcher, the SPA router
+  // does NOT trigger this script, so the saved preference is only updated
+  // by full page loads. That's the desired behavior — first-time visitors
+  // get the right language, returning visitors get what they last visited.
+  // -----------------------------------------------------------------------
   head: [
-    ['link', { rel: 'icon', href: '/favicon.ico' }]
+    ['link', { rel: 'icon', href: '/favicon.ico' }],
+    // Inline (no `src`) so it runs before any external JS / before Vue
+    // hydrates — no flash of the wrong language. Wrapped in try/catch so
+    // a broken browser / blocked localStorage never bricks the site.
+    [
+      'script',
+      {},
+      `(function(){try{var K='vp-locale-pref';var B=${JSON.stringify('/Yomin-Fab-LLM-Unreal-Plugin/')};var p=location.pathname;var isRoot=p===B||p===B.replace(/\\/$/,'');var isEnRoot=p===B+'en/'||p===B+'en';var here=isRoot?'root':(isEnRoot?'en':null);if(here){var saved=null;try{saved=localStorage.getItem(K)}catch(e){}var want=(saved==='root'||saved==='en')?saved:((navigator.language||'').toLowerCase().indexOf('en')===0?'en':'root');if(want!==here){location.replace(want==='en'?B+'en/':B)}else{try{localStorage.setItem(K,here)}catch(e){}}}else if(p.indexOf(B+'en')===0){try{localStorage.setItem(K,'en')}catch(e){}}else if(p.indexOf(B)===0){try{localStorage.setItem(K,'root')}catch(e){}}}catch(e){}})();`
+    ]
   ],
 
   themeConfig: {
