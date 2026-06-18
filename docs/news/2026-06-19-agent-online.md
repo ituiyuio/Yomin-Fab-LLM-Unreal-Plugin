@@ -1,4 +1,5 @@
 ---
+layout: news-entry
 title: Agent Online
 date: 2026-06-19
 tag: Release

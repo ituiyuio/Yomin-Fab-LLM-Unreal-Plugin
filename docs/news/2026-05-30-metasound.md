@@ -1,4 +1,5 @@
 ---
+layout: news-entry
 title: MetaSound 插件上线
 date: 2026-05-30
 tag: Plugin

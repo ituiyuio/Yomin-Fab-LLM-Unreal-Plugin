@@ -1,4 +1,5 @@
 ---
+layout: news-entry
 title: Lite Shell 发布
 date: 2026-06-10
 tag: Skill
