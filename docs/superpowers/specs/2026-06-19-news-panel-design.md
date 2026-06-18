@@ -1,7 +1,7 @@
 # News Panel — Design Spec
 
 **Date:** 2026-06-19
-**Status:** Approved (pending implementation plan)
+**Status:** Implemented
 **Author:** Brainstorming session with user
 
 ## Goal
