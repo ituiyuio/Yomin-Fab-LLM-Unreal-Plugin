@@ -15,5 +15,10 @@ const { frontmatter } = useData()
         :date="frontmatter.date"
       />
     </template>
+    <template #doc-after>
+      <footer class="news-entry-footer">
+        <a href="/news/" class="news-back-link">← Back to all news</a>
+      </footer>
+    </template>
   </DefaultTheme.Layout>
 </template>
