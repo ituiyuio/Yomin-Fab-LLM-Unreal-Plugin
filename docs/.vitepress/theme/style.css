@@ -22,6 +22,87 @@
 }
 
 /* ==========================================================================
+   LLM Easy Shell — home page section (separate from the 4 main plugins)
+   ========================================================================== */
+
+.shell-section {
+  max-width: 1152px;
+  margin: 64px auto 0;
+  padding: 0 24px;
+}
+
+.shell-section-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: var(--vp-c-text-1);
+}
+
+.shell-section-tagline {
+  margin: 0 0 24px;
+  font-size: 14px;
+  color: var(--vp-c-text-2);
+}
+
+.shell-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Anchor inside .VPDoc normally gets color: var(--vp-c-brand-1). Re-pin
+   to theme text color so the card body reads naturally. */
+.shell-section .shell-card,
+.shell-section .shell-card:visited {
+  display: block;
+  padding: 24px;
+  background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  color: var(--vp-c-text-1);
+  text-decoration: none;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.shell-section .shell-card:hover {
+  border-color: var(--vp-c-brand-1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.shell-card-icon {
+  font-size: 32px;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.shell-card-title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--vp-c-text-1);
+}
+
+.shell-card-desc {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
+}
+
+.shell-card-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vp-c-brand-4);
+}
+
+@media (max-width: 768px) {
+  .shell-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
    News Panel — home page section
    ========================================================================== */
 

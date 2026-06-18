@@ -37,19 +37,26 @@ features:
     details: JSON-driven MetaSound Audio Asset Generator. Generate UMetaSoundSource and UMetaSoundPatch assets from JSON with auto-connected nodes.
     link: /llm-metasound/
     linkText: Explore
-
-  - icon: 💻
-    title: LLM Easy Shell
-    details: TCP shell interface for driving the Unreal Editor from any external client. 35+ editor commands, 25+ Python abilities, ports 15151–15200.
-    link: /llm-easy-shell/
-    linkText: Explore
-
-  - icon: 🔍
-    title: LLM Easy Shell Lite
-    details: Read-only TCP bridge between any LLM agent and the Unreal Editor. 9 commands, ports 15201–15250, 2 engine plugin deps, free.
-    link: /llm-easy-shell-lite/
-    linkText: Explore
 ---
+
+<section class="shell-section">
+  <h2 class="shell-section-title">LLM Easy Shell</h2>
+  <p class="shell-section-tagline">Drive the Unreal Editor from any LLM agent — full read/write or read-only safe subset.</p>
+  <div class="shell-grid">
+    <a class="shell-card" href="/llm-easy-shell/">
+      <div class="shell-card-icon">💻</div>
+      <h3 class="shell-card-title">LLM Easy Shell</h3>
+      <p class="shell-card-desc">TCP shell interface for driving the Unreal Editor from any external client. 35+ editor commands, 25+ Python abilities, ports 15151–15200.</p>
+      <span class="shell-card-link">Explore →</span>
+    </a>
+    <a class="shell-card" href="/llm-easy-shell-lite/">
+      <div class="shell-card-icon">🔍</div>
+      <h3 class="shell-card-title">LLM Easy Shell Lite</h3>
+      <p class="shell-card-desc">Read-only TCP bridge between any LLM agent and the Unreal Editor. 9 commands, ports 15201–15250, 2 engine plugin deps, free.</p>
+      <span class="shell-card-link">Explore →</span>
+    </a>
+  </div>
+</section>
 
 <div style="text-align: center; padding: 2rem 0; color: #888;">
 All plugins share the same paradigm: <strong>define your intent in JSON</strong>, and let the plugin handle the rest.
