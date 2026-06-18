@@ -1,4 +1,67 @@
 import { defineConfig } from 'vitepress'
+import { readFileSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
+
+// -----------------------------------------------------------------------------
+// Read news entries' front-matter for the /news/ sidebar.
+//
+// We can't use Vite's import.meta.glob here (config.ts runs outside Vite's
+// transform context). We don't have a YAML lib, so we parse just the few
+// fields we need: `title`, `date`, `slug`. Anything that breaks parsing
+// makes the entry fall out of the sidebar — silent but safe.
+// -----------------------------------------------------------------------------
+
+interface NewsEntryMeta {
+  title: string
+  date: string
+  slug: string
+}
+
+function parseFrontmatter(source: string): Record<string, string> {
+  const out: Record<string, string> = {}
+  const m = source.match(/^---\n([\s\S]*?)\n---/)
+  if (!m) return out
+  for (const line of m[1].split('\n')) {
+    const kv = line.match(/^([A-Za-z_]+):\s*(.*)$/)
+    if (!kv) continue
+    let value = kv[2].trim()
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1)
+    }
+    out[kv[1]] = value
+  }
+  return out
+}
+
+function loadNewsEntries(): NewsEntryMeta[] {
+  const dir = join(__dirname, '..', 'news')
+  let files: string[]
+  try {
+    files = readdirSync(dir).filter(
+      (f) => f.endsWith('.md') && f !== 'index.md' && f !== 'README.md'
+    )
+  } catch {
+    return []
+  }
+  const entries: NewsEntryMeta[] = []
+  for (const f of files) {
+    const fm = parseFrontmatter(readFileSync(join(dir, f), 'utf-8'))
+    if (!fm.title || !fm.date || !fm.slug) continue
+    entries.push({ title: fm.title, date: fm.date, slug: fm.slug })
+  }
+  // Newest first
+  entries.sort((a, b) => b.date.localeCompare(a.date))
+  return entries
+}
+
+const newsList = loadNewsEntries()
+
+// -----------------------------------------------------------------------------
+// VitePress config
+// -----------------------------------------------------------------------------
 
 export default defineConfig({
   title: 'YominUnreal Plugins',
@@ -116,7 +179,11 @@ export default defineConfig({
         {
           text: 'News',
           items: [
-            { text: 'All updates', link: '/news/' }
+            { text: 'All updates', link: '/news/' },
+            ...newsList.map((entry) => ({
+              text: entry.title,
+              link: `/news/${entry.slug}/`
+            }))
           ]
         }
       ]
