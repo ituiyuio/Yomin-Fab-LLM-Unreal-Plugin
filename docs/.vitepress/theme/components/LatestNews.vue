@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useData, withBase } from 'vitepress'
 import { useNews } from '../composables/useNews'
 
 const props = withDefaults(
@@ -9,8 +11,17 @@ const props = withDefaults(
 const { list } = useNews()
 const items = list.slice(0, props.count)
 
-function hrefFor(slug: string): string {
-  return `/news/${slug}/`
+const { localeIndex } = useData()
+const isEn = computed(() => localeIndex.value === 'en')
+
+// withBase prepends the site `base` (e.g. "/Yomin-Fab-LLM-Unreal-Plugin/")
+// so the link works when the site is hosted under a sub-path. Raw <a> tags
+// don't get this for free — only VPLink does.
+const viewAllHref = computed(() => withBase(isEn.value ? '/en/news/' : '/news/'))
+const viewAllText = computed(() => (isEn.value ? 'View all →' : '查看全部 →'))
+
+function cardHref(url: string): string {
+  return withBase(url)
 }
 </script>
 
@@ -18,14 +29,14 @@ function hrefFor(slug: string): string {
   <section v-if="items.length" class="news-section">
     <div class="news-section-head">
       <h2 class="news-section-title">Latest News</h2>
-      <a href="/news/" class="news-section-link">View all →</a>
+      <a :href="viewAllHref" class="news-section-link">{{ viewAllText }}</a>
     </div>
 
     <div class="news-grid">
       <a
         v-for="(entry, idx) in items"
         :key="entry.slug"
-        :href="hrefFor(entry.slug)"
+        :href="cardHref(entry.url)"
         class="news-card"
       >
         <div class="news-card-meta">
@@ -38,7 +49,7 @@ function hrefFor(slug: string): string {
         </div>
         <h3 class="news-card-title">{{ entry.title }}</h3>
         <p class="news-card-summary">{{ entry.summary }}</p>
-        <span class="news-card-cta">Read more →</span>
+        <span class="news-card-cta">{{ isEn ? 'Read more →' : '阅读更多 →' }}</span>
       </a>
     </div>
   </section>

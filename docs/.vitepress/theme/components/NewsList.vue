@@ -1,10 +1,15 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useData, withBase } from 'vitepress'
 import { useNews } from '../composables/useNews'
 
 const { list } = useNews()
 
-function hrefFor(slug: string): string {
-  return `/news/${slug}/`
+const { localeIndex } = useData()
+const isEn = computed(() => localeIndex.value === 'en')
+
+function cardHref(url: string): string {
+  return withBase(url)
 }
 </script>
 
@@ -19,7 +24,7 @@ function hrefFor(slug: string): string {
         <span class="news-timeline-dot" />
         <span v-if="idx < list.length - 1" class="news-timeline-line" />
       </div>
-      <a :href="hrefFor(entry.slug)" class="news-timeline-card">
+      <a :href="cardHref(entry.url)" class="news-timeline-card">
         <div class="news-timeline-meta">
           <span :class="['news-tag', `news-tag-${entry.tag.toLowerCase()}`]">
             {{ entry.tag.toUpperCase() }}
@@ -28,9 +33,9 @@ function hrefFor(slug: string): string {
         </div>
         <h3 class="news-timeline-title">{{ entry.title }}</h3>
         <p class="news-timeline-summary">{{ entry.summary }}</p>
-        <span class="news-timeline-cta">Read more →</span>
+        <span class="news-timeline-cta">{{ isEn ? 'Read more →' : '阅读更多 →' }}</span>
       </a>
     </article>
   </div>
-  <p v-else class="news-empty">暂无更新</p>
+  <p v-else class="news-empty">{{ isEn ? 'No updates yet' : '暂无更新' }}</p>
 </template>

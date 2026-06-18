@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { useData } from 'vitepress'
+import { computed } from 'vue'
+import { useData, withBase } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
 import NewsEntryHeader from './components/NewsEntryHeader.vue'
 
-const { frontmatter } = useData()
+const { frontmatter, localeIndex } = useData()
+const isEn = computed(() => localeIndex.value === 'en')
+
+const allNewsHref = computed(() => withBase(isEn.value ? '/en/news/' : '/news/'))
+const backText = computed(() => (isEn.value ? '← Back to all news' : '← 返回新闻列表'))
 
 // A page is a news entry when its front-matter has both `tag` and `slug` —
 // fields that are unique to news entries (regular doc pages don't use them).
@@ -24,7 +29,7 @@ const { frontmatter } = useData()
         v-if="frontmatter.tag && frontmatter.slug"
         class="news-entry-footer"
       >
-        <a href="/news/" class="news-back-link">← Back to all news</a>
+        <a :href="allNewsHref" class="news-back-link">{{ backText }}</a>
       </footer>
     </template>
   </DefaultTheme.Layout>

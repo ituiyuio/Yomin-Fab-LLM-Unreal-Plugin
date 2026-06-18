@@ -1,14 +1,19 @@
 // docs/.vitepress/theme/composables/useNews.ts
 //
 // Single source of truth for news entries. Reads front-matter from every
-// *.md under /news/ at build time via Vite's import.meta.glob, filters
-// index.md, validates required fields, sorts by date desc, returns
-// { latest, list }.
+// *.md under /news/ and /en/news/ at build time via Vite's import.meta.glob,
+// filters index.md / README.md, validates required fields, sorts by date
+// desc, and returns the slice for the *current* locale (so components
+// never have to know which language they're rendering).
 //
 // Consumed by:
 //   - LatestNews.vue  (home page)
 //   - NewsList.vue    (/news/ index page)
 //   - config.ts       (auto-generates /news/ sidebar)
+
+import { useData } from 'vitepress'
+
+export type NewsLocale = 'root' | 'en'
 
 export interface NewsEntry {
   title: string
@@ -17,6 +22,8 @@ export interface NewsEntry {
   summary: string
   emoji?: string
   slug: string
+  locale: NewsLocale
+  url: string    // pre-computed, includes the locale path prefix
 }
 
 export interface UseNewsResult {
@@ -24,18 +31,18 @@ export interface UseNewsResult {
   list: NewsEntry[]
 }
 
-interface NewsPageData {
-  title: string
-  description: string
-  frontmatter: NewsEntry
-  headers: unknown[]
-  relativePath: string
-  filePath: string
+interface NewsModule {
+  __pageData?: { frontmatter?: Omit<NewsEntry, 'locale' | 'url'> }
+  frontmatter?: Omit<NewsEntry, 'locale' | 'url'>
 }
 
-interface NewsModule {
-  __pageData?: NewsPageData
-  frontmatter?: NewsEntry
+interface RawFrontmatter {
+  title?: string
+  date?: unknown
+  tag?: string
+  summary?: string
+  emoji?: string
+  slug?: string
 }
 
 /** Normalize a date value to YYYY-MM-DD string. */
@@ -56,54 +63,89 @@ function normalizeDate(value: unknown): string {
   return ''
 }
 
-function readEntry(mod: NewsModule): NewsEntry | null {
+function inferLocaleFromPath(modPath: string): NewsLocale {
+  // modPath is something like "/news/agent-online.md" or
+  // "/en/news/agent-online.md" (Vite glob keys, leading slash, srcDir-relative).
+  const parts = modPath.split('/').filter(Boolean)
+  return parts[0] === 'en' ? 'en' : 'root'
+}
+
+function readEntry(mod: NewsModule, modPath: string): NewsEntry | null {
   // VitePress 1.6 ships frontmatter on __pageData.frontmatter; some versions
   // also expose a top-level `frontmatter` named export. Try both.
-  const fm = mod.frontmatter ?? mod.__pageData?.frontmatter
+  const fm = (mod.frontmatter ?? mod.__pageData?.frontmatter) as RawFrontmatter | undefined
   if (!fm) return null
-  return { ...fm, date: normalizeDate(fm.date) }
+
+  const locale = inferLocaleFromPath(modPath)
+  const urlPrefix = locale === 'en' ? '/en/news/' : '/news/'
+
+  return {
+    title: fm.title ?? '',
+    date: normalizeDate(fm.date),
+    tag: fm.tag ?? '',
+    summary: fm.summary ?? '',
+    emoji: fm.emoji,
+    slug: fm.slug ?? '',
+    locale,
+    url: fm.slug ? `${urlPrefix}${fm.slug}/` : ''
+  }
 }
 
 export function useNews(): UseNewsResult {
-  const modules = import.meta.glob<NewsModule>('/news/*.md', {
-    eager: true
-  })
+  // VitePress 1.6: useData() returns `localeIndex` ("root" | "en"), not
+  // `localePath`. localePath only exists in newer 2.x; using it here
+  // crashes the build for the root locale.
+  const { localeIndex } = useData()
+  const currentLocale: NewsLocale =
+    localeIndex.value === 'en' ? 'en' : 'root'
+
+  // Two globs (relative to srcDir, which is `docs/`). The leading slash is
+  // important — without it, Vite would resolve these relative to the
+  // composable's own file location and miss everything.
+  const modules = import.meta.glob<NewsModule>(
+    ['/news/*.md', '/en/news/*.md'],
+    { eager: true }
+  )
 
   const entries: NewsEntry[] = []
   const seenSlugs = new Set<string>()
 
-  for (const [path, mod] of Object.entries(modules)) {
-    const filename = path.split('/').pop() ?? path
+  for (const [modPath, mod] of Object.entries(modules)) {
+    const filename = modPath.split('/').pop() ?? modPath
 
     // Skip the index page (list page) and the maintainer guide.
     if (filename === 'index.md' || filename === 'README.md') continue
 
-    const entry = readEntry(mod)
+    const entry = readEntry(mod, modPath)
 
     if (!entry?.date) {
-      console.warn(`[news] ${filename}: missing front-matter "date" — skipping`)
+      console.warn(`[news] ${modPath}: missing front-matter "date" — skipping`)
       continue
     }
     if (!entry.tag) {
-      console.warn(`[news] ${filename}: missing front-matter "tag" — skipping`)
+      console.warn(`[news] ${modPath}: missing front-matter "tag" — skipping`)
       continue
     }
     if (!entry.slug) {
-      console.warn(`[news] ${filename}: missing front-matter "slug" — skipping`)
+      console.warn(`[news] ${modPath}: missing front-matter "slug" — skipping`)
       continue
     }
-    if (seenSlugs.has(entry.slug)) {
+    const dupKey = `${entry.locale}/${entry.slug}`
+    if (seenSlugs.has(dupKey)) {
       throw new Error(
-        `[news] duplicate slug "${entry.slug}" in ${filename} — slugs must be unique`
+        `[news] duplicate slug "${entry.slug}" in ${modPath} — slugs must be unique per locale`
       )
     }
-    seenSlugs.add(entry.slug)
+    seenSlugs.add(dupKey)
 
     entries.push(entry)
   }
 
-  // Sort by date desc. Invalid dates sink to the end.
-  entries.sort((a, b) => {
+  // Filter to the current locale. Sorting is global so dates line up
+  // across locales if the same slug is used in both.
+  const localEntries = entries.filter((e) => e.locale === currentLocale)
+
+  localEntries.sort((a, b) => {
     const ta = Date.parse(a.date)
     const tb = Date.parse(b.date)
     if (Number.isNaN(ta) && Number.isNaN(tb)) return 0
@@ -113,7 +155,7 @@ export function useNews(): UseNewsResult {
   })
 
   return {
-    latest: entries[0] ?? null,
-    list: entries
+    latest: localEntries[0] ?? null,
+    list: localEntries
   }
 }
