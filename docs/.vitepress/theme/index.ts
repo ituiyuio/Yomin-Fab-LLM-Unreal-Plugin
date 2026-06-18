@@ -1,6 +1,10 @@
 import DefaultTheme from 'vitepress/theme'
+import LatestNews from './components/LatestNews.vue'
 import './style.css'
 
 export default {
-  extends: DefaultTheme
+  extends: DefaultTheme,
+  enhanceApp({ app }) {
+    app.component('LatestNews', LatestNews)
+  }
 }

@@ -54,3 +54,5 @@ features:
 <div style="text-align: center; padding: 2rem 0; color: #888;">
 All plugins share the same paradigm: <strong>define your intent in JSON</strong>, and let the plugin handle the rest.
 </div>
+
+<LatestNews :count="3" />
