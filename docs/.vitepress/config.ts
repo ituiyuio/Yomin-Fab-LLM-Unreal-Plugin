@@ -22,7 +22,8 @@ export default defineConfig({
       { text: 'LLM StateTree', link: '/llm-statetree/' },
       { text: 'LLM MetaSound', link: '/llm-metasound/' },
       { text: 'LLM Easy Shell', link: '/llm-easy-shell/' },
-      { text: 'AI Agent Skills', link: '/skills/' }
+      { text: 'AI Agent Skills', link: '/skills/' },
+      { text: 'News', link: '/news/' }
     ],
 
     sidebar: {
@@ -104,6 +105,14 @@ export default defineConfig({
             { text: 'LLM MetaSound', link: '/skills/llm-metasound' },
             { text: 'LLM Easy Shell', link: '/skills/llm-easy-shell' },
             { text: 'LLM Easy Shell Lite', link: '/skills/llm-easy-shell-lite' }
+          ]
+        }
+      ],
+      '/news/': [
+        {
+          text: 'News',
+          items: [
+            { text: 'All updates', link: '/news/' }
           ]
         }
       ]
