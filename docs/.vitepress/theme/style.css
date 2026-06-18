@@ -25,6 +25,12 @@
    News Panel — home page section
    ========================================================================== */
 
+/* All selectors below are prefixed with .news-section to bump specificity
+   above VitePress's `.VPDoc a { color: var(--vp-c-brand-1) }` rule, which
+   would otherwise repaint our anchor text in brand-1 rose and make it
+   invisible on the rose→purple gradient banner. */
+
+.news-section .news-section { padding: 0; /* avoid double-pad */ }
 .news-section {
   max-width: 1152px;
   margin: 64px auto 0;
@@ -39,7 +45,7 @@
 }
 
 /* Featured banner (latest entry) */
-.news-banner {
+.news-section .news-banner {
   position: relative;
   display: block;
   padding: 32px 36px;
@@ -48,6 +54,14 @@
   color: #fff;
   text-decoration: none;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Anchor inside .VPDoc normally gets color: var(--vp-c-brand-1). Re-pin
+   to white so the banner's gradient stays readable. */
+.news-section .news-banner,
+.news-section .news-banner:visited,
+.news-section .news-banner:hover {
+  color: #fff;
 }
 
 .news-banner:hover {
@@ -120,7 +134,8 @@
   margin-top: 12px;
 }
 
-.news-compact-card {
+.news-section .news-compact-card,
+.news-section .news-compact-card:visited {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -222,7 +237,8 @@
   margin-top: 8px;
 }
 
-.news-timeline-card {
+.news-section .news-timeline-card,
+.news-section .news-timeline-card:visited {
   flex: 1;
   display: block;
   padding: 16px 20px;
