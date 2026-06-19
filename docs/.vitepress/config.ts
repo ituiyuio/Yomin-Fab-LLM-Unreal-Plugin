@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitepress'
+import { defineConfig, type SidebarItem } from 'vitepress'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -68,10 +68,12 @@ const enNews = loadNewsEntries('en/news')
 // VitePress config
 // -----------------------------------------------------------------------------
 
-// Sidebar entries for plugin doc sections (only zh-CN has these today; en
-// users on those paths will 404 until those docs are translated — out of
-// scope for the /news/ pilot).
-const pluginSidebars = {
+// Sidebar entries for plugin doc sections.
+//
+// Two parallel maps: zhPluginSidebars for the root locale, enPluginSidebars
+// for the English locale. Each is wired into the matching locale below.
+// en entries are added incrementally as the matching English content ships.
+const zhPluginSidebars: Record<string, SidebarItem[]> = {
   '/llm-dynamic-ui/': [
     {
       text: 'LLM Dynamic UI',
@@ -155,7 +157,97 @@ const pluginSidebars = {
   ]
 }
 
-const mainNav = [
+// en locale plugin/skill sidebars.
+//
+// Filled in incrementally as English pages ship (mirrors zhPluginSidebars
+// but with /en/... links). Each entry is a copy-paste of the zh entry with
+// the link prefix swapped — keep them in sync.
+const enPluginSidebars: Record<string, SidebarItem[]> = {
+  '/en/llm-dynamic-ui/': [
+    {
+      text: 'LLM Dynamic UI',
+      items: [
+        { text: 'Overview', link: '/en/llm-dynamic-ui/' },
+        { text: 'Getting Started', link: '/en/llm-dynamic-ui/getting-started' },
+        { text: 'Widget Types', link: '/en/llm-dynamic-ui/widget-types' },
+        { text: 'Animation', link: '/en/llm-dynamic-ui/animation' },
+        { text: 'SDF Effects', link: '/en/llm-dynamic-ui/sdf-effects' }
+      ]
+    }
+  ],
+  '/en/llm-material/': [
+    {
+      text: 'LLM Material',
+      items: [
+        { text: 'Overview', link: '/en/llm-material/' },
+        { text: 'Getting Started', link: '/en/llm-material/getting-started' },
+        { text: 'Node Types', link: '/en/llm-material/node-types' },
+        { text: 'Substrate', link: '/en/llm-material/substrate' },
+        { text: 'Layout', link: '/en/llm-material/layout' },
+        { text: 'USH', link: '/en/llm-material/ush' },
+        { text: 'Examples', link: '/en/llm-material/examples' }
+      ]
+    }
+  ],
+  '/en/llm-statetree/': [
+    {
+      text: 'LLM StateTree',
+      items: [
+        { text: 'Overview', link: '/en/llm-statetree/' },
+        { text: 'Getting Started', link: '/en/llm-statetree/getting-started' },
+        { text: 'Node Types', link: '/en/llm-statetree/node-types' },
+        { text: 'Examples', link: '/en/llm-statetree/examples' }
+      ]
+    }
+  ],
+  '/en/llm-metasound/': [
+    {
+      text: 'LLM MetaSound',
+      items: [
+        { text: 'Overview', link: '/en/llm-metasound/' },
+        { text: 'Getting Started', link: '/en/llm-metasound/getting-started' },
+        { text: 'Node Types', link: '/en/llm-metasound/node-types' },
+        { text: 'Examples', link: '/en/llm-metasound/examples' }
+      ]
+    }
+  ],
+  '/en/llm-easy-shell/': [
+    {
+      text: 'LLM Easy Shell',
+      items: [
+        { text: 'Overview', link: '/en/llm-easy-shell/' },
+        { text: 'LLM Easy Shell Lite', link: '/en/llm-easy-shell-lite/' }
+      ]
+    }
+  ],
+  '/en/llm-easy-shell-lite/': [
+    {
+      text: 'LLM Easy Shell Lite',
+      items: [
+        { text: 'Overview', link: '/en/llm-easy-shell-lite/' },
+        { text: 'LLM Easy Shell (full)', link: '/en/llm-easy-shell/' }
+      ]
+    }
+  ],
+  '/en/skills/': [
+    {
+      text: 'AI Agent Skills',
+      items: [
+        { text: 'Overview', link: '/en/skills/' },
+        { text: 'Installation', link: '/en/skills/installation' },
+        { text: 'LLM Dynamic UI', link: '/en/skills/llm-dynamic-ui' },
+        { text: 'LLM Material', link: '/en/skills/llm-material' },
+        { text: 'LLM StateTree', link: '/en/skills/llm-statetree' },
+        { text: 'LLM MetaSound', link: '/en/skills/llm-metasound' },
+        { text: 'LLM Easy Shell', link: '/en/skills/llm-easy-shell' },
+        { text: 'LLM Easy Shell Lite', link: '/en/skills/llm-easy-shell-lite' }
+      ]
+    }
+  ]
+}
+
+// zh-CN nav (root locale): full set of links, all pointing to /<path>/.
+const zhNav = [
   { text: 'LLM Dynamic UI', link: '/llm-dynamic-ui/' },
   { text: 'LLM Material', link: '/llm-material/' },
   { text: 'LLM StateTree', link: '/llm-statetree/' },
@@ -163,6 +255,21 @@ const mainNav = [
   { text: 'LLM Easy Shell', link: '/llm-easy-shell/' },
   { text: 'AI Agent Skills', link: '/skills/' },
   { text: 'News', link: '/news/' }
+]
+
+// en nav: links point to /en/... counterparts that exist under docs/en/.
+//
+// The en pages are file-by-file copies of the root pages (same English
+// content; zh home and nav are translated, but plugin/Skills docs are
+// authored in English). Keep these in sync with zhNav.
+const enNav = [
+  { text: 'LLM Dynamic UI', link: '/en/llm-dynamic-ui/' },
+  { text: 'LLM Material', link: '/en/llm-material/' },
+  { text: 'LLM StateTree', link: '/en/llm-statetree/' },
+  { text: 'LLM MetaSound', link: '/en/llm-metasound/' },
+  { text: 'LLM Easy Shell', link: '/en/llm-easy-shell/' },
+  { text: 'AI Agent Skills', link: '/en/skills/' },
+  { text: 'News', link: '/en/news/' }
 ]
 
 // Per-locale news sidebar: dynamic list driven by loadNewsEntries().
@@ -185,14 +292,18 @@ function newsSidebar(prefix: '/news/' | '/en/news/', entries: NewsEntryMeta[]) {
 
 export default defineConfig({
   title: 'YominUnreal Plugins',
-  description: 'AI-powered Unreal Engine development tools — UI, Material, VFX, AI',
+  // Per-locale descriptions are set inside the `locales` block below —
+  // keeping a top-level `description` here would force both locales to
+  // share an English string in their <meta name="description"> tag.
   cleanUrls: true,
   srcDir: '.',
   base: '/Yomin-Fab-LLM-Unreal-Plugin/',
 
   // Internal brainstorming / planning artifacts — not user-facing docs.
   // They contain example dev-server URLs and don't need to render as pages.
-  srcExclude: ['**/superpowers/**'],
+  // We also exclude any README.md so maintainer-only notes (e.g.
+  // docs/news/README.md, the tag vocabulary guide) don't ship to users.
+  srcExclude: ['**/superpowers/**', '**/README.md'],
 
   // -----------------------------------------------------------------------
   // Auto language preference. GitHub Pages is static — there's no server to
@@ -252,10 +363,11 @@ export default defineConfig({
     root: {
       label: '中文',
       lang: 'zh-CN',
+      description: 'AI 驱动的 Unreal Engine 开发工具 — UI、Material、VFX、AI',
       themeConfig: {
-        nav: mainNav,
+        nav: zhNav,
         sidebar: {
-          ...pluginSidebars,
+          ...zhPluginSidebars,
           ...newsSidebar('/news/', zhNews)
         }
       }
@@ -263,13 +375,15 @@ export default defineConfig({
     en: {
       label: 'English',
       lang: 'en-US',
+      description: 'AI-powered Unreal Engine development tools — UI, Material, VFX, AI',
       // No `link` override: the en home is /en/ (created as docs/en/index.md),
       // and that's where both the language switcher and the top-left logo
       // should land. Setting link to '/en/news/' would push the logo to
       // /en/news/, which is not what "back to home" means.
       themeConfig: {
-        nav: mainNav,
+        nav: enNav,
         sidebar: {
+          ...enPluginSidebars,
           ...newsSidebar('/en/news/', enNews)
         }
       }

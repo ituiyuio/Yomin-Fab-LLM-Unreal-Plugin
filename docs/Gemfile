@@ -1,5 +1,0 @@
-# Copyright (c) 2026 Yiming Wang <yomin_noahwang@foxmail.com>. All rights reserved.
-
-source "https://rubygems.org"
-
-gem "github-pages", "~> 231", group: :jekyll_plugins
