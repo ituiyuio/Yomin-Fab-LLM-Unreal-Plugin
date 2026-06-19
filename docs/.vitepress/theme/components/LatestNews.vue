@@ -28,7 +28,7 @@ function cardHref(url: string): string {
 <template>
   <section v-if="items.length" class="news-section">
     <div class="news-section-head">
-      <h2 class="news-section-title">Latest News</h2>
+      <h2 class="news-section-title">{{ isEn ? 'Latest News' : '最新动态' }}</h2>
       <a :href="viewAllHref" class="news-section-link">{{ viewAllText }}</a>
     </div>
 
@@ -45,7 +45,7 @@ function cardHref(url: string): string {
             {{ entry.tag.toUpperCase() }}
           </span>
           <span class="news-card-date">{{ entry.date }}</span>
-          <span v-if="idx === 0" class="news-card-new">NEW</span>
+          <span v-if="idx === 0" class="news-card-new">{{ isEn ? 'NEW' : '新' }}</span>
         </div>
         <h3 class="news-card-title">{{ entry.title }}</h3>
         <p class="news-card-summary">{{ entry.summary }}</p>
