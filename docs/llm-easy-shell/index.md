@@ -85,7 +85,7 @@ reference `.uplugin` / `Documentation.md` and the bundled Python ability
 set)*
 
 **Important/Additional Notes:** Editor-only plugin. For a minimal-dependency,
-read-only variant, see [LLM Easy Shell Lite](../llm-easy-shell-lite/). UE 5.7+.
+read-only variant, see [LLM Easy Shell Lite](../llm-easy-shell-lite/). UE 5.5 / 5.6 / 5.7 / 5.8. For Survivor-gameplay-specific helpers (143+ Python-friendly functions bridging Python abilities to the Survivor Player Character), see the companion **[LLMSurvivorShell plugin](https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin/tree/main/Plugins/LLMSurvivorShell/)** (project-only distribution; depends on host project's `CODEO` module).
 
 ---
 
@@ -126,8 +126,12 @@ errors by marketplace scanners).
 
 ### UE Version Compatibility
 
-- **Minimum:** UE 5.7 (`EngineVersion: "5.7.0"` in `.uplugin`)
-- **Tested:** UE 5.7.4
+- **Engine matrix:** UE 5.5 / 5.6 / 5.7 / 5.8 (one Fab Project Version per UE)
+- **Engine-version-aware features:**
+  - `ModelContextProtocol` (`mcp` command) — UE 5.8+ only, stubbed on 5.5/5.6/5.7
+  - `WebBrowserWidget` — gated by `WITH_LLMEASYSHELL_WEBBROWSER`; host enables in `.uproject` for CEF state block
+  - `Chooser` API — UE 5.8 uses `DeleteRows(TArrayView<int32>)` + `GetDebugSelectedRows()`; UE 5.7 falls back to `TArray<uint32>` + `MatchedRow=INDEX_NONE`
+  - UI E2E helpers (`Simulate*`, `FindUIWidget`, `TriggerWebUICallback`) — gated by `WITH_LLMEASYSHELL_CODEO`; return `{"error":"host_codeo_required"}` JSON when host lacks `CODEO`
 
 ---
 
@@ -370,4 +374,4 @@ untrusted networks.
 
 ---
 
-*LLMEasyShell v1.0.0 | YominUnreal*
+*LLMEasyShell v1.1.0 | YominUnreal*
