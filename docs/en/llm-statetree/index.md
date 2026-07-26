@@ -58,8 +58,8 @@ Generate complete StateTree Blueprint assets from JSON (`.llmstate` files) with 
 
 | Item | Value |
 |------|-------|
-| Plugin Version | 1.0.0 |
-| Engine | UE 5.7+ |
+| Plugin Version | 1.1.2 |
+| Engine | UE 5.5+ (5.5/5.6/5.7/5.8 multi-UE build) |
 | Modules | LLMStateTree (Runtime), LLMStateTreeEditor (Editor) |
 | Publisher | YominUnreal |
 | Required Plugins | StateTree, GameplayStateTree, EditorScriptingUtilities |

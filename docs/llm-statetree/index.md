@@ -16,9 +16,9 @@ Generate complete StateTree Blueprint assets from JSON (`.llmstate` files) with 
 - **LLM-First Design** — AI outputs JSON directly, no StateTree editor knowledge required
 - **Schema Auto-Inference** — Automatically discovers StateTree node types from UE reflection
 - **Editor Panel** — Browse and preview generated StateTree structure
-- **Parameter Binding** — Support for `${Param.Name}` and `${Context.Property}` binding expressions
+- **Parameter Binding** — Support for `${Parameters.Name}` and `${Context.Property}` binding expressions (legacy `${Param.Name}` alias supported)
 - **Utility AI** — Considerations with response curves for action selection
-- **5 Example Files** — SimpleAI, GuardAI, UtilityAI, StealthAI, BossAI included
+- **9 Example Files** — SimpleAI, GuardAI, UtilityAI, StealthAI, BossAI + 4 NPC dialog examples (Reimu / Rumia / Patchouli / Rumia Merchant) included
 - **14+ Node Types** — Tasks, Conditions, Considerations fully documented
 
 ---
@@ -34,9 +34,9 @@ Generate complete StateTree Blueprint assets from JSON (`.llmstate` files) with 
 {
   "name": "MyAI",
   "version": "1.0",
-  "parameters": [
-    { "name": "Speed", "type": "float", "default": 500.0 }
-  ],
+  "parameters": {
+    "Speed": { "type": "float", "default": 500.0 }
+  },
   "states": [
     {
       "name": "Idle",
@@ -58,8 +58,8 @@ Generate complete StateTree Blueprint assets from JSON (`.llmstate` files) with 
 
 | Item | Value |
 |------|-------|
-| Plugin Version | 1.0.0 |
-| Engine | UE 5.7+ |
+| Plugin Version | 1.1.2 |
+| Engine | UE 5.5+ (5.5/5.6/5.7/5.8 multi-UE build) |
 | Modules | LLMStateTree (Runtime), LLMStateTreeEditor (Editor) |
 | Publisher | YominUnreal |
 | Required Plugins | StateTree, GameplayStateTree, EditorScriptingUtilities |
