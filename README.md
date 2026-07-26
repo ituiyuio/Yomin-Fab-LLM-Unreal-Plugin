@@ -25,7 +25,7 @@ Three plugins are published on **Epic Fab** — the official Unreal Engine marke
 | Plugin | Fab Listing |
 |--------|-------------|
 | **LLM Dynamic UI** | [View on Fab →](https://www.fab.com/listings/d84f1501-b45a-49c2-8069-40132482d0fd) |
-| **LLM Material**   | [View on Fab →](https://www.fab.com/listings/501c1599-bf89-4b61-8037-14ef2fab0728) |
+| **LLM Material**   | [View on Fab →](https://www.fab.com/listings/109df9bd-955a-420a-ae17-d23e5040f81c) |
 | **LLM StateTree**  | [View on Fab →](https://www.fab.com/listings/0e19efd3-6898-4d0f-b7de-5e9fb9a32951) |
 
 *LLM MetaSound is currently distributed through this repository only — Fab listing coming soon.*
