@@ -45,6 +45,7 @@ slug: metasound-1.1.1
 ## 🔧 Internal Refactors
 
 - **Editor module dependency split** — `LLMEasyShell` / `LLMEasyShellLite` are compile-time soft dependencies via `CheckModuleExists` + `WITH_LLMEASYSHELL={0,1}` (no `.uplugin` requirement, host project stays bootable without them)
+- **Release file normalization** — examples, generator, and documentation now use consistent LF line endings (7bf3d43)
 
 ---
 

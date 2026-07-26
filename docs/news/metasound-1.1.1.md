@@ -45,6 +45,7 @@ slug: metasound-1.1.1
 ## 🔧 内部重构
 
 - **Editor 模块依赖拆分** — `LLMEasyShell` / `LLMEasyShellLite` 通过 `CheckModuleExists` + `WITH_LLMEASYSHELL={0,1}` 实现编译时软依赖（`.uplugin` 不强制依赖，宿主项目无这些模块也能启动）
+- **发布文件规范化** — 示例、生成器与文档统一为 LF 换行（7bf3d43）
 
 ---
 
