@@ -2,7 +2,9 @@
 name: llm-easy-shell-lite
 description: |
   只读模式操作运行中的 Unreal Engine 编辑器。Lite 是 LLMEasyShell 的最精简只读子集，
-  只暴露 9 个查询类命令和已注册的 plugin ability，绝不修改任何资产/场景/编辑器状态。
+  暴露 9 个只读查询命令 + 已注册的 plugin ability + `python` PyAbility 调度，加上
+  自维护 (`reload`, Windows only) — 不修改任何资产/场景/项目数据，只触发 LiveCoding
+  编译并写 OS 级别的 ready-signal。
   适合在不确定时进行安全探索，或在需要最小依赖时使用。
 
   **触发场景**：
@@ -11,12 +13,12 @@ description: |
   - 日志查看：编辑器错误日志、Niagara 验证消息
   - 状态查询：项目信息、PIE 状态、game state
 
-  **触发关键词**：ls, cat, find, discover, info, help, gamestate, log, msglog, /Actor/, /Assets/, /Game/, /Level/
+  **触发关键词**：ls, cat, find, discover, info, help, gamestate, log, msglog, python, reload (Windows only), /Actor/, /Assets/, /Game/, /Level/
 
-  **不触发**：任何需要写入的操作（set/spawn/rm/cp/mv/call/save/new/addcomp/play/stop/pause/undo/redo/reload）、
-  截图、C++ 代码编写、AngelScript 脚本。
+  **不触发**：任何需要写入的操作（set/spawn/rm/cp/mv/call/save/new/addcomp/play/stop/pause/undo/redo）、
+  截图、C++ 代码编写、AngelScript 脚本、**`mcp *`（Lite 不实现 MCP 命令，需要用 full 版本 [llm-easy-shell](../llm-easy-shell/SKILL.md)**。
 
-  **完整写操作 / 截图 / Python ability 25+ 子命令**：用 full 版本 [llm-easy-shell](../llm-easy-shell/SKILL.md)。
+  **完整写操作 / 截图 / Python ability 271 子命令 (53 内置 plugin + 228 game-specific − 5 重名 − 6 私有 + 1 reload)**：用 full 版本 [llm-easy-shell](../llm-easy-shell/SKILL.md)。
 ---
 
 ## 能力范围（Lite 实际能跑什么）
@@ -41,6 +43,8 @@ log --errors                        # 查看编辑器错误日志
 msglog --niagara                    # 查看 Niagara 验证消息
 ```
 
+> Lite 不实现 MCP 命令（`Plugins/LLMEasyShellLite/Source/LLMEasyShellLite/Private/` 无 `ShellCommand_Mcp.cpp`，与 full 版本 9 个查询类只读命令对齐 — full 另有 27 个写/PIE/控制命令合共 36）。需要 `mcp status` / `mcp tools` 等用 full 版本 [llm-easy-shell](../llm-easy-shell/SKILL.md)。
+
 **路径规则**：
 
 | 路径 | 含义 |
@@ -60,18 +64,42 @@ msglog --niagara                    # 查看 Niagara 验证消息
 | `llmstatetree` | LLMStateTree | generate / inspect / export / copy / delete / compile |
 | `ui` | LLMDynamicUI | generate / export / list-types / export-schema |
 | `material` | LLMMaterial | generate / export / list-types / describe-type / export-schema |
+| `llmms` | LLMMetaSound | generate / export / inspect |
+| `llmwhitebox` | LLMWhitebox | create-box / create-subtract-box / create-cylinder / create-sphere / create-cone / create-stairs / list-brushes / get-brush / delete-brush / move-rotate / build-room / build-wall-segment / apply-default-material / rebuild-bsp-lighting / build-bsp |
+| `uireactionbus` | UIWebBridge | send / subscribe / snapshot / bench / replay / diff |
+| `python` | LLMEasyShellLite 内置 PyAbility | Lite PyAbility 框架（放 .py 到 `Content/Python/LLMShellAbilitiesLite/abilities/` 即注册） |
+
+> **数据源**：`help` 实际输出 = `LLMEasyShellLiteSubsystem.cpp:552 RegisterAbility(TEXT("python"), PythonAbility)` + `:571 RegisterAbility(AbilityName, Info)` 模板 + 各 LLM 插件 `OnAllModuleLoadingPhasesComplete` 时序反射注册（LLMStateTreeEditorModule.cpp:74 (full AddRaw) + :78 (lite AddRaw) / LLMDynamicUIEditorModule.cpp:41 (full AddLambda) + :51 (lite AddLambda, v1.1 fix) / LLMMaterialModule.cpp:45 (full AddRaw) + :50 (lite AddRaw) / LLMMetaSoundEditorModule.cpp:80 (full AddRaw) + :84 (lite AddRaw) / LLMWhiteboxModule.cpp:54 (full AddRaw) + :56 (lite AddRaw) / UIWebBridgeEditorModule.cpp:60 (AddLambda `OnAllModuleLoadingPhasesComplete`) + :67 (RegisterAsLLMEasyShellAbility) + :113 (lite register) + :130 (full register)）。缺哪个请检查对应 plugin module 是否加载。
+>
+<!-- Forensic: see SKILL_CHANGELOG.md §1 -->
+
+<!-- Forensic: see SKILL_CHANGELOG.md §2 -->
 
 这些是 **只读相关的子命令**（inspect / list-types / describe-type / export-schema / export），可以放心使用。
 **任何会写资产/场景的子命令**（generate / copy / delete / compile）属于"写操作"，理论上不在 Lite 范围，
 但因为 Lite 与这些插件共享 handler 实例，实际能用——使用时自行评估风险。
 
-### 3. PyAbility 执行框架（无内置内容）
+### 3. PyAbility 执行框架（已注册 + 1 内置 .py demo）
 
-Lite 注册了 PyAbility 执行框架，但**没有内置任何 `.py` 文件**。
-如需注册自定义只读命令，在 `Plugins/LLMEasyShellLite/Content/Python/LLMShellAbilitiesLite/abilities/` 下放 `.py` 文件即可。
+Lite 注册了 PyAbility 执行框架（`Subsystem.cpp:552 RegisterAbility(TEXT("python"), PythonAbility)`），**内置 1 个 `.py` 端到端验证 demo**（`simple.py`，跑 `python simple hello world` 验证 PyAbility 框架可用；filesystem 锚定 `Plugins/LLMEasyShellLite/Content/Python/LLMShellAbilitiesLite/abilities/simple.py`）。
 
-> **⚠️ 注意**：full 版本的 `python <name>` 25+ 子命令（material / blueprint / asset / vfx / scene / level / umg /
-> curve / datatable / editor / gameplay / reactive / hd3d...）**Lite 没有**。需要它们请用 full skill。
+<!-- Forensic: see SKILL_CHANGELOG.md §3 -->
+如需注册自定义只读命令，在 `Plugins/LLMEasyShellLite/Content/Python/LLMShellAbilitiesLite/abilities/` 下放 `.py` 文件即可（不要 `_` 或 `__` 前缀，否则不注册）。
+
+> **⚠️ 注意**：full 版本的 `python <name>` 271 子命令（53 内置 plugin + 228 game-specific − 5 重名 − 6 私有 + 1 reload，涵盖 material / blueprint / asset / vfx / scene / level / umg /
+> curve / datatable / editor / gameplay / reactive / hd3d / achievement / affix / archive / artifact / bestiary / biome / boss / bounty / build / career / character / chest / combat / curse / daily / death / equipment / events / evolution / firework / gameplayability / gameplaytag / glacier / heatmap / hints / identity / item / levelup / lifetime / loot / lore / metasound / missions / music / mutator / pcg / pets / pity / player / portal / reaction / reactive / relics / run / save / settings / showcase / sidebar / skilltree / sorceress / speedrun / stage / statistics / stats / status / tarot / trophy / wave / wealth / weapon / weather / wfc / cottage / webui / cheatgui / ability_cooldown / ability_usage / achievement_mastery / achievement_timeline / artifact_stats / biome_cycle / bomb_weapon / boss_rush / build_code / build_templates / career_stats / character_mastery / combat_statistics / combat_tempo / v236-v300+ HUD widget abilities...）**Lite 没有内置**。Lite 有 `python` 框架 + 1 个内置 `simple` demo；full 版独有的 Python 子命令请用 full skill 调用（runtime 当前 270 个，canonical 271 = 53 内置 plugin + 228 game-specific − 5 重名 − 6 私有 + 1 reload；session141 时是 271 的快照，本 session 实测 270 是 reload 之前状态 — 注意 [tool-fix-07 session153 2026-07-11] 闭合原 "runtime 272 = 271 − 1 + 1" 算式 fossil，271 − 1 + 1 = 271 不等于 272）。
+>
+<!-- Forensic: see SKILL_CHANGELOG.md §4 -->
+>
+<!-- Forensic: see SKILL_CHANGELOG.md §5 -->
+>
+<!-- Forensic: see SKILL_CHANGELOG.md §6 -->
+>
+<!-- Forensic: see SKILL_CHANGELOG.md §7 -->
+>
+<!-- Forensic: see SKILL_CHANGELOG.md §8 -->
+>
+<!-- Forensic: see SKILL_CHANGELOG.md §9 -->
 
 ---
 
@@ -80,23 +108,34 @@ Lite 注册了 PyAbility 执行框架，但**没有内置任何 `.py` 文件**�
 Lite 独占 TCP 端口段 **15201–15250**（50 端口）。Full LLMEasyShell 占用 15151–15200，
 **完全互不重叠**——CLI 无需协商，各扫各的段。Lite 默认 15201。
 
-端口文件：`llm-shell/.current_port`
+端口文件：`llmshelllite/.current_port`
+
+<!-- Forensic: see SKILL_CHANGELOG.md §10 -->
+
+<!-- Forensic: see SKILL_CHANGELOG.md §11 -->
+
+<!-- Forensic: see SKILL_CHANGELOG.md §12 -->
 
 ---
 
-## Lite 不做什么（避免误用）
+## Lite v1.1.0-lite — capability changes
 
-Lite 是**只读精简版**，以下能力**没有**（需要请用 full skill [llm-easy-shell](../llm-easy-shell/SKILL.md)）：
+**New since 1.0.0-lite:**
 
-- ❌ 任何写操作（`set` / `spawn` / `rm` / `cp` / `mv` / `call` / `save` / `new` / `addcomp`）
-- ❌ 任何 PIE 控制（`play` / `stop` / `pause`）
-- ❌ `livecoding` / `restart` 编译周期管理
-- ❌ `log --compile`（编译日志捕获，要 full 或 Advanced skill）
-- ❌ 截图（PIE 截图、Win32 窗口截图）
-- ❌ `-q` / `-j` CLI 旗标（Lite 没实现，直接看 stdout）
-- ❌ `python <name>` 25+ 子命令
+- `reload` (Windows only): triggers LiveCoding compile; use `--status` to query compile state.
+- Win32 ready-signal hook: lets `llm-shell --restart` wait on Lite editor readiness.
+- 4 read-only bundled Python abilities: gamestate, scene, mesh_check, vfx_coverage (read subset).
+- 5 promo tips in `help` output: LLMMaterial, LLMDynamicUI, LLMStateTree, LLMMetaSound, LLMEasyShell (Advanced). All same-publisher paid plugins.
+- `@read_only` decorator with write-API blocklist (best-effort, not safety guarantee).
+
+**Still NOT in Lite (by design):**
+
+- Write commands (set/spawn/rm/cp/mv/etc.), PIE control, UI introspection, MCP, screenshots, `log --compile` upgrade.
 
 ---
+
+
+> **Forensic history**: 12 historical `[tool-fix-*]` meta-NOTE blockquotes moved to [SKILL_CHANGELOG.md](SKILL_CHANGELOG.md) (28KB forensic / 6KB actionable, this file 81% → ~19% meta-NOTE after extraction).
 
 ## 完整文档
 

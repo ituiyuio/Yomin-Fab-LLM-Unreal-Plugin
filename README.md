@@ -75,7 +75,7 @@ Six **AI agent skills** live under the [`skills/`](./skills/) directory — drop
 | Plugin | Skill File | What it does |
 |--------|-----------|--------------|
 | 🛠️ LLM Easy Shell      | [`skills/llm-easy-shell/SKILL.md`](./skills/llm-easy-shell/SKILL.md)         | 27 native commands + 25+ Python sub-commands — spawn actors, edit properties, call blueprint functions, trigger Live Coding, take screenshots |
-| 🛠️ LLM Easy Shell Lite | [`skills/llm-easy-shell-lite/SKILL.md`](./skills/llm-easy-shell-lite/SKILL.md) | Read-only subset — 9 safe exploration commands for browsing scenes and assets without risk |
+| 🛠️ LLM Easy Shell Lite | [`skills/llm-easy-shell-lite/SKILL.md`](./skills/llm-easy-shell-lite/SKILL.md) | Read-only subset — 9 safe exploration commands + self-maintenance `reload` (Windows only) + 4 read-only Python abilities, for browsing scenes and assets without risk |
 
 **How to install:** drop the skill folders into your project's `<tool>/skills/` directory (e.g. `<your-ue-project>/.claude/skills/` for Claude Code). See the [full installation guide →](https://ituiyuio.github.io/Yomin-Fab-LLM-Unreal-Plugin/skills/installation).
 
