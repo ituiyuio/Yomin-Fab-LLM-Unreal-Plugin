@@ -1,6 +1,6 @@
 # LLMEasyShellLite Python Ability 执行框架
 
-> Lite 注册了 Python ability 框架，但**没有内置任何 `.py` 文件**。
+> Lite 注册了 Python ability 框架 + **1 个内置 demo ability (`simple`)** 用于 PyAbility 端到端验证。
 > 本文档说明框架能力边界 + 如何放自定义只读 `.py` 文件。
 
 ---
@@ -10,11 +10,11 @@
 | 维度 | Full | Lite |
 |------|------|------|
 | 框架注册 | ✅ | ✅ |
-| 内置 `.py` 文件 | ✅ 25+ 个（material / blueprint / asset / vfx / scene / level / umg / curve / datatable / editor / gameplay / reactive / hd3d...） | ❌ 无 |
+| 内置 `.py` 文件 | ✅ 271 个 (53 plugin 内置 + 228 game-specific − 5 重名 − 6 私有 + 1 reload, material / blueprint / asset / vfx / scene / level / umg / curve / datatable / editor / gameplay / reactive / hd3d / achievement / affix / archive / artifact / bestiary / biome / boss / bounty / build / career / character / chest / combat / curse / daily / death / equipment / events / evolution / firework / gameplayability / gameplaytag / glacier / heatmap / hints / identity / item / levelup / lifetime / loot / lore / metasound / missions / music / mutator / pcg / pets / pity / player / portal / reaction / reactive / relics / run / save / settings / showcase / sidebar / skilltree / sorceress / speedrun / stage / statistics / stats / status / tarot / trophy / wave / wealth / weapon / weather / wfc / cottage / webui / cheatgui / ability_cooldown / ability_usage / achievement_mastery / achievement_timeline / artifact_stats / biome_cycle / bomb_weapon / boss_rush / build_code / build_templates / career_stats / character_mastery / combat_statistics / combat_tempo / v236-v300+ HUD widget 家族...) | ⚠️ 1 个 `simple` demo（端到端验证） |
 | 自定义 `.py` 加载机制 | ✅ | ✅（同 full） |
 | 加载路径 | `Plugins/LLMEasyShell/Content/Python/LLMShellAbilities/abilities/` | `Plugins/LLMEasyShellLite/Content/Python/LLMShellAbilitiesLite/abilities/` |
 | C++ 入口 | `PythonAbilityRegistry.cpp` | `PythonAbilityRegistryLite.cpp`（独立，不与 full 共享） |
-| 调用方式 | `python <name>` | `python <name>` (Lite 暴露 `python` 入口，见 ShellCommand_Python.cpp) |
+| 调用方式 | `python <name>` | `python <name>` (Lite 暴露 `python` 入口，见 `LLMEasyShellLiteSubsystem.cpp:553 RegisterAbilityCommandHandler`) |
 
 > **2026-06-16 路径变更**：所有插件的 Python 都搬到 `Content/Python/` 下，遵循 Fab 规范。
 
@@ -46,7 +46,7 @@ def main(args, world):
 ```
 
 **注意**：
-- Lite 的 `python <name>` 入口是暴露的（见 Documentation.md "Command Reference"）
+- Lite 的 `python <name>` 入口是暴露的（dispatch 通过 `LLMEasyShellLiteSubsystem.cpp:553 RegisterAbilityCommandHandler`，不是 `ShellCommand_Python.cpp` — Lite 没这个文件，统一走 ability handler 框架）
 - 文件名不要以下划线开头（`_xxx.py` = 私有，不注册）
 - docstring 第一行写"做什么"（动词开头 + 具体功能），`help` 命令会展示
 - `main` 第二个参数是 auto-injected `UWorld`（PIE 运行时）或 `None`
@@ -64,7 +64,7 @@ def main(args, world):
 
 - C++ 注册（Lite）：`Plugins/LLMEasyShellLite/Source/LLMEasyShellLite/Private/PythonAbilityRegistryLite.cpp`
 - Lite 框架入口：`Plugins/LLMEasyShellLite/Content/Python/LLMShellAbilitiesLite/abilities/`（Lite 加载路径）
-- Full 框架入口：`Plugins/LLMEasyShell/Content/Python/LLMShellAbilities/abilities/`（Full 加载路径，含 25+ 内置）
+- Full 框架入口：`Plugins/LLMEasyShell/Content/Python/LLMShellAbilities/abilities/`（Full 加载路径，含 53 plugin 内置；game-specific 228 在 `Content/Features/Survivor/Scripts/`，去重 5 cross-dup (cottage_build / gensokyo_characters_test / gensokyo_e2e_test / gensokyo_regression_test / portal_interaction_test) + 6 私有/Init 跳过 + 1 reload auto-add 后 271）
 
 ---
 
@@ -75,6 +75,6 @@ def main(args, world):
 - 不想拉进 full 插件的 9 个引擎依赖
 
 **用 Full**：
-- 需要 25+ 内置命令
-- 写自定义能力 + 需要 `python <name>` 调度入口（Lite 也支持，但 Lite 没内置 ability）
+- 需要 271 内置命令
+- 写自定义能力 + 需要 `python <name>` 调度入口（Lite 也支持，内置 1 个 `simple` demo 验证框架可用）
 - 需要 Live Coding / 写 / PIE 控制等 Lite 范围外能力

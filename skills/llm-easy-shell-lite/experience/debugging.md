@@ -3,6 +3,10 @@
 > 基于 2026-04-19 实战经验凝练：Lite 只读命令的 bug 根因分析和修复模式。
 > Lite 共享 full 的 CommandDispatcher / 反射实现，所以 full 的踩坑经验同样适用。
 
+> **⚠️ 范围警告**：教训 1-2 适用于 Lite + Full；**教训 3-7 引用 `python <name>` 271 子命令 + `call` 命令 + `IBlendableInterface` 反射能力，这些是 Full LLMEasyShell 独有，Lite 没有。** Lite 看到 `python` / `call` 字样的例子请直接跳过或转 full skill。
+>
+> [tool-fix-140 2026-06-29] 原 doc 写 "25+ 子命令" 是 2026-06-14 baseline 时的快照；[tool-fix-07 session96 2026-07-10] 闭合 196→266 (48 plugin + 223 project − 5 重名)；[tool-fix-07 session141 2026-07-10] 又从 266 闭合到 271 (53 plugin + 228 project − 5 重名 − 6 私有 + 1 reload, runtime 当前 truth — 跟上面数字 196→265→266 是 3 个独立阶段 closure chain, 数字 266 是 session96→141 间的中间 snapshot, 当前真实数字是 271 个总 Python 子命令)。
+
 ---
 
 ## 关键教训
