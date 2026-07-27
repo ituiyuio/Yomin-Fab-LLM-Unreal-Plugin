@@ -18,7 +18,7 @@ MetaSound 定义使用 `.llmmetasound` 扩展名，格式为 LLM-friendly JSON�
 
 ## Reference Files
 
-**Node Schema**: `Plugins/LLMMetaSound/Config/Schemas/LLMMetaSoundSchema.llmmetasoundschema` — 包含所有可用 MetaSound 节点类型的完整定义（401 个节点）
+**Node Schema**: `Plugins/LLMMetaSound/Config/Schemas/LLMMetaSoundSchema.llmmetasoundschema` — 包含所有可用 MetaSound 节点类型的完整定义（411 个节点）
 
 **示例目录**: `Plugins/LLMMetaSound/Examples/` — 包含 `.llmmetasound` 示例文件
 
@@ -50,14 +50,14 @@ MetaSound 定义使用 `.llmmetasound` 扩展名，格式为 LLM-friendly JSON�
 ```json
 "Metadata": {
   "NodeName": "MySound",           // 资产名称（必需）
-  "NodeType": "MetasoundSource",  // 或 "MetasoundGraph"（子图/Patch）
+  "NodeType": "MetasoundSource",  // 或 "MetasoundPatch"（子图，纯 DSP 子图）
   "MetasoundDescription": "..."    // 描述（可选）
 }
 ```
 
-`NodeType` 决定资产类型：
+`NodeType` 决定资产类型（parser `LLMMetaSoundParser.cpp:106-113` 只识别 `"Patch"` 子串）：
 - `MetasoundSource` → UMetaSoundSource（可播放音频）
-- `MetasoundGraph` → UMetaSoundPatch（纯 DSP 子图）
+- `MetasoundPatch` → UMetaSoundPatch（纯 DSP 子图）
 
 ### Inputs / Outputs
 
@@ -148,9 +148,6 @@ MetaSound 定义使用 `.llmmetasound` 扩展名，格式为 LLM-friendly JSON�
 | `Perlin Noise (float)` | Perlin 噪声（浮点） |
 | `LFO` | 低频振荡器 |
 | `Additive Synth` | 加法合成器 |
-| `SuperOscillatorMono` | 超级振荡器（单声道） |
-| `SuperOscillatorStereo` | 超级振荡器（立体声） |
-| `Subharmonizer` | 次谐波合成器 |
 
 ### Filters（滤波器）
 
@@ -244,9 +241,6 @@ MetaSound 定义使用 `.llmmetasound` 扩展名，格式为 LLM-friendly JSON�
 |-----------|------|
 | `ConversionAudioToFloat` | 音频→浮点 |
 | `ConversionFloatToAudio` | 浮点→音频 |
-| `ConversionFloatToTime` | 浮点→时间 |
-| `ConversionTimeToFloat` | 时间→浮点 |
-| `BPMToSeconds` | BPM→秒 |
 
 ## Common Patterns
 
@@ -291,17 +285,19 @@ MetaSound 定义使用 `.llmmetasound` 扩展名，格式为 LLM-friendly JSON�
     { "NodeID": 1, "ClassName": "Input", "Name": "FreqIn", "TypeName": "Primitive:Float" },
     { "NodeID": 2, "ClassName": "Input", "Name": "GainIn", "TypeName": "Primitive:Float" },
     { "NodeID": 3, "ClassName": "Sine", "Name": "Osc", "InputDefaults": {} },
-    { "NodeID": 4, "ClassName": "Multiply", "Name": "GainMul", "InputDefaults": {} },
+    { "NodeID": 4, "ClassName": "Multiply", "Name": "GainMul", "ClassPath": "UE.Multiply.Audio by Float", "InputDefaults": {} },
     { "NodeID": 5, "ClassName": "Envelope Follower", "Name": "Env", "InputDefaults": { "Enable": { "LiteralType": "Boolean", "AsBool": true } } }
   ],
   "Edges": [
-    { "FromNodeID": 1, "FromVertexID": 0, "ToNodeID": 3, "ToVertexID": 0 },
-    { "FromNodeID": 3, "FromVertexID": 0, "ToNodeID": 4, "ToVertexID": 0 },
-    { "FromNodeID": 2, "FromVertexID": 0, "ToNodeID": 4, "ToVertexID": 1 },
-    { "FromNodeID": 4, "FromVertexID": 0, "ToNodeID": 5, "ToVertexID": 1 }
+    { "FromNodeID": 1, "FromPinName": "Frequency", "ToNodeID": 3, "ToPinName": "Frequency" },
+    { "FromNodeID": 3, "FromPinName": "Audio", "ToNodeID": 4, "ToPinName": "PrimaryOperand" },
+    { "FromNodeID": 2, "FromPinName": "Gain", "ToNodeID": 4, "ToPinName": "AdditionalOperands" },
+    { "FromNodeID": 4, "FromPinName": "Out", "ToNodeID": 5, "ToVertexID": 1 }
   ]
 }
 ```
+
+> 注:本模板用 PinName 寻址 (Sine.Frequency / Multiply.PrimaryOperand/AdditionalOperands) + Multiply `ClassPath: "UE.Multiply.Audio by Float"` 显式消歧义（Multiply 有 7 overloads，schema last-wins 选 `Time by Float` 会导致 Audio→Time type mismatch；schema L5295）。`UE.Multiply.Audio by Float` 输入是 Audio+Float，输出是 Audio，正是音频增益所需。LLMMetaSoundGenerator.cpp:626-676 走 PinName-first / VertexID-fallback。
 
 ### ADSR 包络模板
 
@@ -315,16 +311,18 @@ MetaSound 定义使用 `.llmmetasound` 扩展名，格式为 LLM-friendly JSON�
   "Nodes": [
     { "NodeID": 1, "ClassName": "Noise", "Name": "Noise", "InputDefaults": {} },
     { "NodeID": 2, "ClassName": "ADSR Envelope", "Name": "Env", "InputDefaults": {} },
-    { "NodeID": 3, "ClassName": "Multiply", "Name": "Mul", "InputDefaults": {} },
+    { "NodeID": 3, "ClassName": "Multiply", "ClassPath": "UE.Multiply.Audio by Float", "Name": "Mul", "InputDefaults": {} },
     { "NodeID": 4, "ClassName": "Envelope Follower", "Name": "OutputEnv", "InputDefaults": { "Enable": { "LiteralType": "Boolean", "AsBool": true } } }
   ],
   "Edges": [
     { "FromNodeID": 1, "FromVertexID": 0, "ToNodeID": 3, "ToVertexID": 0 },
-    { "FromNodeID": 2, "FromVertexID": 0, "ToNodeID": 3, "ToVertexID": 1 },
+    { "FromNodeID": 2, "FromPinName": "Out Envelope", "ToNodeID": 3, "ToVertexID": 1 },
     { "FromNodeID": 3, "FromVertexID": 0, "ToNodeID": 4, "ToVertexID": 1 }
   ]
 }
 ```
+
+> 注:ADSR Envelope VertexID 0/1/2/3/4 是 Trigger 输出 (On Attack/Decay/Sustain/Release/Done)，VertexID 5 才是 "Out Envelope" Audio。用 `FromPinName: "Out Envelope"` (schema L2133) 稳定避免 VertexID 偏移歧义。
 
 ## Examples
 
@@ -341,25 +339,58 @@ MetaSound 定义使用 `.llmmetasound` 扩展名，格式为 LLM-friendly JSON�
 
 ## VertexID 速查
 
-不确定端口索引时，可通过 LLMMetaSound 编辑器面板导出已有资产的 JSON 查看正确的 VertexID。
+> ⚠️ **推荐使用 PinName 而非 VertexID**：`Edges` 中优先用 `FromPinName` / `ToPinName`（stable, schema-order-agnostic），VertexID 仅作 fallback。LLMMetaSound C++ generator (`LLMMetaSoundGenerator.cpp:626-676`) 走 PinName-first / VertexID-fallback 策略。
+> VertexID 由 schema 节点 `inputs[]` / `outputs[]` 数组顺序决定，随 UE MetaSound 插件版本变化而漂移。下面是当前 schema (`Plugins/LLMMetaSound/Config/Schemas/LLMMetaSoundSchema.llmmetasoundschema`) 的快照——以实际 schema 为准。
 
-常见节点的端口索引（由注册表定义，可能因 UE 版本而异）：
+<!-- Forensic: see SKILL_CHANGELOG.md §1 (tool-fix-172 2026-06-29 line drift closure) -->
 
-**Oscillators（Sine/Saw/Square/Triangle/Noise）**：
-- index 0 = Audio（输出）
-- index 1 = Frequency（输入）
-- index 2 = FM（输入，可选）
+**Oscillators（Sine / Saw / Square / Triangle）** — inputs:
+- `[0]` Enabled (Bool)
+- `[1]` Bi Polar (Bool)
+- `[2]` Frequency (Float) ← 最常用
+- `[3]` Modulation (Audio, 旧 doc 误称 "FM")
+- `[4]` Sync (Trigger)
+- `[5]` Phase Offset (Float)
+- `[6]` Glide (Float)
+- `[7]` Type (Enum)
+- `[8]` Pulse Width (Float) — Square only
 
-**Ladder Filter**：
-- index 0 = Audio（输出）
-- index 0 = Audio（输入）
-- index 1 = Cutoff（输入）
-- index 2 = Resonance（输入）
+output: `[0]` Audio
 
-**Envelope Follower**：
-- index 0 = Audio（输出）
-- index 1 = Audio（输入）
-- index 2 = Enable（输入，布尔）
+**Noise** — inputs:
+- `[0]` Seed (Int32)
+- `[1]` Type (Enum)
+
+> Noise **没有 Frequency 输入**（旧 doc 误包含）。
+
+output: `[0]` Audio
+
+**LFO** — inputs:
+- `[0]` Frequency (Float)
+- `[1]` Shape (Enum)
+- `[2]` Min Value (Float)
+- `[3]` Max Value (Float)
+- `[4]` Sync (Trigger)
+- `[5]` Phase Offset (Float)
+- `[6]` Pulse Width (Float)
+
+output: `[0]` Out (Float)
+
+**Ladder Filter** — inputs:
+- `[0]` In (Audio) ← 旧 doc 误称 "Audio"
+- `[1]` Cutoff Frequency (Float) ← 旧 doc 误称 "Cutoff"
+- `[2]` Resonance (Float)
+
+output: `[0]` Out (Audio) ← 旧 doc 误称 "Audio"
+
+**Envelope Follower** — inputs:
+- `[0]` Enable (Bool) ← 旧 doc 索引错位
+- `[1]` In (Audio) ← 旧 doc 误称 "Audio"
+- `[2]` Attack Time (Time)
+- `[3]` Release Time (Time)
+- `[4]` Peak Mode (Enum)
+
+outputs: `[0]` Envelope (Float), `[1]` Audio Envelope (Audio)
 
 ## Troubleshooting
 
@@ -375,3 +406,30 @@ MetaSound 定义使用 `.llmmetasound` 扩展名，格式为 LLM-friendly JSON�
 2. 在面板中粘贴或编写 `.llmmetasound` JSON
 3. 点击 Generate 生成 MetaSound 资产
 4. 可通过 Export 将已有 MetaSound 导出为 JSON 进行修改和重新生成
+
+## CLI Commands
+
+> **Note**: 注册名是 **`llmms`**（不是 `metasound` 或 `llmmetasound`）。`Plugins/LLMMetaSound/Source/LLMMetaSoundEditor/Private/LLMMetaSoundEditorModule.cpp` 通过 `Info.AbilityName = TEXT("llmms")` 注册 — `LLMEasyShell` dispatcher 看到 `metasound`/`llmmetasound` 会返回 `"Unknown command"`。
+
+llmms ability 注册 **3 个 sub-cmd**，runtime `llm-shell -q -j -c help llmms` 1:1 锁定：
+
+| subcommand | usage | description |
+|---|---|---|
+| `generate` | `llmms generate <assetPath> --from <filePath>` | 从 `.llmmetasound` JSON 文件生成 MetaSound 资产 (UMetaSoundSource 或 UMetaSoundPatch, 由 Metadata.NodeType 决定) |
+| `export` | `llmms export <assetPath> [--output <filePath>]` | 导出 MetaSound 资产到 `.llmmetasound` JSON (默认输出到 `Saved/Exported_<AssetName>.llmmetasound`) |
+| `inspect` | `llmms inspect <assetPath>` | 查看 MetaSound 资产结构: node 数量 + graph inputs/outputs + 节点列表 (前 20) |
+
+```bash
+# 生成 MetaSound
+llmms generate /Game/Audio/MySound --from MySound.llmmetasound
+
+# 导出为 JSON (用于 diff / 修改 / 翻译)
+llmms export /Game/Audio/MySound --output C:/Temp/export.llmmetasound
+
+# 检查结构
+llmms inspect /Game/Audio/MySound
+```
+
+<!-- Forensic: see SKILL_CHANGELOG.md §2 (tool-fix-07 session61 3 sub-cmd silent-missing closure) -->
+
+<!-- canonical audit count: doc-audit.py --summary runtime; single source of truth (no paired-sync needed) -->

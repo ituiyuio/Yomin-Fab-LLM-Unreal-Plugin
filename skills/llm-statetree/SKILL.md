@@ -32,16 +32,16 @@ StateTree 定义使用 `.llmstate` 扩展名，格式为 JSON。
 {
   "name": "SimpleAI",
   "version": "1.0",
-  "parameters": [
-    { "name": "IdleDuration", "type": "float", "default": 2.0 },
-    { "name": "ChaseSpeed", "type": "float", "default": 600.0 }
-  ],
+  "parameters": {
+    "IdleDuration": { "type": "float", "default": 2.0 },
+    "ChaseSpeed": { "type": "float", "default": 600.0 }
+  },
   "states": [
     {
       "name": "Idle",
       "type": "State",
       "tasks": [
-        { "type": "StateTreeDelayTask", "name": "Wait", "properties": { "Duration": "${Param.IdleDuration}" } }
+        { "type": "StateTreeDelayTask", "name": "Wait", "properties": { "Duration": "${Parameters.IdleDuration}" } }
       ],
       "transitions": [
         { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Chase" }
@@ -51,7 +51,7 @@ StateTree 定义使用 `.llmstate` 扩展名，格式为 JSON。
       "name": "Chase",
       "type": "State",
       "tasks": [
-        { "type": "StateTreeMoveToTask", "name": "MoveToTarget", "properties": { "AcceptableRadius": 50.0 } }
+        { "type": "StateTreeDelayTask", "name": "ChaseWait", "properties": { "Duration": 0.5 } }
       ],
       "transitions": [
         { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Attack" }
@@ -75,17 +75,17 @@ StateTree 定义使用 `.llmstate` 扩展名，格式为 JSON。
 
 ### Parameters
 
-StateTree 全局参数，可在 Task 中通过 `${Param.Name}` 绑定：
+StateTree 全局参数，可在 Task 中通过 `${Parameters.Name}` 绑定：
 
 ```json
-"parameters": [
-  { "name": "PatrolRadius", "type": "float", "default": 500.0 },
-  { "name": "ChaseSpeed", "type": "float", "default": 600.0 },
-  { "name": "CanAttack", "type": "bool", "default": true }
-]
+"parameters": {
+  "PatrolRadius": { "type": "float", "default": 500.0 },
+  "ChaseSpeed": { "type": "float", "default": 600.0 },
+  "CanAttack": { "type": "bool", "default": true }
+}
 ```
 
-**Types:** `float`, `int`, `bool`, `string`, `vector`, `rotator`
+**Types:** `float`, `int`, `bool`, `string`
 
 ### Evaluators
 
@@ -100,6 +100,10 @@ StateTree 全局参数，可在 Task 中通过 `${Param.Name}` 绑定：
   }
 ]
 ```
+
+> **⚠️ Schema 状态**: `StateTreeNodeSchema.llmstateschema` 的 `Evaluator` category 当前为 **0 个具体节点**（仅 `Task` 3 / `Condition` 13 / `Consideration` 3）。
+> `StateTreeEvaluatorBase` 是 UE 抽象基类，不能直接实例化；需要 AIModule / 项目内具体子类才能 resolve。
+> 在 LLMStateTree plugin 补全 Evaluator 节点前，建议用 `parameters` 配合 Task 内读取替代。
 
 ### States
 
@@ -125,7 +129,7 @@ StateTree 的核心，定义 AI 状态和转换：
 | Behavior | Description |
 |----------|-------------|
 | `TrySelectChildrenInOrder` | 按顺序尝试选择子状态 |
-| `SelectBehaviorChildWithHighestUtility` | 选择效用最高的子状态 |
+| `TrySelectChildrenWithHighestUtility` | 选择效用最高的子状态 |
 
 ## Node Types
 
@@ -136,9 +140,10 @@ StateTree 的核心，定义 AI 状态和转换：
 | Type | Description |
 |------|-------------|
 | `StateTreeDelayTask` | 延迟等待 |
-| `StateTreeMoveToTask` | 移动到目标/位置 |
 | `StateTreeDebugTextTask` | 绘制调试文本 |
 | `StateTreeRunParallelStateTreeTask` | 并行运行另一个 StateTree |
+
+> **⚠️ 注**: `StateTreeMoveToTask` 不在 `StateTreeNodeSchema.llmstateschema` 的 Task 列表中（AIModule plugin 提供但需显式 enable）。Schema 默认只暴露上表 3 个。
 
 **Common Task Properties:**
 ```json
@@ -161,9 +166,12 @@ StateTree 的核心，定义 AI 状态和转换：
 | `StateTreeCompareFloatCondition` | 浮点数比较 |
 | `StateTreeCompareIntCondition` | 整数比较 |
 | `StateTreeCompareBoolCondition` | 布尔比较 |
+| `StateTreeCompareEnumCondition` | 枚举比较 |
+| `StateTreeCompareNameCondition` | FName 比较 |
 | `StateTreeCompareDistanceCondition` | 距离比较 |
 | `GameplayTagMatchCondition` | GameplayTag 匹配 |
 | `GameplayTagContainerMatchCondition` | Tag 容器匹配 |
+| `GameplayTagQueryCondition` | Tag Query 容器匹配 |
 | `StateTreeObjectIsValidCondition` | 对象有效性检查 |
 | `StateTreeObjectEqualsCondition` | 对象相等检查 |
 | `StateTreeObjectIsChildOfClassCondition` | 类继承检查 |
@@ -207,21 +215,27 @@ Utility AI 效用计算因子：
     "trigger": "OnCondition",
     "type": "GotoState",
     "target": "Chase",
-    "condition": {
-      "type": "StateTreeCompareDistanceCondition",
-      "properties": { "Operator": "Less", "Distance": 500.0 }
-    }
+    "conditions": [
+      {
+        "type": "StateTreeCompareDistanceCondition",
+        "properties": { "Operator": "Less", "Distance": 500.0 }
+      }
+    ]
   }
 ]
 ```
+
+> **⚠️ 注**: transition 字段是 **`conditions`**（复数数组），不是 `condition`。Parser 在 `LLMStateTreeParser.cpp:442/718` 用 `GetArrayField("conditions")`，单数 `condition` 会被静默丢弃。
+
+<!-- Forensic: see SKILL_CHANGELOG.md §1 (tool-fix-172 2026-06-29 line drift closure) -->
 
 **Transition Triggers:**
 | Trigger | Description |
 |---------|-------------|
 | `OnStateCompleted` | 状态完成时 |
 | `OnCondition` | 条件满足时 |
-| `OnSucceeded` | Task 成功时 |
-| `OnFailed` | Task 失败时 |
+| `OnStateSucceeded` | Task 成功时 |
+| `OnStateFailed` | Task 失败时 |
 
 **Transition Types:**
 | Type | Description |
@@ -237,16 +251,15 @@ Utility AI 效用计算因子：
 
 ```json
 "properties": {
-  "Duration": "${Param.IdleDuration}",
-  "AcceptableRadius": 100.0,
-  "MovementSpeed": "${Param.ChaseSpeed}"
+  "Duration": "${Parameters.IdleDuration}",
+  "MovementSpeed": "${Parameters.ChaseSpeed}"
 }
 ```
 
 **Binding Scopes:**
 | Scope | Example |
 |-------|---------|
-| `${Param.Name}` | 全局参数 |
+| `${Parameters.Name}` | 全局参数 |
 | `${Evaluators.Name.Property}` | Evaluator 属性 |
 | `${Context.Name}` | Context 属性（由 Schema 定义） |
 
@@ -263,7 +276,7 @@ Utility AI 效用计算因子：
       "name": "Patrol_Move",
       "type": "State",
       "tasks": [
-        { "type": "StateTreeMoveToTask", "name": "Move", "properties": { "AcceptableRadius": 100.0 } }
+        { "type": "StateTreeDelayTask", "name": "MoveWait", "properties": { "Duration": 0.5 } }
       ],
       "transitions": [
         { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Patrol_Wait" }
@@ -289,7 +302,7 @@ Utility AI 效用计算因子：
   "name": "Chase",
   "type": "State",
   "tasks": [
-    { "type": "StateTreeMoveToTask", "name": "ChaseTarget", "properties": { "AcceptableRadius": 50.0 } }
+    { "type": "StateTreeDelayTask", "name": "ChaseCooldown", "properties": { "Duration": 0.5 } }
   ],
   "transitions": [
     { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Attack" }
@@ -313,13 +326,15 @@ Utility AI 效用计算因子：
   "trigger": "OnCondition",
   "type": "GotoState",
   "target": "Chase",
-  "condition": {
-    "type": "StateTreeCompareDistanceCondition",
-    "properties": {
-      "Distance": 500.0,
-      "Operator": "Less"
+  "conditions": [
+    {
+      "type": "StateTreeCompareDistanceCondition",
+      "properties": {
+        "Distance": 500.0,
+        "Operator": "Less"
+      }
     }
-  }
+  ]
 }
 ```
 
@@ -340,7 +355,7 @@ Utility AI 效用计算因子：
 {
   "name": "Root",
   "type": "Group",
-  "selectionBehavior": "SelectBehaviorChildWithHighestUtility",
+  "selectionBehavior": "TrySelectChildrenWithHighestUtility",
   "children": [
     {
       "name": "Idle",
@@ -351,17 +366,17 @@ Utility AI 效用计算因子：
     {
       "name": "Patrol",
       "type": "State",
-      "tasks": [{ "type": "StateTreeMoveToTask", "name": "Move", "properties": {} }],
+      "tasks": [{ "type": "StateTreeDelayTask", "name": "MoveWait", "properties": { "Duration": 1.0 } }],
       "transitions": [
-        { "trigger": "OnCondition", "type": "GotoState", "target": "Chase", "condition": { ... } }
+        { "trigger": "OnCondition", "type": "GotoState", "target": "Chase", "conditions": [{ ... }] }
       ]
     },
     {
       "name": "Chase",
       "type": "State",
-      "tasks": [{ "type": "StateTreeMoveToTask", "name": "Chase", "properties": {} }],
+      "tasks": [{ "type": "StateTreeDelayTask", "name": "ChaseWait", "properties": { "Duration": 0.5 } }],
       "transitions": [
-        { "trigger": "OnCondition", "type": "GotoState", "target": "Patrol", "condition": { ... } }
+        { "trigger": "OnCondition", "type": "GotoState", "target": "Patrol", "conditions": [{ ... }] }
       ]
     }
   ]
@@ -375,12 +390,12 @@ Utility AI 效用计算因子：
   "name": "GuardAI",
   "version": "1.0",
   "description": "Guard AI with patrol, chase, and attack states",
-  "parameters": [
-    { "name": "PatrolRadius", "type": "float", "default": 500.0 },
-    { "name": "ChaseSpeed", "type": "float", "default": 600.0 },
-    { "name": "DetectionRange", "type": "float", "default": 800.0 },
-    { "name": "AttackRange", "type": "float", "default": 150.0 }
-  ],
+  "parameters": {
+    "PatrolRadius": { "type": "float", "default": 500.0 },
+    "ChaseSpeed": { "type": "float", "default": 600.0 },
+    "DetectionRange": { "type": "float", "default": 800.0 },
+    "AttackRange": { "type": "float", "default": 150.0 }
+  },
   "states": [
     {
       "name": "Idle",
@@ -401,7 +416,7 @@ Utility AI 效用计算因子：
           "name": "Patrol_Move",
           "type": "State",
           "tasks": [
-            { "type": "StateTreeMoveToTask", "name": "MoveToPoint", "properties": { "AcceptableRadius": 100.0 } }
+            { "type": "StateTreeDelayTask", "name": "MoveWait", "properties": { "Duration": 1.0 } }
           ],
           "transitions": [
             { "trigger": "OnStateCompleted", "type": "GotoState", "target": "Patrol_Wait" }
@@ -423,10 +438,12 @@ Utility AI 效用计算因子：
           "trigger": "OnCondition",
           "type": "GotoState",
           "target": "Chase",
-          "condition": {
-            "type": "StateTreeCompareDistanceCondition",
-            "properties": { "Distance": "${Param.DetectionRange}", "Operator": "Less" }
-          }
+          "conditions": [
+            {
+              "type": "StateTreeCompareDistanceCondition",
+              "properties": { "Distance": "${Parameters.DetectionRange}", "Operator": "Less" }
+            }
+          ]
         }
       ]
     },
@@ -435,12 +452,9 @@ Utility AI 效用计算因子：
       "type": "State",
       "tasks": [
         {
-          "type": "StateTreeMoveToTask",
-          "name": "ChaseTarget",
-          "properties": {
-            "AcceptableRadius": 50.0,
-            "MovementSpeed": "${Param.ChaseSpeed}"
-          }
+          "type": "StateTreeDelayTask",
+          "name": "ChaseWait",
+          "properties": { "Duration": 0.5 }
         }
       ],
       "transitions": [
@@ -448,19 +462,23 @@ Utility AI 效用计算因子：
           "trigger": "OnCondition",
           "type": "GotoState",
           "target": "Attack",
-          "condition": {
-            "type": "StateTreeCompareDistanceCondition",
-            "properties": { "Distance": "${Param.AttackRange}", "Operator": "Less" }
-          }
+          "conditions": [
+            {
+              "type": "StateTreeCompareDistanceCondition",
+              "properties": { "Distance": "${Parameters.AttackRange}", "Operator": "Less" }
+            }
+          ]
         },
         {
           "trigger": "OnCondition",
           "type": "GotoState",
           "target": "Patrol",
-          "condition": {
-            "type": "StateTreeCompareDistanceCondition",
-            "properties": { "Distance": "${Param.DetectionRange}", "Operator": "Greater" }
-          }
+          "conditions": [
+            {
+              "type": "StateTreeCompareDistanceCondition",
+              "properties": { "Distance": "${Parameters.DetectionRange}", "Operator": "Greater" }
+            }
+          ]
         }
       ]
     },
@@ -480,17 +498,40 @@ Utility AI 效用计算因子：
 
 ## CLI Commands
 
+> **Note**: 实际命令名是 **`llmstatetree`**（带 `llm` 前缀）。直接打 `statetree` 会被 LLMEasyShellSubsystem 的 `CommandToAbilityMap` 判为 unknown ability，返回 `"Unknown command: statetree"`（LLMEasyShellSubsystem.cpp:977 `EShellErrorCode::NotFound` 分支）。
+>
+<!-- Forensic: see SKILL_CHANGELOG.md §2 (tool-fix-156 2026-06-29 cross-subsystem misattribution) -->
+
 生成 StateTree:
 ```bash
-statetree generate /Game/AI/GuardAI --from GuardAI.llmstate
+llmstatetree generate /Game/AI/GuardAI --from GuardAI.llmstate
 ```
 
 检查 StateTree:
 ```bash
-statetree inspect /Game/AI/GuardAI --states
+llmstatetree inspect /Game/AI/GuardAI --states
 ```
 
 导出 StateTree:
 ```bash
-statetree export /Game/AI/GuardAI --output C:/Temp/AI.llmstate
+llmstatetree export /Game/AI/GuardAI --output C:/Temp/AI.llmstate
 ```
+
+复制 StateTree (序列化 → 重新生成到新路径):
+```bash
+llmstatetree copy /Game/AI/GuardAI /Game/AI/GuardAI_v2
+```
+
+删除 StateTree 资产 (`--force` 跳过脏数据确认):
+```bash
+llmstatetree delete /Game/AI/GuardAI --force
+```
+
+强制 StateTree 重新编译 (绕过 cached 空 state, PIE 之前必跑):
+```bash
+llmstatetree compile /Game/AI/GuardAI
+```
+
+<!-- Forensic: see SKILL_CHANGELOG.md §3 (tool-fix-07 session60 3→6 sub-cmd silent-missing closure) -->
+
+<!-- canonical audit count: doc-audit.py --summary runtime; single source of truth (no paired-sync needed) -->

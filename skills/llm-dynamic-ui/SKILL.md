@@ -20,15 +20,19 @@ UI 定义文件使用 `.llmui` 扩展名（LLM UI DSL），格式为 JSON。
 
 ## Reference Files
 
-**UMG 属性字典**: `Plugins/LLMDynamicUI/Content/Schemas/PropertySchema.llmschema` - 包含所有 UMG Widget 的完整属性定义
+**UMG 属性字典**: `Plugins/LLMDynamicUI/Config/Schemas/PropertySchema.llmschema` - 包含所有 UMG Widget 的完整属性定义
 
-**CommonUI Schema**: `Plugins/LLMDynamicUI/Content/Schemas/CommonUISchema.llmschema` - CommonUI 控件定义，支持游戏菜单、手柄导航、InputAction 绑定
+**CommonUI Schema**: `Plugins/LLMDynamicUI/Config/Schemas/CommonUISchema.llmschema` - CommonUI 控件定义，支持游戏菜单、手柄导航、InputAction 绑定
 
-**动画属性字典**: `Plugins/LLMDynamicUI/Content/Schemas/AnimPropertySchema.llmschema` - 包含所有可动画属性的定义（Track类型、值类型、使用示例）
+**动画属性字典**: `Plugins/LLMDynamicUI/Config/Schemas/AnimPropertySchema.llmschema` - 包含所有可动画属性的定义（Track类型、值类型、使用示例）
 
-**SDF 效果字典**: `Plugins/LLMDynamicUI/Content/Schemas/SDFSchema.llmschema` - 包含 SDF 视觉效果（阴影、发光、边框、渐变）的完整定义
+**SDF 效果字典**: `Plugins/LLMDynamicUI/Config/Schemas/SDFSchema.llmschema` - 包含 SDF 视觉效果（阴影、发光、边框、渐变）的完整定义
 
-**示例目录**: `Plugins/LLMDynamicUI/Content/Samples/` - 包含完整的 UI 示例 `.llmui` 文件
+**Widget 类型字典**: `Plugins/LLMDynamicUI/Config/Schemas/WidgetTypeSchema.llmschema` - 24 个 UMG Widget 类型（15 Container + 4 Input + 5 Primitive），含每个 widget 的 `widgetClass` / `isContainer` / `hasCommonUI` / `animatableProperties` / `aliases` 等元数据。供 `ui list-types` 和 schema-aware 生成器读取。
+
+**示例目录**: `Plugins/LLMDynamicUI/Config/Samples/` - 包含完整的 UI 示例 `.llmui` 文件：
+- `CommonUI_Example.llmui` - visionOS Liquid Glass 风格登录界面（启用 CommonUI, parentClass=`CommonActivatableWidget`）
+- `NativeUMG_Example.llmui` - 原生 UMG 示例（无 CommonUI, 纯 UUserWidget 派生）
 
 ## Quick Start
 
@@ -156,18 +160,21 @@ UI 定义文件使用 `.llmui` 扩展名（LLM UI DSL），格式为 JSON。
 | `GridPanel` | UGridPanel | 网格布局 |
 | `UniformGridPanel` | UUniformGridPanel | 均匀网格 |
 | `WidgetSwitcher` | UWidgetSwitcher | 切换显示子控件 |
+| `BackgroundBlur` | UBackgroundBlur | 背景模糊控件（visionOS Liquid Glass 效果, 由 SDFBox `backdropBlur` 自动组合） |
+| `RetainerBox` | URetainerBox | 渲染缓存容器，优化复杂子树的离屏渲染性能 |
+| `InvalidationBox` | UInvalidationBox | 失效标记容器，子树显式失效时主动重绘（避免 ticker 强制刷新） |
 
 ### Leaf Widgets
 | Type | UE Class | Description |
 |------|----------|-------------|
-| `Text` | UTextBlock | 文本显示 |
+| `Text` | UTextBlock | 文本显示 (别名: `TextBlock`) |
 | `Button` | UButton | 按钮 |
 | `Image` | UImage | 图片 |
-| `InputField` | UEditableText | 输入框 (别名: `EditableText`) |
+| `InputField` | UEditableTextBox | 输入框 (别名: `EditableText`, `EditableTextBox`) |
 | `ProgressBar` | UProgressBar | 进度条 |
 | `Slider` | USlider | 滑动条 |
 | `CheckBox` | UCheckBox | 复选框 |
-| `ComboBox` | UComboBoxString | 下拉框 |
+| `ComboBoxString` | UComboBoxString | 下拉框 (别名: `ComboBox`) |
 | `Spacer` | USpacer | 占位空间 |
 
 ### Effects Widgets
@@ -205,28 +212,6 @@ UI 定义文件使用 `.llmui` 扩展名（LLM UI DSL），格式为 JSON。
 **不适用:**
 - LLM 生成的 UI（使用内联样式即可）
 - 同一文件内复用样式（自动去重机制已处理）
-
-## Configuration (配置选项)
-
-在文档根级别设置生成配置：
-
-```json
-{
-  "version": "2.0",
-  "name": "MyUI",
-  "config": {
-    "bUseCommonUI": true,
-    "commonUILayer": "Menu",
-    "commonUIInputMode": "UI"
-  },
-  "rootWidget": { ... }
-}
-```
-
-**配置项说明:**
-- `bUseCommonUI`: 是否使用 `UCommonActivatableWidget` 作为父类 (默认: false)
-- `commonUILayer`: CommonUI 层级，可选值: `Game`, `Menu`, `Popup`, `Dialog`, `Modal`
-- `commonUIInputMode`: 输入模式，可选值: `Game`, `UI`, `All`
 
 ## Slot Properties (布局属性)
 
@@ -309,7 +294,7 @@ UI 定义文件使用 `.llmui` 扩展名（LLM UI DSL），格式为 JSON。
   "text": "显示文本",
   "placeholder": "输入提示",
   "isPassword": false,
-  "progress": 0.75,
+  "percent": 0.75,
   "sliderValue": 0.5,
   "isChecked": false,
   "wrapping": 2,
@@ -320,7 +305,7 @@ UI 定义文件使用 `.llmui` 扩展名（LLM UI DSL），格式为 JSON。
 - `text`: Text/Button 的文本内容
 - `placeholder`: InputField 的提示文本
 - `isPassword`: 是否为密码输入框
-- `progress`: ProgressBar 进度 (0-1)
+- `percent`: ProgressBar 进度 (0-1)
 - `sliderValue`: Slider 值 (0-1)
 - `isChecked`: CheckBox 是否选中
 - `wrapping`: 文本换行模式: 0=NoWrap, 1=Wrap, 2=AutoWrap (默认)
@@ -360,6 +345,8 @@ UI 定义文件使用 `.llmui` 扩展名（LLM UI DSL），格式为 JSON。
 **自动类型推断:**
 - `parentClass` 为 CommonUI 时，`Text` → `CommonText`，`Button` → `CommonButton`
 - 样式自动应用到对应 CommonUI 控件
+
+> **Note**: 启用 CommonUI 模式只需设置 `parentClass` 为 `CommonActivatableWidget` 或 `CommonUserWidget`。文档根级别的 `"config"` 块（含 `bUseCommonUI` / `commonUILayer` / `commonUIInputMode` 字段）**不会被 `LLMJsonParser::ParseFromJsonObject` 读取**（见 `LLMJsonParser.cpp:51-137` 只解析 `version` / `name` / `parentClass` / `metadata` / `globalAnimations` / `styles` / `rootWidget` 这 7 个根字段），JSON 里写 `config` 块会被静默丢弃。如需设置 CommonUI Layer / InputMode，请用 CLI flag `--layer` 或在 C++ 里构造 `FLLMUMGGeneratorConfig` 传参。
 
 ## Style Properties (样式属性)
 
@@ -463,8 +450,8 @@ UI 定义文件使用 `.llmui` 扩展名（LLM UI DSL），格式为 JSON。
   {
     "name": "colorPulse",
     "property": "BackgroundColor",
-    "fromColor": { "R": 0.2, "G": 0.5, "B": 0.8, "A": 1 },
-    "toColor": { "R": 0.4, "G": 0.7, "B": 1.0, "A": 1 },
+    "fromValue": 0.2,
+    "toValue": 1.0,
     "duration": 1.5,
     "easing": "InOutSine",
     "loop": -1,
@@ -473,23 +460,27 @@ UI 定义文件使用 `.llmui` 扩展名（LLM UI DSL），格式为 JSON。
 ]
 ```
 
+> **Note**: `fromColor` / `toColor` 字段**尚未被 `ParseAnimation` 解析**（见 `LLMJsonPropertyParsers.cpp:302-365` 只读 `fromValue` / `toValue` / `fromVector` / `toVector`）。`FLLMAnimation.FromColor` / `ToColor` struct 字段（`LLMJsonSchema.h:348, 352`）保持默认黑色 init，写了会被静默丢弃。如需 RGBA 多通道动画，请用 `fromVector` / `toVector`（支持 2 通道，如 `{"x": 0.2, "y": 0.5}`），或为 Color property 暂时只走单通道插值。
+
 ### 关键帧动画
 
 ```json
 "animations": [
   {
     "name": "bounce",
-    "property": "RenderScale",
+    "property": "RenderOpacity",
     "keyframes": [
-      { "time": 0, "value": { "x": 1.0, "y": 1.0 } },
-      { "time": 0.1, "value": { "x": 1.2, "y": 1.2 } },
-      { "time": 0.2, "value": { "x": 0.9, "y": 0.9 } },
-      { "time": 0.3, "value": { "x": 1.05, "y": 1.05 } },
-      { "time": 0.4, "value": { "x": 1.0, "y": 1.0 } }
+      { "time": 0.0, "value": 1.0 },
+      { "time": 0.1, "value": 0.8 },
+      { "time": 0.2, "value": 1.2 },
+      { "time": 0.3, "value": 0.95 },
+      { "time": 0.4, "value": 1.0 }
     ]
   }
 ]
 ```
+
+> **Note**: `FLLMKeyframe.Value` 是 `float` 单值（`LLMJsonSchema.h:303`），`ParseKeyframe` 用 `TryGetNumberField("value", Kf.Value)`（`LLMJsonPropertyParsers.cpp:368-386`）只读 scalar。**Keyframes 不支持 Vector2D** —— 用 `{ "x": 1.0, "y": 1.0 }` 这种 object 形式写 keyframe 会被 `TryGetNumberField` 静默丢弃，得到 0.0 值。如需多通道动画，请用 `fromVector` / `toVector`（2D Vector 插值），或拆成多个 scalar 动画（每个通道一个 `property`）。
 
 ### Easing Types
 
@@ -506,7 +497,7 @@ UI 定义文件使用 `.llmui` 扩展名（LLM UI DSL），格式为 JSON。
 系统使用**动画属性注册表**，支持动态扩展新的可动画属性。查看完整属性列表：
 
 ```
-Plugins/LLMDynamicUI/Content/Schemas/AnimPropertySchema.llmschema
+Plugins/LLMDynamicUI/Config/Schemas/AnimPropertySchema.llmschema
 ```
 
 或在编辑器中点击 **"Export Anim Props"** 按钮导出最新字典。
@@ -590,7 +581,7 @@ SDFBox 支持 `backdropBlur` 属性实现背景模糊效果，系统自动组合
 - `Subtle(32)`: 轻微模糊
 - `Frosted(80)`: 强磨砂效果
 
-详细属性参考: `Plugins/LLMDynamicUI/Content/Schemas/SDFSchema.llmschema`
+详细属性参考: `Plugins/LLMDynamicUI/Config/Schemas/SDFSchema.llmschema`
 
 ### 固定高度行 (输入框/按钮)
 ```json
@@ -652,10 +643,10 @@ SDFBox 支持 `backdropBlur` 属性实现背景模糊效果，系统自动组合
 ```json
 {
   "type": "ProgressBar",
-  "content": { "progress": 0 },
+  "content": { "percent": 0 },
   "animations": [{
     "name": "fillProgress",
-    "property": "progress",
+    "property": "Percent",
     "fromValue": 0,
     "toValue": 1,
     "duration": 2.0,
@@ -775,8 +766,15 @@ LLMDynamicUI does **not** use the Python Ability framework (`LLMShellAbilitiesLi
 ```cpp
 // Compile-time: detected via CheckModuleExists("LLMEasyShellLite")
 #if WITH_LLMEASYSHELL_LITE
-    FCoreDelegates::OnAllModuleLoadingPhasesComplete.AddRaw(
-        this, &FLLMDynamicUIEditorModule::RegisterWithLLMEasyShellLite);
+    // v1.1 fix: AddLambda with raw `this` capture (instead of AddRaw or
+    // TWeakObjectPtr<IModuleInterface>). The module is an IModuleInterface, not
+    // a UObject, so TWeakObjectPtr static_asserts. ShutdownModule removes the
+    // binding via the stored FDelegateHandle to prevent dangling dispatch.
+    LiteShellDelegateHandle = FCoreDelegates::OnAllModuleLoadingPhasesComplete.AddLambda(
+        [this]()
+        {
+            this->RegisterWithLLMEasyShellLite();
+        });
 #endif
 ```
 
@@ -784,9 +782,8 @@ At editor startup, the editor module checks for `/Script/LLMEasyShellLite.LLMEas
 
 ### Why the Same Handler Works for Both Shells
 
-The two shells' command dispatchers look for different UFUNCTION names by default:
-- **Full** (`ULLMEasyShellSubsystem`) prefers `ExecuteWithResult`, falls back to `Execute`
-- **Lite** (`ULLMEasyShellLiteSubsystem`) only knows `Execute` (base class `ULLMEasyShellAbilityCommandObjectLite`)
+The two shells' command dispatchers follow the same priority (Lite matches Full as of v1.1):
+- **Both Full (`ULLMEasyShellSubsystem`) and Lite (`ULLMEasyShellLiteSubsystem`)** try `ExecuteWithResult` first, fall back to `Execute` if not present (see `LLMEasyShellLiteSubsystem.cpp:392` ExecuteWithResult → L432 Execute fallback)
 
 LLMDynamicUI's `ULLMDynamicUICommandHandler` exposes **both** UFUNCTIONs:
 ```cpp
@@ -821,3 +818,45 @@ llmshelllite ui export-schema --output C:/Temp/schema.json
 - `WITH_LLMEASYSHELL_LITE=1` if `Plugins/LLMEasyShellLite/` exists
 
 Both can be 1 simultaneously (e.g. dev workstation with both shells installed). The two `ui` abilities are independent — each shell's CLI sees only its own registered commands.
+
+## CLI Commands
+
+> **Note**: 注册名是 **`ui`**（不是 `dynamicui` 或 `llmdynamicui`）。`Plugins/LLMDynamicUI/Source/LLMDynamicUI/Private/LLMDynamicUIModule.cpp` 通过 `Info.AbilityName = TEXT("ui")` 注册 — `LLMEasyShell` dispatcher 看到 `dynamicui`/`llmdynamicui` 会返回 `"Unknown command"`。
+
+ui ability 注册 **4 个 sub-cmd**，runtime `llm-shell -q -j -c help ui` 1:1 锁定：
+
+| subcommand | usage | description |
+|---|---|---|
+| `generate` | `ui generate <assetPath> --from <filePath> [--common-ui] [--layer <Menu\|Game\|Popup>]` | 从 `.llmui` JSON 定义生成 UWidgetBlueprint |
+| `export` | `ui export <assetPath> [--output <filePath>]` | 导出 UWidgetBlueprint 为 `.llmui` JSON |
+| `list-types` | `ui list-types [--category <category>]` | 列出可用的 widget 类型（可按 category 过滤） |
+| `export-schema` | `ui export-schema [--output <filePath>]` | 导出 widget type schema 为 JSON 文件 |
+
+```bash
+# 生成 UMG widget
+ui generate /Game/UI/MyWidget --from MyWidget.llmui --layer Game
+
+# 导出为 JSON
+ui export /Game/UI/MyWidget --output C:/Temp/widget.llmui
+
+# 列出所有 widget 类型
+ui list-types
+
+# 导出完整 schema (LLM 消费用)
+ui export-schema --output C:/Temp/widget-types.json
+```
+
+<!-- Forensic: see SKILL_CHANGELOG.md §1 (tool-fix-07 session61, original L849) -->
+
+## 经验库 / Known Pitfalls
+
+`references/` 目录汇总了 LLMDynamicUI 历史踩坑：
+
+- **1.1.1 patch 版本号机制**：`llmdynamicui-1-1-0-tagged-pre-patch-2026-06-17.md`（`--follow-tags` 在本机 remote 不推新 tag）
+- **ParentClass 模式**：`llmdynamicui-parentclass-pattern.md`（UMG widget 必继承自 LLMDynamicUIBase 才能正确加载 schema）
+- **`ui generate` 崩溃（PNG 未 import）**：`ui-generate-crash-2026-06-25.md` — ⚠️ **[STALE/SUPERSEDED tool-fix-152 2026-06-29]** 原文档 rootCause 引用了不存在的 `imagePath` JSON 字段(LLMDynamicUI Image widget 仅用 style brush fields),且 `--from` 描述错误(实际是必需 flag 不是 warning)。Current correct usage 见该 doc "[Current Correct Usage]" 章节。
+
+<!-- Forensic: see SKILL_CHANGELOG.md §2 (tool-fix-164 2026-06-29, original L859) -->
+
+
+<!-- Forensic: see SKILL_CHANGELOG.md §3 (tool-fix-257 2026-06-29, original L862) -->

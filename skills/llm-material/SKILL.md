@@ -19,9 +19,9 @@ Material 定义文件使用 `.llmmat` 扩展名（LLM Material DSL），格式�
 
 ## Reference Files
 
-**Expression Schema**: `Plugins/LLMMaterial/Content/MaterialExpressionSchema.json` - 包含所有 Material Expression 节点的完整定义（输入、输出、属性）
+**Expression Schema**: `Plugins/LLMMaterial/Config/MaterialExpressionSchema.llmschema` - 包含所有 Material Expression 节点的完整定义（输入、输出、属性）
 
-**示例目录**: `Plugins/LLMMaterial/Content/Examples/` - 包含完整的材质示例 `.llmmat` 文件
+**示例目录**: `Plugins/LLMMaterial/Config/Examples/` - 包含完整的材质示例 `.llmmat` 文件
 
 ## Quick Start
 
@@ -241,7 +241,7 @@ Custom 节点自动填充 `Code = "return MyFresnel(Normal, ViewDir, Power);"`�
 | `Custom` | 自定义 HLSL 代码 | `Code` 或 `HeaderRef`+`OutputType`+`Inputs` | 动态（通过 Inputs 定义） |
 
 **属性说明**：
-- `Code` - 直接写入的 HLSL 代码（如 `return sin(vormal) * 0.5 + 0.5;`）
+- `Code` - 直接写入的 HLSL 代码（如 `return sin(Normal) * 0.5 + 0.5;`）
 - `HeaderRef` - 引用 `functions` 中定义的函数名，自动生成 `return FuncName(args);`
 - `OutputType` - 输出类型：`CMOT_Float1`/`CMOT_Float2`/`CMOT_Float3`/`CMOT_Float4`
 - `Description` - 节点描述
@@ -639,38 +639,48 @@ LLMMaterial 支持 UE5 Substrate 分层材质系统。当 `.llmmat` 文件包含
 }
 ```
 
-### 硅胶材质（M_SiliconeDoll）- Substrate + USH 混合模式
+### 硅胶材质模板（参考 M_SiliconeDoll 设计 - Substrate + USH 混合模式）
 
-**文件**: `Content/Materials/M_SiliconeDoll.llmmat`
+> **⚠️ 这是模板/教学示例，不是已存在的资产**。`Content/Materials/M_SiliconeDoll.llmmat` **不存在**（filesystem 0 hits 全工程），只是文档作者当初设想的"完整硅胶材质应当长这样"的教学范本。生产可用的硅胶资产只有 3 个：
+> - `Content/Core/LLM/Materials/M_SiliconeSkin_v3.llmmat`（最接近本模板，纯 SSS 单 slab MSS_Diffusion）
+> - `Content/Core/LLM/Materials/M_TPESilicone_v7_NoSSS.llmmat`（TPE 硅胶，无 SSS）
+> - `Content/Core/LLM/Materials/M_TPESilicone_v8_AiCup.llmmat`（TPE 硅胶 v8，AiCup 用例）
+>
+> 唯一存在的 USH 文件只有 `Content/Shaders/SiliconeFresnel.ush` 1 个（`SiliconeSSSApprox.ush` / `SiliconeRimGlow.ush` / `SiliconeComposite.ush` 0 hits 全工程）。要参考真实写法，**打开 M_SiliconeSkin_v3.llmmat** 看其 `substrate.slabs.sss_skin` 节点配置。
 
-写实硅胶质感材质，适用于硅胶娃娃、软体机器人等场景。使用 SubstrateSlabBSDF 提供精确 PBR + SSS，配合 USH Custom HLSL 节点实现 Fresnel rim light 和 SSS 近似透光。
+写实硅胶质感材质的设计思路，适用于硅胶娃娃、软体机器人等场景。使用 SubstrateSlabBSDF 提供精确 PBR + SSS，配合 USH Custom HLSL 节点实现 Fresnel rim light 和 SSS 近似透光。
 
 核心特性：
 - **SubstrateSlabBSDF**：物理精确的 PBR，SSSMFP/SSSMFPScale 控制次表面散射颜色和半径
-- **SiliconeFresnel**（USH）：基于 IOR 计算 F0 的 Fresnel，边缘过渡更柔和（vs 玻璃的 sharp edge）
-- **SiliconeSSSApprox**（USH）：背光区域近似 SSS，红光穿透比蓝光更强
-- **SiliconeRimGlow**（USH）：边缘光晕，用于轮廓 highlight
+- **SiliconeFresnel**（USH，唯一已实现）：基于 IOR 计算 F0 的 Fresnel，边缘过渡更柔和（vs 玻璃的 sharp edge）
+- **SiliconeSSSApprox**（USH，模板）：背光区域近似 SSS，红光穿透比蓝光更强
+- **SiliconeRimGlow**（USH，模板）：边缘光晕，用于轮廓 highlight
 
-关键参数：
+关键参数（参考 M_SiliconeSkin_v3 实际值）：
 
 | 参数 | 默认值 | 说明 |
 |------|--------|-----|
-| `param_basecolor` | [0.95, 0.88, 0.82] | 基底颜色（暖粉调） |
-| `param_roughness` | 0.28 | 粗糙度（半光泽 doll surface） |
+| `param_basecolor` | [0.92, 0.72, 0.62] | 基底颜色（暖粉调，M_SiliconeSkin_v3 实际值） |
+| `param_roughness` | 0.18 | 粗糙度（M_SiliconeSkin_v3 实际值） |
 | `param_ior` | 1.42 | 折射率（硅胶典型值 1.40-1.50） |
 | `param_fresnel_exp` | 3.5 | Fresnel 指数（越大边缘越窄） |
 | `param_sss_scale` | 1.2 | SSS 散射半径 |
-| `param_sss_mfp_r/g/b` | 1.0/0.40/0.28 | SSS Mean Free Path 三通道（红散射最强） |
+| `param_sss_mfp_r/g/b` | 0.60/0.25/0.12 | SSS Mean Free Path 三通道（M_SiliconeSkin_v3 实际值，红散射最强） |
 | `param_rim_color` | [1.0, 0.95, 0.90] | 边缘光颜色 |
 | `param_rim_str` | 0.4 | 边缘光强度 |
 | `param_translucency` | 0.3 | SSS 透光强度 |
 
-生成方式：
-```
-material generate /Game/Materials/M_SiliconeDoll --from Content/Materials/M_SiliconeDoll.llmmat
+生产资产查看（不要按模板路径生成，路径不存在）：
+```bash
+# 查看 M_SiliconeSkin_v3 实际配置（最接近模板设计的真实资产）
+cat Content/Core/LLM/Materials/M_SiliconeSkin_v3.llmmat
+
+# 验证 USH 文件实际只有 1 个
+ls Content/Shaders/Silicone*.ush
+# → SiliconeFresnel.ush（其他 3 个模板列出的 USH 文件 0 hits 全工程）
 ```
 
-生成的 USH 文件：`/Game/Shaders/SiliconeFresnel.ush`、`SiliconeSSSApprox.ush`、`SiliconeRimGlow.ush`、`SiliconeComposite.ush`
+<!-- Forensic: see SKILL_CHANGELOG.md §1 (tool-fix-170 SiliconeDoll template asset/USH fossil closure) -->
 
 ### Subsurface 皮肤材质（SubsurfaceProfile）
 ```json
@@ -705,7 +715,7 @@ material generate /Game/Materials/M_SiliconeDoll --from Content/Materials/M_Sili
     }
   ],
   "connections": [
-    { "from": "fresnel", "fromPin": "Output", "to": "sssEmissive", "toPin": "A" },
+    { "from": "fresnel", "fromPin": "Result", "to": "sssEmissive", "toPin": "A" },
     { "from": "skinColor", "fromPin": "Result", "to": "sssEmissive", "toPin": "B" }
   ],
   "output": {
@@ -786,9 +796,9 @@ material generate /Game/Materials/M_SiliconeDoll --from Content/Materials/M_Sili
 
 修改布局参数请编辑：
 ```
-Plugins/LLMMaterial/Source/LLMMaterial/Builder/MaterialGraphBuilder.cpp
+Plugins/LLMMaterial/Source/LLMMaterial/Core/LLMMaterialTypes.h
 ```
-函数 `LayoutNodes()` 中的 `ColumnWidth`、`RowHeight`、`SourceColX`、`GridOriginY` 常量。
+`FLLMMaterialLayoutConfig` struct 中的 `ColumnWidth`、`RowHeight`、`SourceColX`、`GridOriginY` `static constexpr float` 常量（`Builder/MaterialGraphLayout.cpp:41-44` 读取）。原 `MaterialGraphBuilder.cpp::LayoutNodes()` 已退化为 9 行 delegate 到 `FMaterialGraphLayout::ApplySugiyama`。
 
 ## Editor Workflow
 
@@ -809,59 +819,75 @@ Plugins/LLMMaterial/Source/LLMMaterial/Builder/MaterialGraphBuilder.cpp
 
 ## Command Reference
 
+> **Source of truth**: 以下命令列表与 `Plugins/LLMMaterial/Source/LLMMaterial/LLMMaterialModule.cpp::BuildAbilityInfoJson()` 注册表一致(LLMEasyShell dispatcher 仅放行注册的子命令)。
+> 通用资产操作(创建/删除/复制/移动/查看/设置参数)由 **LLMEasyShell 主系统** 提供 (`new` `rm` `cp` `mv` `cat` `set`)，不在 material ability 重复注册。
+
+<!-- Forensic: see SKILL_CHANGELOG.md §2 (tool-fix-07 session62 5-subcommand count closure) -->
+
 ### Shell 命令
 
 ```bash
 # 从 JSON 生成材质
 material generate <assetPath> --from <filePath> [--domain <domain>] [--blending <blending>]
 
-# 查看材质信息
-material inspect <assetPath>
-
 # 导出材质到 JSON
 material export <assetPath> [--output <filePath>]
 
-# 创建新材质
-material create <assetPath> --domain <domain> [--blending <blending>]
+# 导出 Expression Schema (所有节点类型 + pin + property)
+material export-schema [--output <filePath>]
 
-# 设置材质参数
-material set <assetPath> <paramName> <value> [--type <scalar|vector|texture>]
+# 列出可用 MaterialExpression 节点类型
+material list-types [--category <category>] [--search <keyword>]
+
+# 查看节点类型详情 (pin / property / DSL 示例)
+material describe-type <typeName>
 ```
 
 ### 参数说明
 
 **generate**:
 - `assetPath` - 目标材质资产路径（如 `/Game/Materials/MyMaterial`）
-- `--from` - 源 JSON 文件路径
+- `--from` - 源 JSON 文件路径(支持 UE 路径 `/Game/...` `/Plugin/...` 或文件系统绝对路径)
 - `--domain` - 材质域（Surface/PostProcess/UI/VirtualTexture）
 - `--blending` - 混合模式（Opaque/Masked/Translucent/Additive）
 
-**inspect**:
-- `assetPath` - 要查看的材质资产路径
-
 **export**:
 - `assetPath` - 要导出的材质资产路径
-- `--output` - 输出 JSON 文件路径（可选，默认导出到 Saved 目录）
+- `--output` - 输出 JSON 文件路径（可选，默认导出到 `Saved/Exported_<MaterialName>.llmmat`）
 
-**create**:
-- `assetPath` - 新材质资产路径
-- `--domain` - 材质域
-- `--blending` - 混合模式
+**export-schema**:
+- `--output` - 输出 schema 文件路径（可选，默认导出到 `Config/MaterialExpressionSchema.llmschema`）
 
-**set**:
-- `assetPath` - 目标材质资产路径
-- `paramName` - 参数名称
-- `value` - 参数值
-- `--type` - 参数类型（scalar/vector/texture）
+**list-types**:
+- `--category` - 按分类过滤（Math/Texture/Constant/Coordinates/...）
+- `--search` - 按名称子串搜索
+
+**describe-type**:
+- `typeName` - 节点类型名（如 `Multiply` / `TextureSample` / `Add`）
 
 ## Schema Reference
 
 查看完整的 Expression 类型定义：
 ```
-Plugins/LLMMaterial/Content/MaterialExpressionSchema.json
+Plugins/LLMMaterial/Config/MaterialExpressionSchema.llmschema
 ```
 
 或在编辑器中使用命令导出：
 ```
 material export-schema --output C:/Temp/schema.json
 ```
+
+## 经验库 / Known Pitfalls
+
+`references/` 目录汇总了 12 个 Material 踩坑（Substrate / Nanite / multi-UE 兼容 / build pre-existing）：
+
+- **Substrate 崩溃 + SSS**：`llmmat-substrate-crash-fix.md`, `llmmat-substrate-sss-crash.md`, `llmmat-substrate-pipeline.md`
+- **Nanite + Substrate 错配**：`llmmat-nanite-crash.md`
+- **多 UE 兼容**：`ue55-material-api-survey-2026-06-17.md`（SubsurfaceProfile.Implementation 仅 5.6+, GetMaterialResource 5.7 EShaderPlatform）
+- **隐式零值陷阱**：`llmmat-value-vs-constant-zeroblack.md`（属性名必须 `Constant` 不是 `Value`）
+- **Silent Success 回归**：`llmmat-silent-success-regression-2026-06-09.md`
+- **Build.cs 软依赖完整模式**：`llmmat-soft-dep-check-module-exists-2026-06-09.md`
+- **BlendableLocation 验证**：`llmmat-blendablelocation-verify-batch-a-2026-06-11.md`
+- **连接修复**：`llmmat-connection-fix.md`
+- **输出节点修复**：`llmmat-output-section-fix.md`
+- **LLMEasyShell Lite 集成**：`llmmaterial-llmeashyshell-lite-integration.md`
