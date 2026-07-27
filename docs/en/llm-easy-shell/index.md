@@ -8,7 +8,7 @@ TCP shell interface for driving the Unreal Editor from any external client
 (LLM agent loop, CLI, test harness). One-line commands in, JSON out — no UE
 editor knowledge required.
 
-**Quick value:** 35+ editor commands · 25+ built-in Python abilities · TCP
+**Quick value:** 36 editor commands · 48 built-in Python abilities (266 sub-commands) · TCP
 server on ports 15151–15200 · works alongside any LLM agent framework.
 
 > 🎯 **For a minimal-dependency, read-only variant**, see
@@ -59,11 +59,11 @@ stalls.
 
 ## Technical Information
 
-**Features:** 35+ editor commands (scene read/write, asset read/write,
+**Features:** 36 editor commands (scene read/write, asset read/write,
 property/function discovery, PIE control, Live Coding, logs, UI
 introspection, screenshots), TCP server on ports 15151–15200, Ability
 framework for plugin-registered C++ commands, PyAbility framework for
-`.py`-defined commands, 25+ built-in Python abilities, command trace
+`.py`-defined commands, 48 built-in Python abilities, command trace
 logging.
 
 **Code Modules:** LLMEasyShell (Editor)
@@ -131,7 +131,7 @@ errors by marketplace scanners).
 
 ---
 
-## Command Reference (35+ commands)
+## Command Reference (36 commands)
 
 ### Scene
 
@@ -226,7 +226,7 @@ errors by marketplace scanners).
 
 ---
 
-## Python Abilities (25+ built-in)
+## Python Abilities (48 built-in)
 
 LLMEasyShell ships with a reference set of Python abilities in
 `PyAbilities/LLMShellAbilities/abilities/`. Each ability is a standalone
@@ -338,8 +338,8 @@ TCP port ranges and do not conflict at runtime. Install either or both.
 | | LLMEasyShell (this plugin) | LLMEasyShell Lite |
 |---|---|---|
 | Purpose | Full read + write + automation | Read-only exploration |
-| Commands | 35+ (read + write + control) | 9 (query only) |
-| Python abilities | 25+ built-in abilities | Framework + 1 demo |
+| Commands | 36 (read + write + control) | 9 (query only) |
+| Python abilities | 48 built-in abilities | Framework + 1 demo |
 | Screenshots | Yes (PIE + Win32 paths) | No |
 | Live Coding | Yes | No |
 | TCP port | 15151–15200 | 15201–15250 |
@@ -370,4 +370,4 @@ untrusted networks.
 
 ---
 
-*LLMEasyShell v1.0.0 | YominUnreal*
+*LLMEasyShell v1.1.1 | YominUnreal*
