@@ -4,24 +4,29 @@ outline: [2, 3]
 
 # LLM Easy Shell Lite
 
-> Read-only TCP bridge between any LLM agent and the Unreal Editor.
+> TCP bridge between any LLM agent and the Unreal Editor — the **9 built-in
+> commands are read-only**; the Python runtime and third-party plugin abilities
+> are **open surfaces**.
 > Co-exists with **LLM Easy Shell** (full read + write + automation, separate
 > TCP port range `15151–15200`).
 
-**Quick value:** 9 read-only commands · open Python Ability framework · ports
-15201–15250 · 2 engine plugin dependencies · zero third-party libraries.
+**Quick value:** 9 read-only commands + 1 self-maintenance `livecoding` ·
+registry-driven `help` · open Python Ability framework · ports 15201–15250 ·
+2 engine plugin dependencies · zero third-party libraries.
 
 > 🎯 **For full read + write + automation**, see
-> [LLM Easy Shell](../llm-easy-shell/) (35+ commands, 25+ Python abilities).
+> [LLM Easy Shell](../llm-easy-shell/) (37 commands, 46 built-in Python abilities).
 
 ---
 
 ## Core Features
 
-- **Read-only TCP server** — port range 15201–15250 (disjoint from full
-  Easy Shell's 15151–15200)
+- **TCP server** — port range 15201–15250 (disjoint from full Easy Shell's
+  15151–15200)
 - **9 built-in read-only commands** — `ls` / `cat` / `find` / `discover` /
   `info` / `help` / `gamestate` / `log` / `msglog`
+- **1 self-maintenance command** — `livecoding` (aliases `reload` / `lc`):
+  triggers a Live Coding compile on Windows
 - **Open Python Ability framework** — full UE Python access via `python <name>`
 - **Niagara message-log capture** — pull validation messages for VFX work
 - **Multi-plugin C++ ability auto-registration** — `LLMMaterial`, `LLMVFX`,
@@ -34,7 +39,7 @@ outline: [2, 3]
 ```bash
 # Agent loop — one line per action
 > info
-{"project":"MyGame","engine":"5.7.4","pie":"stopped","port":15201}
+{"project":"MyGame","engine":"5.8.4","pie":"stopped","port":15201}
 
 > ls /Level/Actors
 {"ok":true,"items":["BP_Player_C_1","BP_PlayerStart_1"],"count":2}
@@ -46,19 +51,21 @@ outline: [2, 3]
 {"ok":true,"wave":3,"health":85,"gold":120}
 ```
 
-Send a one-line command → Get a one-line JSON response. **No write access**:
-every command is read-only by design, so it's safe to leave running in
-exploratory pipelines.
+Send a one-line command → Get a one-line JSON response. The 9 built-in
+commands are read-only by design; the Python runtime and third-party plugin
+abilities are open surfaces, so scope an agent to the built-ins when you need
+a hard guarantee.
 
 ---
 
 ## Technical Information
 
-**Features:** Read-only TCP server (port 15201–15250), 9 built-in read-only
-commands (`ls` / `cat` / `find` / `discover` / `info` / `help` / `gamestate`
-/ `log` / `msglog`), open Python Ability framework (full UE Python access),
-Niagara message-log capture, multi-plugin C++ ability auto-registration,
-AI-agent-first JSON protocol.
+**Features:** TCP server (port 15201–15250), 9 built-in read-only commands
+(`ls` / `cat` / `find` / `discover` / `info` / `help` / `gamestate` / `log` /
+`msglog`) + 1 self-maintenance `livecoding` (Windows only; aliases `reload` /
+`lc`), open Python Ability framework (full UE Python access), Niagara
+message-log capture, multi-plugin C++ ability auto-registration (plugin-defined
+command sets, not sandboxed by Lite), AI-agent-first JSON protocol.
 
 **Code Modules:** LLMEasyShellLite (Editor)
 
@@ -74,11 +81,11 @@ AI-agent-first JSON protocol.
 
 **Documentation Link:** [Documentation.md in plugin folder](https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin/tree/main/Plugins/LLMEasyShellLite/Documentation.md)
 
-**Example Project:** Any UE 5.7+ project — connect a TCP client to
+**Example Project:** Any UE 5.5+ project — connect a TCP client to
 `localhost:15201` (first free port in `15201–15250`).
 
 **Important/Additional Notes:** Requires `PythonScriptPlugin` and
-`EditorScriptingUtilities` (both bundled with UE 5.7+). Plugin is Editor-only
+`EditorScriptingUtilities` (both bundled with UE 5.5+). Plugin is Editor-only
 (`Type: Editor` in `.uplugin`). No third-party C++ or Python libraries are
 shipped.
 
@@ -89,7 +96,7 @@ shipped.
 ### Required Host Plugins
 
 This plugin depends on two engine plugins that **must be enabled** in the
-host project before compilation. They are included with UE 5.7+ and do not
+host project before compilation. They are included with UE 5.5+ and do not
 need to be downloaded separately:
 
 - **PythonScriptPlugin** — Required to execute `.py` Python abilities. Enable via
@@ -107,7 +114,7 @@ need to be downloaded separately:
 ### Verifying a Clean Build
 
 ```bash
-cd "/c/Program Files/Epic Games/UE_5.7/Engine/Build/BatchFiles"
+cd "/c/Program Files/Epic Games/UE_5.8/Engine/Build/BatchFiles"
 ./RunUAT.bat BuildPlugin \
   -plugin="D:/path/to/LLMEasyShellLite.uplugin" \
   -package="D:/Temp/LLMEasyShellLite" \
@@ -123,8 +130,9 @@ errors by many marketplace scanners).
 
 ### UE Version Compatibility
 
-- **Minimum:** UE 5.7 (`EngineVersion: "5.7.0"` in `.uplugin`)
-- **Tested:** UE 5.7
+- **Minimum:** UE 5.5
+- **Tested:** UE 5.5, 5.6, 5.7, 5.8 (each Fab Project Version ships an
+  independent zip)
 
 ---
 
@@ -173,9 +181,12 @@ errors by many marketplace scanners).
 ### Threading Model
 
 - **TCP listener**: main thread; non-blocking `FSocket` accept loop driven by the `UEditorSubsystem` tick.
-- **Command execution**: synchronous on the game thread. All 9 built-in commands and Python ability dispatches complete before the next TCP line is read.
+- **Command execution**: synchronous on the game thread. All 10 built-in commands and Python ability dispatches complete before the next TCP line is read.
 - **Python execution**: routed through `PythonScriptPlugin`'s `FPythonScriptExecution` (game thread, same as C++).
-- **Side-effect guarantee**: built-in commands are read-only by design; Python abilities can do whatever the UE Python API allows.
+- **Side-effect guarantee**: the 9 built-in read-only commands are non-destructive by
+  design. Beyond that Lite offers no guarantee: Python abilities can do whatever
+  the UE Python API allows, and third-party plugin abilities carry the plugin's
+  own write semantics.
 
 ---
 
@@ -191,7 +202,7 @@ reported as `{"ok": false, "error": "..."}`.
 
 ```bash
 > info
-{"project":"MyGame","engine":"5.7.4","pie":"stopped","port":15201}
+{"project":"MyGame","engine":"5.8.4","pie":"stopped","port":15201}
 ```
 
 ### `ls`
@@ -395,8 +406,8 @@ third-party dependency and is not redistributed from any external source.
 
 The only engine-level dependencies are:
 
-- **PythonScriptPlugin** — Epic-shipped, bundled with UE 5.7+
-- **EditorScriptingUtilities** — Epic-shipped, bundled with UE 5.7+
+- **PythonScriptPlugin** — Epic-shipped, bundled with UE 5.5+
+- **EditorScriptingUtilities** — Epic-shipped, bundled with UE 5.5+
 
 These are engine plugins, not third-party software under Fab's definition.
 
@@ -416,4 +427,4 @@ These are engine plugins, not third-party software under Fab's definition.
 
 ---
 
-*LLMEasyShellLite v1.0.0-lite | YominUnreal | Free*
+*LLMEasyShellLite v1.2.0-lite | YominUnreal | Free*
