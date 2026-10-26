@@ -21,7 +21,7 @@ Material 定义文件使用 `.llmmat` 扩展名（LLM Material DSL），格式�
 
 **Expression Schema**: `Plugins/LLMMaterial/Config/MaterialExpressionSchema.llmschema` - 包含所有 Material Expression 节点的完整定义（输入、输出、属性）
 
-**示例目录**: `Plugins/LLMMaterial/Config/Examples/` - 包含完整的材质示例 `.llmmat` 文件
+**示例目录**: `Plugins/LLMMaterial/Config/Examples/` - 完整的材质示例 `.llmmat` 文件（参数 / Fresnel / Panner / 贴图通道 / 顶点色 / Masked+opacityMask / 两种 Substrate 组合算子）。文件名以 `Invalid` 开头的是**故意坏**的负样本（用来证明解析器会拒绝坏定义）—— 别照着抄。
 
 ## Quick Start
 
@@ -54,7 +54,11 @@ Material 定义文件使用 `.llmmat` 扩展名（LLM Material DSL），格式�
 
 ## Shader Headers (USH) - HLSL 函数支持
 
-LLMMat 支持在 `.llmmat` 中编写 HLSL 着色器代码片段，生成 `.ush` 文件供材质引用。所有生成的 `.ush` 文件输出到统一目录 `/Game/Shaders/`。
+LLMMat 支持在 `.llmmat` 中编写 HLSL 着色器代码片段，生成 `.ush` 文件供材质引用。所有生成的 `.ush` 文件输出到统一目录 `<ProjectContentDir>/Shaders/`。
+
+> **路径形态**：这是**文件系统路径**（`<Project>/Content/Shaders/`），**不是** UE content path `/Game/Shaders/`。`USHGenerator::Initialize()` 用 `FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Shaders"))` 拼出来；把它当 content path 用会得到"文件从没被写出来"的错觉（历史上确实踩过，见 `references/llmmat-connection-fix.md`）。
+>
+> **引用路径 ≠ 落盘路径**：`HeaderRef` / `ushIncludes` 里写的是**工程相对 include 路径** `Shaders/<FuncName>.ush`（插件内部按此拼装），而文件实际落在 `<Project>/Content/Shaders/<FuncName>.ush`。另外插件只推导 include 路径，**不会**自动写进 `UMaterialExpressionCustom::IncludeFilePaths`——需要在材质里手工补上该 include 才能真正编到。
 
 ### `functions` - 内联定义生成 .ush
 
@@ -89,10 +93,12 @@ LLMMat 支持在 `.llmmat` 中编写 HLSL 着色器代码片段，生成 `.ush` 
 ```json
 {
   "ushIncludes": [
-    "/Game/Shaders/MyExistingFunc.ush"
+    "Shaders/MyExistingFunc.ush"
   ]
 }
 ```
+
+> `ushIncludes` 是**工程相对 include 路径**（同一目录即 `<Project>/Content/Shaders/`），不是 UE content path。
 
 ### Custom 节点 `HeaderRef` - 引用函数
 
@@ -164,9 +170,9 @@ LLMMat 支持在 `.llmmat` 中编写 HLSL 着色器代码片段，生成 `.ush` 
 }
 ```
 
-生成的 `.ush` 文件：
+生成的 `.ush` 文件（文件系统路径）：
 ```
-/Game/Shaders/
+<ProjectContentDir>/Shaders/
   MyFresnel.ush    ← 自动生成
 ```
 
@@ -192,33 +198,40 @@ Custom 节点自动填充 `Code = "return MyFresnel(Normal, ViewDir, Power);"`�
 | `Multiply` | 乘法 | A, B | Result |
 | `Subtract` | 减法 | A, B | Result |
 | `Divide` | 除法 | A, B | Result |
-| `Power` | 幂运算 | Base, Exp | Result |
+| `Power` | 幂运算 | Base, Exponent | Result |
 | `Sine` / `Cosine` | 正弦/余弦 | Input | Result |
 | `Abs` | 绝对值 | Input | Result |
 | `Min` / `Max` | 最小/最大值 | A, B | Result |
 | `Clamp` | 限制范围 | Input, Min, Max | Result |
-| `Lerp` | 线性插值 | A, B, Alpha | Result |
+| `LinearInterpolate` | 线性插值(别名 `Lerp`) | A, B, Alpha | Result |
+
+> **引脚名必须逐字对**：`Power` 的指数输入叫 **`Exponent`**（不是 `Exp`），`Desaturation` 的比例输入叫 `Fraction`（是**输入**不是属性），`StaticSwitchParameter` 的两路是 **`A` / `B`**（不是 `True`/`False`）。写错的后果不是报错那么简单 —— 2026-10-25 之前插件把"连不上"只记成一句 warning，材质照样生成、命令照样报 Success。**现在成功消息里会带 `[warnings]` 段，看到就当失败处理。**
 
 ### Constants
 | Type | Description | Properties |
 |------|-------------|------------|
-| `Constant` | 标量常量 | Value (float) |
-| `Constant2Vector` | 2D 向量 | Constant [X, Y] |
+| `Constant` | 标量常量 | R (float)(别名 `Value`) |
+| `Constant2Vector` | 2D 向量 | R, G (float) |
 | `Constant3Vector` | 3D 向量/颜色 | Constant [R, G, B] |
 | `Constant4Vector` | 4D 向量/颜色+Alpha | Constant [R, G, B, A] |
 
 ### Textures
 | Type | Description | Properties | Inputs | Outputs |
 |------|-------------|------------|--------|---------|
-| `TextureSample` | 纹理采样 | Texture (path) | UVs | RGB, R, G, B, A |
+| `TextureSample` | 纹理采样 | Texture (path), SamplerType | UVs | RGB, R, G, B, A |
+| `TextureSampleParameter2D` | 纹理参数 | ParameterName, Texture, SamplerType | UVs | RGB, R, G, B, A |
 | `TextureCoordinate` | UV 坐标 | CoordinateIndex | - | UV |
+
+> **法线贴图必须显式声明采样方式**：`"SamplerType": "Normal"`。不写就会按 Color 采样，shader 编译直接失败
+> （`Sampler type is Color, should be Normal`）。
 
 ### Parameters (参数)
 | Type | Description | Properties |
 |------|-------------|------------|
 | `ScalarParameter` | 标量参数 | ParameterName, DefaultValue |
 | `VectorParameter` | 向量参数 | ParameterName, DefaultValue |
-| `TextureSampleParameter` | 纹理参数 | ParameterName, Texture |
+| `TextureSampleParameter2D` | 纹理参数 | 同上方 Textures 表（ParameterName, Texture, SamplerType）—— 列两处是分类视角不同, 属性集以 Textures 表为准 |
+| `StaticSwitchParameter` | 静态开关 | ParameterName, DefaultValue (bool) |
 
 ### Coordinates
 | Type | Description | Outputs |
@@ -234,6 +247,11 @@ Custom 节点自动填充 `Code = "return MyFresnel(Normal, ViewDir, Power);"`�
 | `ComponentMask` | 通道遮罩 | Input | R, G, B, A (根据 mask 配置) |
 | `AppendVector` | 向量组合 | A, B | Result |
 | `Desaturation` | 去饱和 | Input, Fraction | Result |
+| `Fresnel` | 菲涅耳(边缘) | Exponent, Normal | Result |
+| `Panner` | UV 滚动 | Coordinate, Time, Speed（不接则走属性 ConstCoordinate / SpeedX / SpeedY） | Result |
+
+> `Fresnel` 在 UE 5.8 的引脚是 **`Exponent`**（旧版的 `Bias` / `Scale` 已被引擎删掉，写了会被忽略并报 warning），另有 `BaseReflectFraction` 属性（float, 默认 0.04）与可选输入 `Normal`（2026-10-26 按引擎头 `MaterialExpressionFresnel.h` 归正——原表格行把 `Normal` 错排在属性列且断言"只有 Exponent"）。
+> `Panner` 的 `Speed` 是 **float2 输入**（不接则用 `SpeedX`/`SpeedY` 属性），`Time` 不接则用游戏时间。
 
 ### Custom (HLSL)
 | Type | Description | Properties | Inputs |
@@ -289,7 +307,7 @@ Custom 节点自动填充 `Code = "return MyFresnel(Normal, ViewDir, Power);"`�
 
 **常见引脚名称**:
 - 输出: `Result`, `RGB`, `R`, `G`, `B`, `A`
-- 输入: `A`, `B`, `Base`, `Exp`, `UVs`, `Input`
+- 输入: `A`, `B`, `Base`, `Exponent`, `UVs`, `Input`（2026-10-26 勘误：原写 `Exp`，正是 Power 表下方警告里点名的错名）
 
 ## Material Outputs (材质输出)
 
@@ -322,6 +340,10 @@ Custom 节点自动填充 `Code = "return MyFresnel(Normal, ViewDir, Power);"`�
 - 节点引用: `{ "node": "nodeId", "pin": "outputName" }`
 - 常量值: `0.5` 或 `"#FF0000"` 或 `[1.0, 0.0, 0.0]`
 
+> **常量输出会真的落到材质上**（2026-10-25 修复：之前常量分支是空壳，`metallic`/`roughness`/`specular`/`opacity`/`opacityMask` 全被静默丢弃、材质退回引擎默认值，而命令照样报 Success）。颜色类输出喂标量会按 `(v, v, v)` 补齐。
+>
+> **`material generate` 的成功消息里带 `[warnings]` 段就当失败处理** —— 那里是"属性名不存在 / 连不上引脚"的信号，材质跟你写的不一样。
+
 ## Material Properties (材质属性)
 
 ```json
@@ -341,9 +363,16 @@ Custom 节点自动填充 `Code = "return MyFresnel(Normal, ViewDir, Power);"`�
 
 **材质域 (Domain)**:
 - `Surface` - 表面材质（默认）
+- `DeferredDecal` - 延迟贴花
+- `LightFunction` - 光源函数
+- `Volume` - 体积材质
 - `PostProcess` - 后处理材质
 - `UserInterface` - UI 材质
-- `VirtualTexture` - 虚拟纹理
+- `RuntimeVirtualTexture` - 运行时虚拟纹理
+
+> **别名**（仍能解析，导出侧不产出）：`UI` = `UserInterface`、`Decal` = `DeferredDecal`、`VirtualTexture` = `Surface`（老词表写法，历史上就等价 Surface；真要 RVT 域请写 `RuntimeVirtualTexture`）。
+>
+> 域 / 混合模式的词表由 `FLLMEnumLookup` 一张表决定，**导出侧与解析侧同源** ⇒ `material export` 出来的 `domain` / `blendMode` 一定解析得回同一个值。
 
 **混合模式 (BlendMode)**:
 - `Opaque` - 不透明（默认）
@@ -351,6 +380,8 @@ Custom 节点自动填充 `Code = "return MyFresnel(Normal, ViewDir, Power);"`�
 - `Translucent` - 半透明
 - `Additive` - 加法混合
 - `Modulate` - 调制混合
+- `AlphaComposite` - 预乘 alpha 合成
+- `AlphaHoldout` - alpha 镂空
 
 **着色模型 (ShadingModel)**:
 - `DefaultLit` - 默认光照（默认）
@@ -377,6 +408,8 @@ Custom 节点自动填充 `Code = "return MyFresnel(Normal, ViewDir, Power);"`�
 ```
 
 如果不指定 `subsurfaceProfile`，系统会在材质同一目录下自动创建 `{材质名}_SSS` 的 SubsurfaceProfile 资产，包含适合皮肤/硅胶渲染的参数（Burley SSS 模型、AFIS 高质量渲染）。
+
+> 给了路径但资产**不存在**时，系统会打一条 `SubsurfaceProfile not found` warning 并回落到上面的自动创建，不会静默失败。UE 5.8 的引擎内容里**没有** `DefaultSkin` 之类的现成 SubsurfaceProfile 可直接引用（`/Engine/EngineResources/`、`/Engine/EngineMaterials/` 下均无），所以最省事的做法是干脆省略这个字段。
 
 ## Substrate Materials (UE5 Substrate)
 
@@ -522,6 +555,8 @@ LLMMaterial 支持 UE5 Substrate 分层材质系统。当 `.llmmat` 文件包含
 2. **Hybrid 模式**：`nodes` 中的 Expression 节点可以被 `substrate.slabs[].inputs[]` 中的 `{ "node": "node_id" }` 引用。支持的 key 有：`node`、`nodeId`、`node_id`、`nodeRef`（均等价）
 3. **纹理输入**：纹理使用资产路径字符串，系统自动创建 `TextureObject` 或 `TextureSample` 节点
 4. **不含 bottom 的 VerticalLayering**：当 root 只指定 `top` 时，Top slab 直接作为 root（无需 VerticalLayering 节点）
+5. **导出可往返**（2026-10-25 修复）：`material export` 会把材质里的 substrate 拓扑**还原**成 `substrate` 块（slabs + root），导出的文件能直接再 `material generate`。以前导出的是拍平的表达式节点、再导入报 `Orphaned node` / `Dangling node`。只有真正表达不了的部分才会给 warning（嵌套组合、Select 阈值 ≠ 0.5、没有 FrontMaterial）。
+6. **slab 输入名 == UE 属性名**：`inputs` 的 key 就是 UE 表达式上那个 `FExpressionInput` 的属性名（`DiffuseAlbedo` / `Roughness` / `F0` / `SSSMFP` / ...）。两侧同名，引擎加了新引脚不用改 DSL 词表；Hair / Unlit / Eye / SingleLayerWater 的输入以前会被**静默丢弃**，现在都通吃。
 
 ## Common Patterns
 
@@ -639,46 +674,45 @@ LLMMaterial 支持 UE5 Substrate 分层材质系统。当 `.llmmat` 文件包含
 }
 ```
 
-### 硅胶材质模板（参考 M_SiliconeDoll 设计 - Substrate + USH 混合模式）
+### 硅胶材质模板（Substrate + USH 混合模式）
 
-> **⚠️ 这是模板/教学示例，不是已存在的资产**。`Content/Materials/M_SiliconeDoll.llmmat` **不存在**（filesystem 0 hits 全工程），只是文档作者当初设想的"完整硅胶材质应当长这样"的教学范本。生产可用的硅胶资产只有 3 个：
-> - `Content/Core/LLM/Materials/M_SiliconeSkin_v3.llmmat`（最接近本模板，纯 SSS 单 slab MSS_Diffusion）
-> - `Content/Core/LLM/Materials/M_TPESilicone_v7_NoSSS.llmmat`（TPE 硅胶，无 SSS）
-> - `Content/Core/LLM/Materials/M_TPESilicone_v8_AiCup.llmmat`（TPE 硅胶 v8，AiCup 用例）
->
-> 唯一存在的 USH 文件只有 `Content/Shaders/SiliconeFresnel.ush` 1 个（`SiliconeSSSApprox.ush` / `SiliconeRimGlow.ush` / `SiliconeComposite.ush` 0 hits 全工程）。要参考真实写法，**打开 M_SiliconeSkin_v3.llmmat** 看其 `substrate.slabs.sss_skin` 节点配置。
+> **⚠️ 这是模板/教学示例，不是已存在的资产**。本节出现的 `.llmmat` / `.ush` 文件名都是**范本占位符**，不是任何工程里现成存在的文件。历史上本节曾把不存在的资产写成"生产可用资产"，LLM 照着路径跑 `material generate` 立刻掉进 file-not-found / wrong-reference 调试循环（完整 forensics 见 SKILL_CHANGELOG §1）。
+
+**先核实，再引用**——在任何工程里动手前，先列出该工程真实存在的资产，只用真实存在的文件当参考：
+
+```bash
+# 列出本工程实际的 .llmmat 资产
+find . -name "*.llmmat" -not -path "./.git/*"
+
+# 列出本工程实际存在的 .ush 着色器头文件（生成目录 <ProjectContentDir>/Shaders/）
+ls Content/Shaders/*.ush
+```
+
+确认哪个 `.llmmat` 真的存在之后，再打开它看 `substrate.slabs` 的节点配置作为写法参考。
 
 写实硅胶质感材质的设计思路，适用于硅胶娃娃、软体机器人等场景。使用 SubstrateSlabBSDF 提供精确 PBR + SSS，配合 USH Custom HLSL 节点实现 Fresnel rim light 和 SSS 近似透光。
 
 核心特性：
 - **SubstrateSlabBSDF**：物理精确的 PBR，SSSMFP/SSSMFPScale 控制次表面散射颜色和半径
-- **SiliconeFresnel**（USH，唯一已实现）：基于 IOR 计算 F0 的 Fresnel，边缘过渡更柔和（vs 玻璃的 sharp edge）
-- **SiliconeSSSApprox**（USH，模板）：背光区域近似 SSS，红光穿透比蓝光更强
-- **SiliconeRimGlow**（USH，模板）：边缘光晕，用于轮廓 highlight
+- **SiliconeFresnel**（USH 范本名）：基于 IOR 计算 F0 的 Fresnel，边缘过渡更柔和（vs 玻璃的 sharp edge）
+- **SiliconeSSSApprox**（USH 范本名）：背光区域近似 SSS，红光穿透比蓝光更强
+- **SiliconeRimGlow**（USH 范本名）：边缘光晕，用于轮廓 highlight
 
-关键参数（参考 M_SiliconeSkin_v3 实际值）：
+> 上面 3 个 USH 名字都是**范本名**——只有你在 `functions[]` 里定义了同名函数，才会真的被生成到 `<Project>/Content/Shaders/`。
+
+关键参数（硅胶基底典型值）：
 
 | 参数 | 默认值 | 说明 |
 |------|--------|-----|
-| `param_basecolor` | [0.92, 0.72, 0.62] | 基底颜色（暖粉调，M_SiliconeSkin_v3 实际值） |
-| `param_roughness` | 0.18 | 粗糙度（M_SiliconeSkin_v3 实际值） |
+| `param_basecolor` | [0.92, 0.72, 0.62] | 基底颜色（暖粉调，硅胶典型值） |
+| `param_roughness` | 0.18 | 粗糙度（硅胶典型值） |
 | `param_ior` | 1.42 | 折射率（硅胶典型值 1.40-1.50） |
 | `param_fresnel_exp` | 3.5 | Fresnel 指数（越大边缘越窄） |
 | `param_sss_scale` | 1.2 | SSS 散射半径 |
-| `param_sss_mfp_r/g/b` | 0.60/0.25/0.12 | SSS Mean Free Path 三通道（M_SiliconeSkin_v3 实际值，红散射最强） |
+| `param_sss_mfp_r/g/b` | 0.60/0.25/0.12 | SSS Mean Free Path 三通道（红散射最强） |
 | `param_rim_color` | [1.0, 0.95, 0.90] | 边缘光颜色 |
 | `param_rim_str` | 0.4 | 边缘光强度 |
 | `param_translucency` | 0.3 | SSS 透光强度 |
-
-生产资产查看（不要按模板路径生成，路径不存在）：
-```bash
-# 查看 M_SiliconeSkin_v3 实际配置（最接近模板设计的真实资产）
-cat Content/Core/LLM/Materials/M_SiliconeSkin_v3.llmmat
-
-# 验证 USH 文件实际只有 1 个
-ls Content/Shaders/Silicone*.ush
-# → SiliconeFresnel.ush（其他 3 个模板列出的 USH 文件 0 hits 全工程）
-```
 
 <!-- Forensic: see SKILL_CHANGELOG.md §1 (tool-fix-170 SiliconeDoll template asset/USH fossil closure) -->
 
@@ -691,7 +725,7 @@ ls Content/Shaders/Silicone*.ush
   "domain": "Surface",
   "blendMode": "Translucent",
   "shadingModel": "SubsurfaceProfile",
-  "subsurfaceProfile": "/Engine/EngineResources/DefaultSkin.DefaultSkin",
+  "subsurfaceProfile": "/Game/Materials/SkinMaterial_SSS.SkinMaterial_SSS",
   "twoSided": true,
   "nodes": [
     {
@@ -819,8 +853,9 @@ Plugins/LLMMaterial/Source/LLMMaterial/Core/LLMMaterialTypes.h
 
 ## Command Reference
 
-> **Source of truth**: 以下命令列表与 `Plugins/LLMMaterial/Source/LLMMaterial/LLMMaterialModule.cpp::BuildAbilityInfoJson()` 注册表一致(LLMEasyShell dispatcher 仅放行注册的子命令)。
-> 通用资产操作(创建/删除/复制/移动/查看/设置参数)由 **LLMEasyShell 主系统** 提供 (`new` `rm` `cp` `mv` `cat` `set`)，不在 material ability 重复注册。
+> **Source of truth**: 以下命令列表与 `Plugins/LLMMaterial/Source/LLMMaterial/Commands/MaterialCommandRegistry.h` 的命令注册表一致(`LLMMaterialModule.cpp::BuildAbilityInfoJson()` 由该注册表派生,是 ability JSON 的唯一来源)。
+> **LLMEasyShell dispatcher 只放行注册表里的子命令** —— 注册表之外的命令名一律到不了处理器,会直接返回 `Unknown command`。想加新命令 = 新建 `Commands/Material<Name>Command.{h,cpp}` + 在注册表里加一条,两条路径共用同一张表。
+> 通用资产操作(创建/删除/复制/移动/查看/设置参数)由 **LLMEasyShell 主系统** 提供 (`new` `rm` `cp` `mv` `cat` `set`),不在 material ability 重复注册。
 
 <!-- Forensic: see SKILL_CHANGELOG.md §2 (tool-fix-07 session62 5-subcommand count closure) -->
 
@@ -848,15 +883,19 @@ material describe-type <typeName>
 **generate**:
 - `assetPath` - 目标材质资产路径（如 `/Game/Materials/MyMaterial`）
 - `--from` - 源 JSON 文件路径(支持 UE 路径 `/Game/...` `/Plugin/...` 或文件系统绝对路径)
-- `--domain` - 材质域（Surface/PostProcess/UI/VirtualTexture）
-- `--blending` - 混合模式（Opaque/Masked/Translucent/Additive）
+- `--domain` - 材质域（Surface/DeferredDecal/LightFunction/Volume/PostProcess/UserInterface/RuntimeVirtualTexture）
+- `--blending` - 混合模式（Opaque/Masked/Translucent/Additive/Modulate/AlphaComposite/AlphaHoldout）
 
 **export**:
 - `assetPath` - 要导出的材质资产路径
-- `--output` - 输出 JSON 文件路径（可选，默认导出到 `Saved/Exported_<MaterialName>.llmmat`）
+- `--output` - 输出 JSON 文件路径（可选，默认导出到 `Saved/LLMMaterial/Exported_<MaterialName>.llmmat`）
 
 **export-schema**:
-- `--output` - 输出 schema 文件路径（可选，默认导出到 `Config/MaterialExpressionSchema.llmschema`）
+- `--output` - 输出 schema 文件路径（可选，默认导出到 `Saved/LLMMaterial/MaterialExpressionSchema.llmschema`）
+
+> 默认输出落在**工程的 Saved 目录**（可写），不写回插件目录——Fab 安装的插件目录是只读的。插件配置项 `SchemaExportPath` 若已设置则优先于该默认值。
+>
+> **编辑器面板**（Window ▸ Tools ▸ LLMMaterial）用同一套规则：Domain / Blend 两个下拉可以覆盖 `.llmmat` 里声明的值（留空 = 用文件自己的值），可选项与 shell 的 `--domain` / `--blending` 取自同一张词表；面板的 "Export Material" / "Export Schema" 与命令落在同一目录。
 
 **list-types**:
 - `--category` - 按分类过滤（Math/Texture/Constant/Coordinates/...）

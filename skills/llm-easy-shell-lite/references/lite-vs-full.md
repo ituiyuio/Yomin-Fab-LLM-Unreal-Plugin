@@ -1,8 +1,17 @@
 # LLMEasyShell Lite vs Full 能力对照表
 
-Lite 是 LLMEasyShell 的**最精简只读子集**，只暴露查询类能力。Full 版提供完整 36 命令 + Python ability 271 子命令 (53 内置 plugin + 228 game-specific − 5 重名 − 6 私有 + 1 reload) + 写操作能力 + 截图能力。
+Lite 是 LLMEasyShell 的**最精简子集**：9 个只读查询命令 + 1 个自维护命令（`livecoding`，Windows only），其余为开放面。
+
+> **边界**：Lite 的「只读」只覆盖**内置 9 个查询命令**（`livecoding` 触发 LiveCoding 编译，是自维护命令不是只读）。PyAbility runtime（完整 UE Python API）
+> 与第三方 plugin ability（插件自带命令集与写语义）都是**开放面**，Lite 不做权限隔离。
+> 下表的命令行对比只针对**内置原生命令**。Full 版提供完整 37 命令 + Python ability 370 子命令（2026-10-25 runtime 读数, 插件托管 + 项目脚本 + 1 框架自动注册 reload —— 真源是 `python reload` 输出, 写死必化石）+ 写操作能力 + 截图能力。
 
 > [tool-fix-141 2026-06-29] 闭合 tool-fix-140 (commit 8b0c152) 留下的 sub-fossil：命令数 28 → 36。原 doc 写 "完整 28 命令" 是 tool-fix-140 部分修复 Python ability 25+ → 175 时漏修的 fossil，源-of-truth = `Plugins/LLMEasyShell/Source/LLMEasyShell/Private/LLMEasyShellSubsystem.cpp:L1460-1495` 36 个 `RegisterCommand` 调用 1:1 对齐（`find Plugins/LLMEasyShell/Source/LLMEasyShell/Private -name 'ShellCommand_*.cpp' | wc -l` = 36 同源 double lock），跟 `llm-easy-shell/SKILL.md:207 '36 个原生命令 = 28 核心 + 7 UI 调试 + 1 已弃用 livelog'` + `llm-easy-shell/references/commands.md:7,15,16 '共 36 个,直接通过 CommandDispatcher 注册'` 全部一致。Runtime `./llm-shell.exe --help` 二进制输出 UE 5.8 binary 仍 health（无 crash、无 command list 注册差异）。
+>
+> [r2294 Ship F 2026-10-23 · 2026-10-26 复核] **基准数漂移订正**：本节以下各条 tool-fix blockquote 记的都是**各自当时**的读数 —— 作为**史实**不改写, 但别当现值读。Full 原生命令沿革：36（06-29）→ 38（r2294 10-23 读数, 含 `ui state`）→ **37**（2026-10-25 `ui state` 项目专属内容外迁 LLMSurvivorShell 宿主插件, `RegisterBuiltInCommands` 存活调用 37 个、`ShellCommand_*.cpp` 37 枚同源对齐; 装 LLMSurvivorShell 时 runtime 38）。
+>   · 文档现值：本文件 L7 + `llm-easy-shell/SKILL.md` + `llm-easy-shell/references/commands.md` = **37**。
+>   · ⚠ r2294 首版曾把本文件 L3 连同上述文档一起改成 38 并在此声明「全部已改成 38」—— 10-25 外迁后该声明失真, 本行即其勘误。
+>   ⇒ ⚠ 锚**符号名**不锚行号。
 >
 > [tool-fix-149 2026-06-29] tool-fix-141 meta-NOTE 内 fossil 锚定 sub-closure: L1457-1492 → L1460-1495 (跟 tool-fix-149 commands.md L16 锁定 1:1)。tool-fix-141 写 meta-NOTE 时是当时已 fossil 的 cpp 注释锚定 (tool-fix-146 2026-06-29 commit d43280d 跟 tool-fix-141 同日 ship 注释里 fossil 锚点 L1458-1493 跟 cpp 实际 L1460-1495 差 3-4 行), tool-fix-141 信任了 self-claimed anchor 没回 cpp 验证。Source-of-truth 跟 commands.md:16 同。
 >
@@ -30,8 +39,8 @@ Lite 是 LLMEasyShell 的**最精简只读子集**，只暴露查询类能力。
 | `set` / `spawn` / `rm` / `cp` / `mv` / `call` | ✅ | ❌ | Lite 无写操作 |
 | `save` / `new` / `mkdir` / `addcomp` | ✅ | ❌ | Lite 无资产管理 |
 | `play` / `stop` / `pause` | ✅ | ❌ | Lite 无 PIE 控制 |
-| `undo` / `redo` / `reload` | ✅ | ❌ | Lite 无编辑历史 |
-| `livecoding` / `lc` | ✅ | ❌ | Lite 无编译周期管理 |
+| `undo` / `redo` | ✅ | ❌ | Lite 无编辑历史 |
+| `livecoding` / `reload` / `lc` | ✅ | ✅ | Lite 自维护：触发 LiveCoding 编译（Windows only）。命令真名 `livecoding`，`reload` / `lc` 是别名 |
 
 ---
 
@@ -45,10 +54,10 @@ Lite 是 LLMEasyShell 的**最精简只读子集**，只暴露查询类能力。
 | `llmms` | LLMMetaSound plugin | ✅ | ✅ |
 | `llmwhitebox` | LLMWhitebox plugin | ✅ 15 commands | ✅ 15 commands (跟 Full 1:1) |
 | `uireactionbus` | UIWebBridge plugin | ✅ 6 commands | ✅ 6 commands (跟 Full 1:1) |
-| `python` | LLMEasyShell Lite PyAbility | ✅ 271 内置子命令 (53 plugin + 228 project − 5 重名 − 6 私有 + 1 reload) | ⚠️ 框架注册 + 1 内置 `simple` demo (端到端验证) |
+| `python` | LLMEasyShell Lite PyAbility | ✅ 数百个命令（2026-10-25 runtime 读数 370, 时点快照 —— 同名时插件那份赢） | ⚠️ 框架注册 + 4 内置 ability (`simple` 端到端 demo + `gamestate` / `mesh_check` / `vfx_coverage` 只读子集) |
 
 > `python <name>` Full 包含：`material` / `blueprint` / `asset` / `vfx` / `scene` / `level` / `umg` / `curve` / `datatable` / `editor` / `gameplay` / `gameplaytag` / `gameplayability` / `navigation` / `poseseach` / `chooser` / `property` / `bpcomp` / `bpprop` / `reparent` / `perf` / `anim` / `reactive` / `hd3d` / `hd3dpostprocess` / `hd3dscene` 等
-> Lite 端 `python` 框架已注册（`LLMEasyShellLiteSubsystem.cpp:552 RegisterAbility(TEXT("python"), PythonAbility)`）+ **1 个内置 `simple` demo ability**（验证 PyAbility 端到端可用，filesystem 锚定 `Plugins/LLMEasyShellLite/Content/Python/LLMShellAbilitiesLite/abilities/simple.py`）；用户可放 .py 到 `Plugins/LLMEasyShellLite/Content/Python/LLMShellAbilitiesLite/abilities/` 注册自定义只读命令。
+> Lite 端 `python` 框架已注册（`LLMEasyShellLiteSubsystem::RegisterAbility(TEXT("python"), PythonAbility)`）+ **4 个内置 ability**（`simple` 端到端 demo + `gamestate` / `mesh_check` / `vfx_coverage` 只读子集，filesystem 锚定 `Plugins/LLMEasyShellLite/Content/Python/LLMShellAbilitiesLite/abilities/`）；用户可放 .py 到同目录注册自定义只读命令。
 
 ---
 
@@ -95,7 +104,7 @@ Lite 是 LLMEasyShell 的**最精简只读子集**，只暴露查询类能力。
 **用 Full**：
 - 需要写操作（改属性、生成资产、PIE 控制）
 - 需要截图
-- 需要 `python <name>` 271 子命令
+- 需要 `python <name>` 370 子命令
 - 需要 `-q` / `-j` 旗标（让 LLM parse 更简单）
 - 需要 `log --compile`
 

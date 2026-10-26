@@ -37,10 +37,10 @@ Also added PreEditChange/PostEditChange in ApplyNodeProperties() for individual 
 The crash only occurs when async shader compilation fires AFTER material graph rebuild. Removing `ForceRecompileForRendering()` prevents the async trigger. PreEditChange/PostEditChange ensures proper Slate cache invalidation. With shader already compiled during `material generate` (ShaderCompiled: true), no new async compilation occurs.
 
 ## Verified Working
-M_TPESkin (DefaultLit + Fresnel, Translucent) generated and applied to SiliconeTestSphere — editor stable for 5+ minutes without crash.
+A skin material (DefaultLit + Fresnel, Translucent) generated and applied to a test sphere — editor stable for 5+ minutes without crash.
 
 ## Secondary Issue: SubsurfaceProfile D3D12RHI Crash
-MSM_SubsurfaceProfile + Translucent causes D3D12RHI crash at 0x0000000000000048 on UE5.7 + RTX 5090. Workaround: use `DefaultLit + Emissive` for SSS approximation (M_TPESkin approach).
+MSM_SubsurfaceProfile + Translucent causes D3D12RHI crash at 0x0000000000000048 on UE5.7 + RTX 5090. Workaround: use `DefaultLit + Emissive` for SSS approximation (the DefaultLit + Fresnel route above).
 
 ## HitProxy Assertion Crash (RESOLVED)
 `Assertion failed: Material && MaterialRenderProxy` at `SceneHitProxyRendering.cpp:960` — triggered when:
@@ -52,7 +52,7 @@ MSM_SubsurfaceProfile + Translucent causes D3D12RHI crash at 0x0000000000000048 
 
 **FIX**: The `material generate` command now returns `ShaderCompiled: true` because the shader IS compiled synchronously during generation. By the time `SetMaterial` is called, the material is fully compiled. `GetMaterialWithFallback()` returns the actual compiled material → no nullptr → assertion passes.
 
-**Verification**: 2026-04-13 — M_TPESkin generated with `ShaderCompiled: true`, applied to SiliconeTestSphere via `SetMaterial`, sphere selected (triggering HitProxy), editor stable for 7+ minutes (well past the original 366s crash point). No crash.
+**Verification**: 2026-04-13 — the skin material generated with `ShaderCompiled: true`, applied to a test sphere via `SetMaterial`, sphere selected (triggering HitProxy), editor stable for 7+ minutes (well past the original 366s crash point). No crash.
 
 **Note**: `CloseAllEditorsForAsset` in MaterialBuilder.cpp (line 285) was added but is NOT the fix — it just closes asset editor windows. The actual fix is that the shader is compiled before SetMaterial is called.
 
@@ -61,7 +61,7 @@ MSM_SubsurfaceProfile + Translucent causes D3D12RHI crash at 0x0000000000000048 
 **Wrong approaches tried**: `FlushRenderingCommands()` (linker error — needs RenderCore module), `MarkRenderStateDirty()` TObjectIterator loop (crashed during LiveCoding).
 
 ## Verified Working (2026-04-13)
-M_TPESkin (DefaultLit + Fresnel, Translucent) generated with ShaderCompiled=true, applied to SiliconeTestSphere, selected actor → editor stable 7+ min, no HitProxy crash.
+The skin material (DefaultLit + Fresnel, Translucent) generated with ShaderCompiled=true, applied to a test sphere, selected actor → editor stable 7+ min, no HitProxy crash.
 
 ---
 
@@ -81,10 +81,10 @@ M_TPESkin (DefaultLit + Fresnel, Translucent) generated with ShaderCompiled=true
 - After graph build, `RebuildShadingModelField()` (already present) corrects `ShadingModels` to proper Substrate values
 - Transparent SSS materials are additionally sanitized by `RebuildShadingModelField()` → `MSM_DefaultLit` + `SSM_DefaultLit`
 
-**Verified**: `material generate /Game/Materials/M_TPESkin_Substrate --from Content/Materials/M_TPESkin_Substrate.llmmat` → `ShaderCompiled: true`, no crash.
+**Verified**: `material generate /Game/Materials/MySkinMaterial_Substrate --from <ProjectDir>/Content/Materials/MySkinMaterial_Substrate.llmmat` (ShaderCompiled: true), no crash.
 
 ## NEW Crash: Substrate ShaderCompiler CookStats (2026-04-14, UNRESOLVED)
-After fixing the `check(false)` crash above, Substrate materials (`M_TPESilicone_v5_AiCup`, `M_TPESilicone_Substrate_v2`) generate with `ShaderCompiled: true`, but the editor CRASHES later during shader compilation.
+After fixing the `check(false)` crash above, Substrate materials (`MySubstrateMaterial_v5`, `MySubstrateMaterial_v2`) generate with `ShaderCompiled: true`, but the editor CRASHES later during shader compilation.
 
 **Crash Stack**:
 ```
@@ -102,11 +102,11 @@ UnrealEditor-Engine.dll!FTimerManager::Tick()
 
 **Root Cause**: Substrate shader compilation triggers `CookStats::LogStats` which tries to create FString from invalid/corrupted memory. Likely: Substrate's internal BSDF tree (SubstrateSlabBSDF + VerticalLayering) produces invalid/empty `FString` fields during `SubstrateGenerateMaterialTopologyTree` code generation, and `CookStats` tries to log these.
 
-**Affected Materials**: Any `.llmmat` with `substrate: { slabs: [...] }` — including v5 (3 slabs + VerticalLayering + topFuzz) and v2 (2 slabs + VerticalLayering).
+**Affected Materials**: Any `.llmmat` with `substrate: { slabs: [...] }` — including the 3-slab variant (3 slabs + VerticalLayering + topFuzz) and the 2-slab variant (2 slabs + VerticalLayering).
 
 **Symptom**: Material generates OK (`ShaderCompiled: true`), applied to object, looks white (shader not rendering), then editor crashes within minutes.
 
-**Workaround**: Use traditional pipeline (`.llmmat` with `nodes:` + `connections:` + `output:`) instead of Substrate. Verified working: `M_TPESilicone_v4` (32 nodes, `ShaderCompiled: true`, no crash).
+**Workaround**: Use traditional pipeline (`.llmmat` with `nodes:` + `connections:` + `output:`) instead of Substrate. Verified working: `MyTraditionalMaterial` (32 nodes, `ShaderCompiled: true`, no crash).
 
 **Next Step**: Debug the FString corruption in Substrate topology generation. Possible causes:
 1. `CreateVerticalLayering` creates invalid UMaterialExpression node (null pointers in string fields)

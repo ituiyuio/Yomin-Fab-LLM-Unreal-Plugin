@@ -29,5 +29,5 @@ if (GraphDefinition.Substrate.HasSlabs())
 Substrate 材质在 UE5.7 下不应启用 Nanite。
 
 ## Verification
-- M_TPESilicone_v8_AiCup 重新生成后保存成功，无崩溃
+- The Substrate test material regenerated and saved successfully, no crash
 - 2026-04-19

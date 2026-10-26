@@ -16,7 +16,7 @@ slug: llm-easy-shell-1.1.0
 ## ✨ 亮点 (跟 v1.0.0 一致,首次对外)
 
 - **Agent runtime** — TCP 监听端口 15151–15200,接纯文本命令返 JSON。LLM agent loop / CLI / test harness 都能驱动编辑器,不用写自定义传输。
-- **36 个原生 editor commands** — scene / asset / property / function 反射 / PIE 控制 / Live Coding / log 抓取 / UI 内省 / 截图 / MCP。
+- **36 个原生 editor commands**（1.1.0 发布时点读数, 2026-10 已 37, `ui state` 外迁后口径）— scene / asset / property / function 反射 / PIE 控制 / Live Coding / log 抓取 / UI 内省 / 截图 / MCP。
 - **C++ Ability 框架** — 插件通过 `ULLMEasyShellAbilityCommandObject` 注册类型化命令,启动时自动发现。Material / VFX / UI / PCG / Quixel / LLMMS / StateTree 都作为 ability ship。
 - **Python Ability 框架** — `.py` 丢进 `abilities/`,`python reload` 后立即可用 `python <name>`。
 - **25+ 内置 Python abilities** — asset / blueprint / property / gameplay / animation / curve / datatable / chooser / level / scene / editor / material / vfx / umg / pose search / navigation / perf / HD3D demo set。

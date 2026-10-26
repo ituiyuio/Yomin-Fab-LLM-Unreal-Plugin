@@ -28,7 +28,7 @@ Changed to `return !NodeId.IsEmpty();` — PinName may be empty (builder uses de
 - `LLMMaterialSerializer.cpp` — `SerializeMaterialOutputs` captures PinName from OutputIndex, handles constant defaults
 - `MaterialExportCommand.cpp` — added debug logging for output section
 
-## Export Result (M_TPESilicone_v4)
+## Export Result (sample material)
 ```json
 "output": {
  "baseColor": { "node": "Lerp_1_25", "pin": "Result" },

@@ -1,6 +1,6 @@
 ---
 name: llmmat-substrate-pipeline
-description: LLMMaterial Substrate build pipeline — complete end-to-end verified with TPE material
+description: LLMMaterial Substrate build pipeline — complete end-to-end verified with a Substrate material
 type: reference
 originSessionId: f503f7c1-d9dc-4e77-944e-7b6c8dd73019
 ---
@@ -37,5 +37,5 @@ originSessionId: f503f7c1-d9dc-4e77-944e-7b6c8dd73019
 - LLMMaterial/Builder/MaterialBuilder.cpp: bUseMaterialAttributes=true + UpdateCachedExpressionData
 
 ## Test Case
-- `material generate /Game/Materials/M_TPESilicone_v6_AiCup --from D:/UnrealEngine/CODEO/Content/Materials/M_TPESilicone_v6_AiCup.llmmat`
-- Result: `ShaderCompiled: true`, 17 nodes, 15 connections
+- `material generate /Game/Materials/MySubstrateMaterial --from <ProjectDir>/Content/Materials/MySubstrateMaterial.llmmat`
+- Result of that run: `ShaderCompiled: true`, 17 nodes, 15 connections

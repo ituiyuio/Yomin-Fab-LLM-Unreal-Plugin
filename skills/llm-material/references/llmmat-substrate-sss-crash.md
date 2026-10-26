@@ -42,7 +42,7 @@ Keep the oil_surface + flesh_tpe VerticalLayering but remove SSS parameters from
 ### Option 4: Upgrade Engine
 This bug may be fixed in a later UE5.7 patch or UE5.8+. Check Unreal Engine release notes.
 
-## Updated Test: M_TPESilicone_v8_AiCup (2026-04-19)
+## Updated Test: single-slab Substrate material (2026-04-19)
 Single SubstrateSlabBSDF + SSSMFP + SSSMFPScale, NO VerticalLayering, NO root composition.
 Result: `ShaderCompiled: true` (10 InputNodes) — shader compiles, runtime rendering TBD.
 

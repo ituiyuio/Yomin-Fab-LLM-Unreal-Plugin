@@ -185,10 +185,12 @@ UI 定义文件使用 `.llmui` 扩展名（LLM UI DSL），格式为 JSON。
 ### CommonUI Widgets (需要 CommonUI 插件)
 | Type | UE Class | Description |
 |------|----------|-------------|
-| `CommonButton` | UCommonButton | CommonUI 按钮，支持输入动作 |
-| `CommonText` | UCommonText | CommonUI 文本，支持样式资源 |
-| `CommonBorder` | UCommonBorder | CommonUI 边框，支持样式资源 |
-| `CommonImage` | UCommonImage | CommonUI 图片 |
+| `CommonButton` | `UCommonButtonBase` 的具体 BP 子类 | CommonUI 按钮，支持输入动作（样式资产未就绪时回退到 `UButton`） |
+| `CommonText` | `UCommonTextBlock` | CommonUI 文本，支持样式资源 |
+| `CommonBorder` | `UCommonBorder` | CommonUI 边框，支持样式资源 |
+| `CommonImage` | `UImage` | CommonUI 图片 —— CommonUI 没有 CommonImage 控件，实现回退到标准 `UImage` |
+
+> 这 4 个名字是 `Button` / `Text` / `Border` / `Image` 的**别名**（同一个 widget 的 CommonUI 变体），不是额外类型；`WidgetTypeSchema.llmschema` 以 `aliases` 数组登记它们，`SDFBox` 单独登记在 `SDFSchema.llmschema`。
 
 ## styleRef (专家模式)
 
@@ -853,7 +855,7 @@ ui export-schema --output C:/Temp/widget-types.json
 `references/` 目录汇总了 LLMDynamicUI 历史踩坑：
 
 - **1.1.1 patch 版本号机制**：`llmdynamicui-1-1-0-tagged-pre-patch-2026-06-17.md`（`--follow-tags` 在本机 remote 不推新 tag）
-- **ParentClass 模式**：`llmdynamicui-parentclass-pattern.md`（UMG widget 必继承自 LLMDynamicUIBase 才能正确加载 schema）
+- **ParentClass 模式**：`llmdynamicui-parentclass-pattern.md`（生成的 widget 默认继承 `UUserWidget`；要继承项目自定义基类，在 `.llmui` 根级写 `parentClass` 字段 —— 简单名 / `/Game/...` 完整路径 / `/Script/<Module>.<Class>` 完整路径 —— 或走 `--common-ui` / `--layer` 的 CommonUI 路径。插件不提供任何自带基类，v1.0 时代"必须继承插件基类"的说法已作废）
 - **`ui generate` 崩溃（PNG 未 import）**：`ui-generate-crash-2026-06-25.md` — ⚠️ **[STALE/SUPERSEDED tool-fix-152 2026-06-29]** 原文档 rootCause 引用了不存在的 `imagePath` JSON 字段(LLMDynamicUI Image widget 仅用 style brush fields),且 `--from` 描述错误(实际是必需 flag 不是 warning)。Current correct usage 见该 doc "[Current Correct Usage]" 章节。
 
 <!-- Forensic: see SKILL_CHANGELOG.md §2 (tool-fix-164 2026-06-29, original L859) -->

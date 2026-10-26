@@ -503,7 +503,7 @@ Utility AI 效用计算因子：
 
 ## CLI Commands
 
-> **Note**: 实际命令名是 **`llmstatetree`**（带 `llm` 前缀）。直接打 `statetree` 会被 LLMEasyShellSubsystem 的 `CommandToAbilityMap` 判为 unknown ability，返回 `"Unknown command: statetree"`（LLMEasyShellSubsystem.cpp:977 `EShellErrorCode::NotFound` 分支）。
+> **Note**: 实际命令名是 **`llmstatetree`**（带 `llm` 前缀）。直接打 `statetree` 会被 LLMEasyShellSubsystem 的 `CommandToAbilityMap` 判为 unknown ability，返回 `"Unknown command: statetree"`（LLMEasyShellSubsystem.cpp 的 `EShellErrorCode::NotFound` 分支 —— 2026-10-26 改锚符号名, 原 `:977` 行号化石已漂至 ~:1056）。
 >
 <!-- Forensic: see SKILL_CHANGELOG.md §2 (tool-fix-156 2026-06-29 cross-subsystem misattribution) -->
 

@@ -61,5 +61,7 @@ We released **LLM Easy Shell Lite v1.1.0-lite**. This is a minor bump from 1.0.0
 - The C++ `Execute_Implementation` wrapper defaults `bSuccess = true` when inner Python-result JSON lacks a `success` field. This is a known follow-up; documented in the project's `.superpowers/sdd/progress.md`.
 
 ## Verifier Scripts
-- `tools/verify_lite_smoke.py` — 7/7 smoke tests (reload --status, help tips, 4 abilities, @read_only block + non-block, info compat)
-- `tools/verify_lite_restart.py` — 3/3 W27 roundtrip (named event exists + signaled, ResetEvent then re-SetEvent within 1s, .ready_event file present)
+- `tools/gates/verify_lite_smoke.py` — 7/7 smoke tests (reload --status, help tips, 4 abilities, @read_only block + non-block, info compat)
+- `tools/gates/verify_lite_restart.py` — 3/3 W27 roundtrip (named event exists + signaled, ResetEvent then re-SetEvent within 1s, .ready_event file present)
+
+*(gate scripts live in the upstream development repo; they are not shipped inside this distribution repo.)*

@@ -24,7 +24,7 @@ Lite 是 LLMEasyShell 的最精简只读子集，经验文档比 full 少很多�
 以下主题 Lite 不涉及，需要时看 [full skill](../../llm-easy-shell/experience/)：
 
 - 写命令经验（rm / cp / mv / new / set / spawn / save）
-- Python ability 系统踩坑（full 271 个 `.py` ability：53 plugin + 228 project − 5 重名 − 6 私有 + 1 reload）
+- Python ability 系统踩坑（full 数百个 `.py` ability，2026-10-25 runtime 读数 370；早期 271 读数已化石）
 - Blueprint CDO / property 操作经验
 - LiveCoding / restart 编译周期
 

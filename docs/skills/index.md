@@ -27,7 +27,7 @@ These skills teach the agent how to **drive a running UE editor** through the LL
 
 | | Skill | What it teaches | Source file |
 |---|-------|-----------------|-------------|
-| 🛠️ | **llm-easy-shell**     | Full read/write access — 27 native commands + 25+ Python sub-commands | [`skills/llm-easy-shell/SKILL.md`](https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin/blob/main/skills/llm-easy-shell/SKILL.md) |
+| 🛠️ | **llm-easy-shell**     | Full read/write access — 37 native commands + hundreds of Python sub-commands | [`skills/llm-easy-shell/SKILL.md`](https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin/blob/main/skills/llm-easy-shell/SKILL.md) |
 | 🛠️ | **llm-easy-shell-lite** | Read-only subset — 9 safe exploration commands | [`skills/llm-easy-shell-lite/SKILL.md`](https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin/blob/main/skills/llm-easy-shell-lite/SKILL.md) |
 
 ---

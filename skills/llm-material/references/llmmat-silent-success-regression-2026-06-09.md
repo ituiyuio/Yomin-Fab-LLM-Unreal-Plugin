@@ -16,7 +16,7 @@ metadata:
 - **`b772c0a` (2026-04-03)**:正确路径 — `Material->ForceRecompileForRendering()` + 60s 阻塞轮询 `IsCompilationFinished()` + 读 `GetCompileErrors()` + `IsCompilingOrHadCompileError` 兜底诊断
 - **`14b5cfc` (2026-04-15)**:为避免 Substrate 上 `FAssetThumbnailPool crash` 把上面的逻辑全部砍掉,改为 `ProcessAsyncResults(0.0f, true)`(fire-and-forget)+ `pending` 即 `BuildSuccessResult` 静默成功
 
-**症状**:任何带 SM6 编译错误的 `.llmmat`(典型如 `M_HD3D_KawaseDOF`)在 `material generate` 时返 `success=true` 但实际材质是坏的。
+**症状**:任何带 SM6 编译错误的 `.llmmat`(典型如一个带 SM6 错误的 DOF 后处理材质)在 `material generate` 时返 `success=true` 但实际材质是坏的。
 
 **根因(更深)**:14b5cfc 砍错位置了。`FAssetThumbnailPool crash` 是 `ForceRecompileForRendering` 的副作用(thumbnail 渲染 + render thread race),不是"等编译"的副作用。CLI 命令场景下没有 thumbnail 渲染,触发 + 等编译是安全的。
 

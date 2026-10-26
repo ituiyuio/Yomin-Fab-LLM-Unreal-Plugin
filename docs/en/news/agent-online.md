@@ -15,7 +15,7 @@ We just upgraded **LLM Easy Shell** to "Agent Online" — AI agents can now driv
 
 ## What's new
 
-- **27 native commands** covering actor CRUD, property editing, and level management
+- **27 native commands** (count at release time; 37 as of 2026-10) covering actor CRUD, property editing, and level management
 - **25 Python sub-commands** to invoke any `unreal` module API
 - **Live Coding trigger** — let the agent hot-reload C++ after edits
 - **Screenshot pullback** — the agent can "see" the editor viewport (PNG via TCP)

@@ -32,4 +32,20 @@ metadata:
 
 ---
 
+## §3: `tool-fix 2026-09-26` ResolveClassByFullPath tail-match 歧义静默覆盖
+
+> Root cause: `LLMMetaSoundSchemaExporter.cpp::ResolveClassByFullPath` 的 IterateRegistry lambda 里 exact-match 命中后仅 `return`（只退出本次 lambda 调用，迭代继续），之后的 tail-match 分支仍会执行并**覆盖** OutClassName；且 tail-match 取输入路径的最后两段（如 "Multiply.Audio"），`UE.Multiply.Audio` 与 `Experimental.Multiply.Audio` 规范化后同尾 `multiply.audio` — last-iterated-wins 静默选中 Experimental（Cat-typed pins In/In 2），下游 BuildEdges 报 "has no input pin named 'PrimaryOperand'" 错把根因指向 DSL 写法。Runtime 复现：`llmms generate` 任意含 `"ClassPath": "UE.Multiply.Audio"` 的 .llmmetasound。
+>
+> Fix（Source/LLMMetaSoundEditor 2 files）：(1) exact-match 加 `bExactFound` 锁，命中后跳过一切后续匹配；(2) tail-match 收集候选计数 — 唯一候选才采纳，多候选 fail-loud 返回 false + 新增 4-param overload `FString& OutError` 列出全部撞尾注册路径（3-param UFUNCTION 签名保持 blueprint 兼容委托转发）；(3) `LLMMetaSoundGenerator.cpp` 调用点透传 OutError 到错误信息。验证：LiveCoding 热载后 7 个含 Multiply/AD Envelope/MapRange 歧义类的 SFX DSL 全部 generate 成功 + export 回读 pin 连接 1:1 正确（`UE.Multiply.Audio` 的 PrimaryOperand/AdditionalOperands 命中）。编辑器重启后（patch DLL 持久）回归 generate 仍通过。
+>
+> 同 family 遗留：`ResolveClassName`（ClassName 短路 fallback）同构 last-wins 歧义仍在 — 属 documented 行为（SKILL.md 已要求 Multiply/Add 等 overload 必走 ClassPath），不修但登记。
+>
+> 相邻发现（未修，登记）：(a) `llmms export` 输出带 UTF-8 BOM（json.load 需 utf-8-sig）且丢 ClassPath/自定义 Name 保真度；(b) 重新 generate 同名资产触发引擎侧 "Multiple node classes with key" LogMetaSound 提示（MetaSound source 资产自动注册为 node class 的已知行为，无害）；(c) llm-shell `set` 对 TMap<enum, TObjectPtr> 属性写入路径在 `FLLMEasyShellReflection` 内 EXCEPTION_ACCESS_VIOLATION 崩编辑器（2026-09-26 实证，TedsCore+LLMEasyShellReflection 栈）— CDO 接线请改走 python ability `set_editor_property` dict 路径。
+
+---
+
 <!-- canonical audit count: doc-audit.py --summary runtime; single source of truth (no paired-sync needed) -->
+
+## §4: `2026-10-26` SKILL.md 文档面重写（区别于 §3 的源码修复）
+
+> §3 记录的是消费端源码修复（ResolveClassByFullPath）；本条对应**本批 SKILL.md 文档面**：(1) 新增顶层 `AssetType`（`Source`/`Patch`，显式优先于 `NodeType` 推导，含四行优先级表）与 `OutputFormat`（`Mono` 默认 / `Stereo`/`Quad`/`5dot1`/`7dot1`，立体声混音器两路输出时必写，否则右声道静默丢弃）；(2) 边连接改 **PinName-first**（`FromPinName`/`ToPinName` 推荐）；(3) External 节点重载算子必须带 `ClassPath`（短名 last-wins 会选错 overload）；(4) Input/Output 节点 `Name` 必须与 `Inputs[]`/`Outputs[]` 成员一致；(5) 子命令 3→6；(6) 9 个示例样本清单重写（含立体声样本 StereoWidePad）。

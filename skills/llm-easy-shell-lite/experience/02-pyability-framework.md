@@ -10,7 +10,7 @@
 | 维度 | Full | Lite |
 |------|------|------|
 | 框架注册 | ✅ | ✅ |
-| 内置 `.py` 文件 | ✅ 271 个 (53 plugin 内置 + 228 game-specific − 5 重名 − 6 私有 + 1 reload, material / blueprint / asset / vfx / scene / level / umg / curve / datatable / editor / gameplay / reactive / hd3d / achievement / affix / archive / artifact / bestiary / biome / boss / bounty / build / career / character / chest / combat / curse / daily / death / equipment / events / evolution / firework / gameplayability / gameplaytag / glacier / heatmap / hints / identity / item / levelup / lifetime / loot / lore / metasound / missions / music / mutator / pcg / pets / pity / player / portal / reaction / reactive / relics / run / save / settings / showcase / sidebar / skilltree / sorceress / speedrun / stage / statistics / stats / status / tarot / trophy / wave / wealth / weapon / weather / wfc / cottage / webui / cheatgui / ability_cooldown / ability_usage / achievement_mastery / achievement_timeline / artifact_stats / biome_cycle / bomb_weapon / boss_rush / build_code / build_templates / career_stats / character_mastery / combat_statistics / combat_tempo / v236-v300+ HUD widget 家族...) | ⚠️ 1 个 `simple` demo（端到端验证） |
+| 内置 `.py` 文件 | ✅ 数百个（2026-10-25 runtime 读数 370；早期文档写 271 = 53 plugin + 228 game-specific − 5 重名 − 6 私有 + 1 reload，已化石）, material / blueprint / asset / vfx / scene / level / umg / curve / datatable / editor / gameplay / reactive / hd3d / achievement / affix / archive / artifact / bestiary / biome / boss / bounty / build / career / character / chest / combat / curse / daily / death / equipment / events / evolution / firework / gameplayability / gameplaytag / glacier / heatmap / hints / identity / item / levelup / lifetime / loot / lore / metasound / missions / music / mutator / pcg / pets / pity / player / portal / reaction / reactive / relics / run / save / settings / showcase / sidebar / skilltree / sorceress / speedrun / stage / statistics / stats / status / tarot / trophy / wave / wealth / weapon / weather / wfc / cottage / webui / cheatgui / ability_cooldown / ability_usage / achievement_mastery / achievement_timeline / artifact_stats / biome_cycle / bomb_weapon / boss_rush / build_code / build_templates / career_stats / character_mastery / combat_statistics / combat_tempo / v236-v300+ HUD widget 家族...) | ⚠️ 1 个 `simple` demo（端到端验证） |
 | 自定义 `.py` 加载机制 | ✅ | ✅（同 full） |
 | 加载路径 | `Plugins/LLMEasyShell/Content/Python/LLMShellAbilities/abilities/` | `Plugins/LLMEasyShellLite/Content/Python/LLMShellAbilitiesLite/abilities/` |
 | C++ 入口 | `PythonAbilityRegistry.cpp` | `PythonAbilityRegistryLite.cpp`（独立，不与 full 共享） |
@@ -64,7 +64,7 @@ def main(args, world):
 
 - C++ 注册（Lite）：`Plugins/LLMEasyShellLite/Source/LLMEasyShellLite/Private/PythonAbilityRegistryLite.cpp`
 - Lite 框架入口：`Plugins/LLMEasyShellLite/Content/Python/LLMShellAbilitiesLite/abilities/`（Lite 加载路径）
-- Full 框架入口：`Plugins/LLMEasyShell/Content/Python/LLMShellAbilities/abilities/`（Full 加载路径，含 53 plugin 内置；game-specific 228 在 `Content/Features/Survivor/Scripts/`，去重 5 cross-dup (cottage_build / gensokyo_characters_test / gensokyo_e2e_test / gensokyo_regression_test / portal_interaction_test) + 6 私有/Init 跳过 + 1 reload auto-add 后 271）
+- Full 框架入口：`Plugins/LLMEasyShell/Content/Python/LLMShellAbilities/abilities/`（Full 加载路径；game-specific 在宿主工程 `Content/Features/<Feature>/Scripts/`。271 = 早期时点读数（53 plugin + 228 project − 5 重名 − 6 私有 + 1 reload），2026-10-25 runtime 已 370、filesystem 仍持续生长 —— 真源是 `python reload` 输出）
 
 ---
 
@@ -75,6 +75,6 @@ def main(args, world):
 - 不想拉进 full 插件的 9 个引擎依赖
 
 **用 Full**：
-- 需要 271 内置命令
+- 需要大量内置命令（数百个，runtime 读数为准）
 - 写自定义能力 + 需要 `python <name>` 调度入口（Lite 也支持，内置 1 个 `simple` demo 验证框架可用）
 - 需要 Live Coding / 写 / PIE 控制等 Lite 范围外能力

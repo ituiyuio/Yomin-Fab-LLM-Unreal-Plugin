@@ -15,7 +15,7 @@ slug: agent-online
 
 ## 这次能做什么
 
-- **27 个原生指令** 覆盖 actor 增删改查、属性编辑、关卡管理
+- **27 个原生指令** 覆盖 actor 增删改查、属性编辑、关卡（发布时点读数，2026-10 已 37）管理
 - **25 个 Python 子指令** 调用任何 `unreal` 模块 API
 - **Live Coding** 触发：让 agent 改完 C++ 自动热重载
 - **截图拉回**：agent 可以"看到"编辑器画面（PNG via TCP）

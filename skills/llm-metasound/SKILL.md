@@ -5,7 +5,7 @@ description: |
   (1) 创建或设计 UE5 MetaSound 音频资产（UMetaSoundSource / UMetaSoundPatch）
   (2) 将音频图描述转换为可生成的 DSL 格式（.llmmetasound JSON）
   (3) 理解或修改现有的 MetaSound JSON 定义
-  (4) 需要了解支持的节点类型（Oscillator、Filter、Envelope、Mixer 等）
+  (4) 需要了解支持的节点类型（Sine / Saw / Square、Ladder Filter / Biquad Filter、Envelope Follower / ADSR Envelope、Audio Mixer 等）
   (5) 查询节点输入/输出端口、类型和默认值
   请使用此技能。
 ---
@@ -52,12 +52,31 @@ MetaSound 定义使用 `.llmmetasound` 扩展名，格式为 LLM-friendly JSON�
   "NodeName": "MySound",           // 资产名称（必需）
   "NodeType": "MetasoundSource",  // 或 "MetasoundPatch"（子图，纯 DSP 子图）
   "MetasoundDescription": "..."    // 描述（可选）
-}
+},
+
+"AssetType": "Source",            // 顶层可选字段："Source" | "Patch"，显式优先于 NodeType
 ```
 
-`NodeType` 决定资产类型（parser `LLMMetaSoundParser.cpp:106-113` 只识别 `"Patch"` 子串）：
-- `MetasoundSource` → UMetaSoundSource（可播放音频）
-- `MetasoundPatch` → UMetaSoundPatch（纯 DSP 子图）
+资产类型由**顶层可选字段** `AssetType` 决定；缺省时才从 `Metadata.NodeType` 推导：
+
+| 优先级 | 取值 | 结果 |
+|--------|------|------|
+| 1（最高） | 顶层 `"AssetType": "Source"` | UMetaSoundSource（可播放音频） |
+| 1（最高） | 顶层 `"AssetType": "Patch"` | UMetaSoundPatch（纯 DSP 子图） |
+| 2（兜底） | `NodeType` 含 `Source` | UMetaSoundSource |
+| 2（兜底） | `NodeType` 含 `Patch` | UMetaSoundPatch |
+| 2（兜底） | `NodeType` 含 `Graph` | UMetaSoundPatch（没有 transport 的图就是 patch） |
+| 2（兜底） | 其他 / 缺省 | UMetaSoundSource + 一条 warning |
+
+`AssetType` 是显式开关，**永远优先于** `NodeType`。日常写 `NodeType: "MetasoundSource"` 或 `"MetasoundPatch"` 即可；写 `"MetasoundGraph"` 会落到 Patch 分支（无 transport 的纯 DSP 子图）。
+
+### OutputFormat（立体声必写）
+
+顶层可选字段 `"OutputFormat"`：`"Mono"`（默认）/ `"Stereo"` / `"Quad"` / `"5dot1"` / `"7dot1"`（别名 `5.1` / `7.1` 也认）。
+
+**什么时候必须写**：图里有**两路以上音频输出**的节点时。最常见的是立体声混音器（`Audio Mixer (Stereo, 2)`）出 `Out L` + `Out R` 两路——源每个声道只给**一个**输出口，源还是单声道时第二路**没有去处**，右声道被静默丢弃（插件现在会报 "audio source output(s) could not be connected ... were dropped"，但只有显式声明 Stereo 才能真的建成）。
+
+参考 `StereoWidePad.llmmetasound`。
 
 ### Inputs / Outputs
 
@@ -98,7 +117,7 @@ MetaSound 定义使用 `.llmmetasound` 扩展名，格式为 LLM-friendly JSON�
   {
     "NodeID": 1,
     "ClassName": "Input",         // 节点类名（必需）
-    "Name": "Freq",               // 显示名称（可选）
+    "Name": "Freq",               // Input/Output 节点：必须与 Inputs[]/Outputs[] 里同名成员的 Name 完全一致
     "TypeName": "Primitive:Float", // Input/Output 节点必须指定
     "InputDefaults": {             // 默认值（可选）
       "Frequency": { "LiteralType": "Float", "AsFloat": 440.0 }
@@ -111,9 +130,13 @@ MetaSound 定义使用 `.llmmetasound` 扩展名，格式为 LLM-friendly JSON�
 - `ClassName` 必须是 `"Input"` 或 `"Output"`
 - `TypeName` 必须指定，如 `"Primitive:Float"`、`"Audio:Buffer"`
 
-**External 节点**（Oscillator、Filter 等）：
-- `ClassName` 使用注册表中的类名
+**External 节点**（Sine / Saw / Ladder Filter 等）：
+- `ClassName` 使用注册表中的类名（取 `Config/Schemas/LLMMetaSoundSchema.llmmetasoundschema` 的 `className` 字段，不是 `displayName`）
 - `TypeName` 对 External 节点可省略
+- **重载算子必须带 `ClassPath`**（`Multiply` / `Add` / `Subtract` 等各有多套 overload）。
+  只给 `ClassName` 时注册表按短名 last-wins，可能选中 `Time by Float` 这类变体，
+  于是 Audio→Time 类型不匹配而构建失败。用 schema 里的 `classPath` 精确指定，例如
+  `"ClassPath": "UE.Multiply.Audio by Float"`。
 
 ### Edges
 
@@ -121,12 +144,16 @@ MetaSound 定义使用 `.llmmetasound` 扩展名，格式为 LLM-friendly JSON�
 "Edges": [
   {
     "FromNodeID": 1,     // 源节点 ID
-    "FromVertexID": 0,   // 源输出端口索引
+    "FromPinName": "Audio", // 源输出端口名（推荐）
     "ToNodeID": 2,       // 目标节点 ID
-    "ToVertexID": 0       // 目标输入端口索引
+    "ToPinName": "In"    // 目标输入端口名（推荐）
   }
 ]
 ```
+
+**端口寻址**：`FromPinName` / `ToPinName` 是首选（按名字解析，跨引擎版本稳定）；
+`FromVertexID` / `ToVertexID` 是老写法（按引脚索引），只在对应的 `*PinName` 为空时才生效。
+端口名从 schema 的 `inputs` / `outputs` 里查。
 
 **连接类型规则**：
 - `Audio:Buffer` → `Audio:Buffer`（音频接音频）
@@ -233,7 +260,7 @@ MetaSound 定义使用 `.llmmetasound` 扩展名，格式为 LLM-friendly JSON�
 |-----------|------|
 | `Audio Bus Reader (N)` | N 声道音频总线读取 |
 | `Audio Bus Writer (N)` | N 声道音频总线写入 |
-| `Wave Writer` | 采样写入器 |
+| `Wave Writer (Stereo)` / `Wave Writer (N-Channel)` | 采样写入器（声道数写在类名里） |
 
 ### Conversions（类型转换）
 
@@ -282,8 +309,8 @@ MetaSound 定义使用 `.llmmetasound` 扩展名，格式为 LLM-friendly JSON�
   ],
   "Outputs": [],
   "Nodes": [
-    { "NodeID": 1, "ClassName": "Input", "Name": "FreqIn", "TypeName": "Primitive:Float" },
-    { "NodeID": 2, "ClassName": "Input", "Name": "GainIn", "TypeName": "Primitive:Float" },
+    { "NodeID": 1, "ClassName": "Input", "Name": "Frequency", "TypeName": "Primitive:Float" },
+    { "NodeID": 2, "ClassName": "Input", "Name": "Gain", "TypeName": "Primitive:Float" },
     { "NodeID": 3, "ClassName": "Sine", "Name": "Osc", "InputDefaults": {} },
     { "NodeID": 4, "ClassName": "Multiply", "Name": "GainMul", "ClassPath": "UE.Multiply.Audio by Float", "InputDefaults": {} },
     { "NodeID": 5, "ClassName": "Envelope Follower", "Name": "Env", "InputDefaults": { "Enable": { "LiteralType": "Boolean", "AsBool": true } } }
@@ -330,12 +357,18 @@ MetaSound 定义使用 `.llmmetasound` 扩展名，格式为 LLM-friendly JSON�
 
 | 文件 | 结构 | 说明 |
 |------|------|------|
-| `SquareBass.llmmetasound` | Square → Ladder Filter → Envelope Follower | 方波贝斯 |
-| `SawDiscord.llmmetasound` | Saw → Ladder Filter → Envelope Follower | 锯齿波discord |
-| `TrianglePad.llmmetasound` | Triangle → Envelope Follower | 三角波垫音 |
-| `TriangleSub.llmmetasound` | Triangle → Envelope Follower | 三角波低音 |
-| `NoiseBurst.llmmetasound` | Noise → Envelope Follower | 噪声突发 |
-| `SquareLead.llmmetasound` | Square → Ladder Filter → Envelope Follower | 方波主音 |
+| `SquareLead.llmmetasound` | Saw → Ladder Filter → Multiply(float gain)；LFO→MapRange→pitch，AD Envelope→MapRange→cutoff | 控制率接线（Float）+ ClassPath 消歧 |
+| `SquareBass.llmmetasound` | 2× Square → Mono Mixer → Ladder Filter → Envelope Follower → Multiply | 双声源合并成一路 |
+| `TrianglePad.llmmetasound` | 2× Triangle → Mono Mixer → Ladder Filter(LFO 扫截止) → Envelope Follower | 慢 LFO 扫滤波 |
+| `TriangleSub.llmmetasound` | Triangle → Ladder Filter → Envelope Follower → Bitcrusher → Multiply | 失真 sub |
+| `NoiseBurst.llmmetasound` | 2× Noise(整数 seed) → Mono Mixer → Ladder Filter → Envelope Follower → Multiply | 整数默认值 + 多声源合并 |
+| `SawDiscord.llmmetasound` | 2× Saw → Mono Mixer → Ladder Filter(高共振) → Envelope Follower → Multiply | 不谐和双锯 |
+| `InterfaceSynth.llmmetasound` | Input(Frequency/Cutoff/Gain) → Square → Ladder Filter → Multiply | **图接口参数**：Input 节点的 `Name` 必须与 `Inputs[]` 同名 |
+| `SubBassPatch.llmmetasound` | Square → Ladder Filter → Multiply → Output（`NodeType: MetasoundPatch`）| **Patch 资产类型** + 输出接口成员 |
+| `StereoWidePad.llmmetasound` | 2× Sine → Stereo Mixer（顶层 `"OutputFormat": "Stereo"`）| **立体声**：混音器出两路，源必须配立体声输出格式 |
+
+> 全部 9 枚都在上游开发仓的 `tools/gates/verify_llmmetasound_samples.py` 夹具门里（结构/类型/接口命名/边/悬空节点；该门属上游仓，不随本发行仓分发）。
+> 改完样本先跑那道门，再进编辑器 `llmms generate` 实测。
 
 ## VertexID 速查
 
@@ -411,13 +444,18 @@ outputs: `[0]` Envelope (Float), `[1]` Audio Envelope (Audio)
 
 > **Note**: 注册名是 **`llmms`**（不是 `metasound` 或 `llmmetasound`）。`Plugins/LLMMetaSound/Source/LLMMetaSoundEditor/Private/LLMMetaSoundEditorModule.cpp` 通过 `Info.AbilityName = TEXT("llmms")` 注册 — `LLMEasyShell` dispatcher 看到 `metasound`/`llmmetasound` 会返回 `"Unknown command"`。
 
-llmms ability 注册 **3 个 sub-cmd**，runtime `llm-shell -q -j -c help llmms` 1:1 锁定：
+llmms ability 注册 **6 个 sub-cmd**，runtime `llm-shell -q -j -c help llmms` 1:1 锁定。
+命令清单的**唯一真源**是 `LLMMetaSoundCommandHandler.cpp` 的 `GetCommandDescriptors()` 一张表——
+运行时 help 文本与 ability 元数据的 `commands[]` 都从它派生，两份文案不可能再漂移：
 
 | subcommand | usage | description |
 |---|---|---|
-| `generate` | `llmms generate <assetPath> --from <filePath>` | 从 `.llmmetasound` JSON 文件生成 MetaSound 资产 (UMetaSoundSource 或 UMetaSoundPatch, 由 Metadata.NodeType 决定) |
-| `export` | `llmms export <assetPath> [--output <filePath>]` | 导出 MetaSound 资产到 `.llmmetasound` JSON (默认输出到 `Saved/Exported_<AssetName>.llmmetasound`) |
+| `generate` | `llmms generate <assetPath> --from <filePath>` | 从 `.llmmetasound` JSON 文件生成 MetaSound 资产 (UMetaSoundSource 或 UMetaSoundPatch，由顶层 `AssetType` 决定) |
+| `export` | `llmms export <assetPath> [--output <filePath>]` | 导出 MetaSound 资产到 `.llmmetasound` JSON (默认输出到 `Saved/Exported_<AssetName>.llmmetasound`)，带上解析后的 `AssetType` 与 `OutputFormat`，重导即得同一资产 |
 | `inspect` | `llmms inspect <assetPath>` | 查看 MetaSound 资产结构: node 数量 + graph inputs/outputs + 节点列表 (前 20) |
+| `validate` | `llmms validate --from <filePath>` | **只读校验**（不生成资产、不碰 package）：类名/ClassPath 在不在注册表、InputDefaults 键是不是真输入脚、边引脚名与两端类型、一个输入脚是否只接一个源、接口节点名是否与 `Inputs[]`/`Outputs[]` 同名 |
+| `schema` | `llmms schema [--output <filePath>]` | 导出节点类 schema 到文件（默认 `Saved/LLMMetaSoundSchema.llmmetasoundschema`），只回报路径 + 节点数，不回灌 500KB 正文 |
+| `open-panel` | `llmms open-panel` | 打开 LLM MetaSound 编辑器面板 (Slate GUI)。面板里的 Output Format 组合框只是**兜底**——文档自己声明的顶层 `OutputFormat` 优先 |
 
 ```bash
 # 生成 MetaSound
@@ -428,6 +466,12 @@ llmms export /Game/Audio/MySound --output C:/Temp/export.llmmetasound
 
 # 检查结构
 llmms inspect /Game/Audio/MySound
+
+# 只读校验 (改完先跑这个，别等生成失败才发现)
+llmms validate --from /Plugin/LLMMetaSound/Examples/InterfaceSynth
+
+# 打开 GUI 面板
+llmms open-panel
 ```
 
 <!-- Forensic: see SKILL_CHANGELOG.md §2 (tool-fix-07 session61 3 sub-cmd silent-missing closure) -->

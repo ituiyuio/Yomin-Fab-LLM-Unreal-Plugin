@@ -33,12 +33,14 @@ Bug found: `MaterialGraphBuilder::CreateExpressionNode()` called `ShaderGenerato
 Bug found: `USHGenerator::Initialize()` set `ShaderOutputDir = "/Game/Shaders"` (UE content path, not filesystem path). Files were never written. Fix: `ShaderOutputDir = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Shaders"))`.
 
 ## Affected Files
-- `Content/LLMDefs/Materials/LiquidGlass_v22_Complete.llmmat` — recreated with all Inputs arrays
-- `Content/LLMDefs/Materials/LiquidGlass_v21_Advanced.llmmat` — already had Inputs arrays (correct)
+- `<ProjectDir>/Content/Materials/MyGlassMaterial_Complete.llmmat` — recreated with all Inputs arrays
+- `<ProjectDir>/Content/Materials/MyGlassMaterial_Advanced.llmmat` — already had Inputs arrays (correct)
 - `Plugins/LLMMaterial/Source/LLMMaterial/Builder/MaterialGraphBuilder.cpp` — Inputs-first ordering, Inputs.Empty() before adding
 - `Plugins/LLMMaterial/Source/LLMMaterial/Builder/USHGenerator.cpp` — filesystem path fix
 
 ## Also Fixed
-- `GlassMaterialLayer::UpdateBaseParameters()` hardcoded DeepColor instead of using `OpticalConfig.DeepColor`
-- Added `DeepColor` field to `FLiquidGlassOptical` struct in `LiquidGlassTypes.h`
-- Updated default material path to v22 Complete in both `LiquidGlassComponent.cpp` and `GlassMaterialLayer.cpp`
+> 以下 3 项发生在 **host project 侧**（消费 LLMMaterial 的那个工程自己的玻璃材质模块），不在 LLMMaterial 插件内 —— 列在这里只为记录当时的连带修复。
+
+- The host project's `GlassMaterialLayer::UpdateBaseParameters()` hardcoded DeepColor instead of using `OpticalConfig.DeepColor`
+- Added `DeepColor` field to the `FLiquidGlassOptical` struct in `LiquidGlassTypes.h`
+- Updated the default material path to the "Complete" variant in both `LiquidGlassComponent.cpp` and `GlassMaterialLayer.cpp`
