@@ -32,19 +32,19 @@ Generate complete UMetaSoundSource and UMetaSoundPatch assets from JSON (`.llmme
 
 ```json
 {
+  "AssetType": "Source",
   "Metadata": {
     "NodeName": "MySound",
-    "NodeType": "MetasoundSource",
     "MetasoundDescription": "My custom sound"
   },
   "Inputs": [],
   "Outputs": [],
   "Nodes": [
-    { "NodeID": 1, "ClassName": "Triangle", "Name": "Osc1", "InputDefaults": { "Frequency": { "LiteralType": "Float", "AsFloat": 440.0 } } },
-    { "NodeID": 2, "ClassName": "Envelope Follower", "Name": "AmpEnv", "InputDefaults": { "Enable": { "LiteralType": "Boolean", "AsBool": true } } }
+    { "NodeID": 1, "ClassName": "Triangle", "ClassPath": "UE.Triangle.Audio", "Name": "Osc1", "InputDefaults": { "Frequency": { "LiteralType": "Float", "AsFloat": 440.0 } } },
+    { "NodeID": 2, "ClassName": "Envelope Follower", "ClassPath": "UE.Envelope Follower", "Name": "AmpEnv", "InputDefaults": { "Enable": { "LiteralType": "Boolean", "AsBool": true } } }
   ],
   "Edges": [
-    { "FromNodeID": 1, "FromVertexID": 0, "ToNodeID": 2, "ToVertexID": 1 }
+    { "FromNodeID": 1, "FromPinName": "Audio", "ToNodeID": 2, "ToPinName": "In" }
   ]
 }
 ```
@@ -55,8 +55,8 @@ Generate complete UMetaSoundSource and UMetaSoundPatch assets from JSON (`.llmme
 
 | Item | Value |
 |------|-------|
-| Plugin Version | 1.0.0 |
-| Engine | UE 5.7+ |
+| Plugin Version | 1.2.0 |
+| Engine | UE 5.7 / 5.8 |
 | Modules | LLMMetaSoundEditor (Editor) |
 | Publisher | YominUnreal |
 | Required Plugins | Metasound (engine) |

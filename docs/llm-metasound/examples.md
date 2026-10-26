@@ -88,9 +88,11 @@ White noise burst with percussive envelope.
 
 | Field | Description |
 |-------|-------------|
+| `AssetType` | `"Source"` or `"Patch"` — top-level, authoritative; takes precedence over `Metadata.NodeType` |
+| `OutputFormat` | `"Mono"` (default) / `"Stereo"` / `"Quad"` / `"5dot1"` / `"7dot1"` — channel layout |
 | `Metadata.NodeName` | Asset display name |
-| `Metadata.NodeType` | `"MetasoundSource"` or `"MetasoundGraph"` (subgraph/Patch) |
+| `Metadata.NodeType` | Legacy spelling of `AssetType` (`"MetasoundSource"` / `"MetasoundGraph"`), still honored |
 | `Inputs[]` | Graph-level input interface |
 | `Outputs[]` | Graph-level output interface |
-| `Nodes[]` | Graph nodes |
-| `Edges[]` | Connections between pins |
+| `Nodes[]` | Graph nodes (`ClassPath` disambiguates overloaded operators) |
+| `Edges[]` | Connections between pins (`FromPinName` / `ToPinName` preferred; `*VertexID` deprecated) |

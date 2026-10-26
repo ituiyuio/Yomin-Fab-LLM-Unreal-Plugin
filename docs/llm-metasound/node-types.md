@@ -8,23 +8,35 @@ LLMMetaSound supports all MetaSound node types discovered from the INodeClassReg
 
 ## Asset Types
 
-### MetasoundSource
+The top-level `AssetType` field (`"Source"` or `"Patch"`) is **authoritative** — when present it takes precedence over the legacy `Metadata.NodeType`. Both spellings work; new authoring should use `AssetType`.
 
-UMetaSoundSource with transport (OnPlay trigger).
+### Source (UMetaSoundSource)
+
+UMetaSoundSource with transport (OnPlay trigger, auto-connected).
 
 ```json
 {
+  "AssetType": "Source",
   "Metadata": {
     "NodeName": "MySound",
-    "NodeType": "MetasoundSource",
     "MetasoundDescription": "My custom sound"
   }
 }
 ```
 
-### MetasoundGraph
+### Patch (UMetaSoundPatch)
 
 UMetaSoundPatch — pure DSP patch / subgraph without transport.
+
+```json
+{
+  "AssetType": "Patch"
+}
+```
+
+### Channel Layout (OutputFormat)
+
+`OutputFormat` declares the source's channel layout: `"Mono"` (default), `"Stereo"`, `"Quad"`, `"5dot1"`, `"7dot1"`. Set it when a node publishes more than one audio output (e.g. a stereo mixer's `Out L` / `Out R`) — otherwise a stereo graph on a mono source silently drops a channel.
 
 ---
 
@@ -32,9 +44,9 @@ UMetaSoundPatch — pure DSP patch / subgraph without transport.
 
 ```json
 {
+  "AssetType": "Source",
   "Metadata": {
     "NodeName": "TriangleSub",
-    "NodeType": "MetasoundSource",
     "MetasoundDescription": "Triangle wave with sub-octave"
   },
   "Inputs": [
@@ -45,11 +57,11 @@ UMetaSoundPatch — pure DSP patch / subgraph without transport.
     { "Name": "Audio", "TypeName": "Primitive:Float" }
   ],
   "Nodes": [
-    { "NodeID": 1, "ClassName": "Triangle", "Name": "MainOsc", "InputDefaults": {} },
-    { "NodeID": 2, "ClassName": "Envelope Follower", "Name": "AmpEnv", "InputDefaults": {} }
+    { "NodeID": 1, "ClassName": "Triangle", "ClassPath": "UE.Triangle.Audio", "Name": "MainOsc", "InputDefaults": {} },
+    { "NodeID": 2, "ClassName": "Envelope Follower", "ClassPath": "UE.Envelope Follower", "Name": "AmpEnv", "InputDefaults": {} }
   ],
   "Edges": [
-    { "FromNodeID": 1, "FromVertexID": 0, "ToNodeID": 2, "ToVertexID": 1 }
+    { "FromNodeID": 1, "FromPinName": "Audio", "ToNodeID": 2, "ToPinName": "In" }
   ]
 }
 ```
@@ -92,16 +104,19 @@ UMetaSoundPatch — pure DSP patch / subgraph without transport.
 
 ```json
 "Edges": [
-  { "FromNodeID": 1, "FromVertexID": 0, "ToNodeID": 2, "ToVertexID": 1 }
+  { "FromNodeID": 1, "FromPinName": "Audio", "ToNodeID": 2, "ToPinName": "In" }
 ]
 ```
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `FromNodeID` | int | Source node ID |
-| `FromVertexID` | int | Source pin index |
+| `FromPinName` | string | Source pin name, resolved against the engine's live vertex list |
 | `ToNodeID` | int | Target node ID |
-| `ToVertexID` | int | Target pin index |
+| `ToPinName` | string | Target pin name, resolved against the engine's live vertex list |
+| `FromVertexID` / `ToVertexID` | int | **Deprecated** legacy pin indices — used only when the corresponding `*PinName` is empty |
+
+Pin names are stable across UE versions and self-document intent (e.g. `Audio`, `In`, `Out`, `Audio Envelope`). Prefer them for new authoring.
 
 ---
 
@@ -166,19 +181,19 @@ UMetaSoundPatch — pure DSP patch / subgraph without transport.
 
 ```json
 {
+  "AssetType": "Source",
   "Metadata": {
     "NodeName": "TriangleSub",
-    "NodeType": "MetasoundSource",
     "MetasoundDescription": "Triangle wave with envelope"
   },
   "Inputs": [],
   "Outputs": [],
   "Nodes": [
-    { "NodeID": 1, "ClassName": "Triangle", "Name": "MainOsc", "InputDefaults": { "Frequency": { "LiteralType": "Float", "AsFloat": 110.0 } } },
-    { "NodeID": 2, "ClassName": "Envelope Follower", "Name": "AmpEnv", "InputDefaults": { "Enable": { "LiteralType": "Boolean", "AsBool": true } } }
+    { "NodeID": 1, "ClassName": "Triangle", "ClassPath": "UE.Triangle.Audio", "Name": "MainOsc", "InputDefaults": { "Frequency": { "LiteralType": "Float", "AsFloat": 110.0 } } },
+    { "NodeID": 2, "ClassName": "Envelope Follower", "ClassPath": "UE.Envelope Follower", "Name": "AmpEnv", "InputDefaults": { "Enable": { "LiteralType": "Boolean", "AsBool": true } } }
   ],
   "Edges": [
-    { "FromNodeID": 1, "FromVertexID": 0, "ToNodeID": 2, "ToVertexID": 1 }
+    { "FromNodeID": 1, "FromPinName": "Audio", "ToNodeID": 2, "ToPinName": "In" }
   ]
 }
 ```
@@ -187,21 +202,21 @@ UMetaSoundPatch — pure DSP patch / subgraph without transport.
 
 ```json
 {
+  "AssetType": "Source",
   "Metadata": {
     "NodeName": "SawDiscord",
-    "NodeType": "MetasoundSource",
     "MetasoundDescription": "Sawtooth with filter"
   },
   "Inputs": [],
   "Outputs": [],
   "Nodes": [
-    { "NodeID": 1, "ClassName": "Saw", "Name": "SawOsc", "InputDefaults": { "Frequency": { "LiteralType": "Float", "AsFloat": 175.0 } } },
-    { "NodeID": 2, "ClassName": "Ladder Filter", "Name": "HPF", "InputDefaults": {} },
-    { "NodeID": 3, "ClassName": "Envelope Follower", "Name": "AmpEnv", "InputDefaults": { "Enable": { "LiteralType": "Boolean", "AsBool": true } } }
+    { "NodeID": 1, "ClassName": "Saw", "ClassPath": "UE.Saw.Audio", "Name": "SawOsc", "InputDefaults": { "Frequency": { "LiteralType": "Float", "AsFloat": 175.0 } } },
+    { "NodeID": 2, "ClassName": "Ladder Filter", "ClassPath": "UE.Ladder Filter.Audio", "Name": "HPF", "InputDefaults": {} },
+    { "NodeID": 3, "ClassName": "Envelope Follower", "ClassPath": "UE.Envelope Follower", "Name": "AmpEnv", "InputDefaults": { "Enable": { "LiteralType": "Boolean", "AsBool": true } } }
   ],
   "Edges": [
-    { "FromNodeID": 1, "FromVertexID": 0, "ToNodeID": 2, "ToVertexID": 0 },
-    { "FromNodeID": 2, "FromVertexID": 0, "ToNodeID": 3, "ToVertexID": 1 }
+    { "FromNodeID": 1, "FromPinName": "Audio", "ToNodeID": 2, "ToPinName": "In" },
+    { "FromNodeID": 2, "FromPinName": "Out", "ToNodeID": 3, "ToPinName": "In" }
   ]
 }
 ```
@@ -210,9 +225,9 @@ UMetaSoundPatch — pure DSP patch / subgraph without transport.
 
 ```json
 {
+  "AssetType": "Source",
   "Metadata": {
-    "NodeName": "ModularSynth",
-    "NodeType": "MetasoundSource"
+    "NodeName": "ModularSynth"
   },
   "Inputs": [
     { "Name": "Gain", "TypeName": "Primitive:Float" },
