@@ -79,7 +79,7 @@ command sets, not sandboxed by Lite), AI-agent-first JSON protocol.
 
 **Supported Target Build Platforms:** Windows, Mac, Linux
 
-**Documentation Link:** [Documentation.md in plugin folder](https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin/tree/main/Plugins/LLMEasyShellLite/Documentation.md)
+**Documentation Link:** [llm-easy-shell-lite skill & reference docs](https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin/tree/main/skills/llm-easy-shell-lite)
 
 **Example Project:** Any UE 5.5+ project — connect a TCP client to
 `localhost:15201` (first free port in `15201–15250`).

@@ -11,7 +11,7 @@ hero:
       link: /llm-dynamic-ui/
     - theme: alt
       text: 在 GitHub 上查看
-      link: https://github.com/yomin-unreal
+      link: https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin
 
 features:
   - icon: 🎨

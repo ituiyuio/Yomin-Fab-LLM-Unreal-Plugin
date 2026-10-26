@@ -79,11 +79,10 @@ command trace logging.
 
 **Supported Target Build Platforms:** Windows, Mac, Linux
 
-**Documentation Link:** [Documentation.md in plugin folder](https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin/tree/main/Plugins/LLMEasyShell/Documentation.md)
+**Documentation Link:** [llm-easy-shell skill & reference docs](https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin/tree/main/skills/llm-easy-shell)
 
-**Example Project:** *(see the GitHub repo's `Plugins/LLMEasyShell/` for
-reference `.uplugin` / `Documentation.md` and the bundled Python ability
-set)*
+**Example Project:** *(the public repo ships the skill folder — reference
+docs and the bundled Python ability set)*
 
 **Important/Additional Notes:** Editor-only plugin. For a minimal-dependency,
 read-only variant, see [LLM Easy Shell Lite](../llm-easy-shell-lite/). UE 5.5–5.8.
