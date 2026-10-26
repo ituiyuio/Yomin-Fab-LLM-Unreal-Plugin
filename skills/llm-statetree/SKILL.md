@@ -20,9 +20,11 @@ StateTree 定义使用 `.llmstate` 扩展名，格式为 JSON。
 
 ## Reference Files
 
-**Node Schema**: `Plugins/LLMStateTree/Config/Schemas/StateTreeNodeSchema.llmstateschema` - 包含所有 StateTree 节点类型的完整定义、属性类型、默认值
+**Node Schema**: `Plugins/LLMStateTree/Config/Schemas/StateTreeNodeSchema.llmstateschema` - 节点类型的 schema 快照（属性类型 / 默认值 / usage / instance data 属性）。
+> **⚠️ 它是快照不是全集**：内容取决于**当前工程**反射能发现哪些节点（引擎模块 + 项目模块 + 已启用的测试模块都会进来）。**权威活列表用 `llmstatetree nodes`**，那个命令直接问当前工程。
+> 刷新快照：`llmstatetree schema --output Plugins/LLMStateTree/Config/Schemas/StateTreeNodeSchema.llmstateschema`
 
-**Examples**: `Plugins/LLMStateTree/Config/Examples/` - 包含完整的 AI 示例文件
+**Examples**: `Plugins/LLMStateTree/Config/Examples/` - 完整的 AI 示例文件
 
 **导出 Schema**: 在编辑器中点击 "Generate Schema" 按钮生成最新节点定义
 
@@ -101,9 +103,10 @@ StateTree 全局参数，可在 Task 中通过 `${Parameters.Name}` 绑定：
 ]
 ```
 
-> **⚠️ Schema 状态**: `StateTreeNodeSchema.llmstateschema` 的 `Evaluator` category 当前为 **0 个具体节点**（仅 `Task` 3 / `Condition` 13 / `Consideration` 3）。
-> `StateTreeEvaluatorBase` 是 UE 抽象基类，不能直接实例化；需要 AIModule / 项目内具体子类才能 resolve。
-> 在 LLMStateTree plugin 补全 Evaluator 节点前，建议用 `parameters` 配合 Task 内读取替代。
+> **⚠️ Schema 状态**: `StateTreeNodeSchema.llmstateschema` 当前 **40 个节点**（`Task` 10 / `Condition` 24 / `Consideration` 3 / `Evaluator` 3）。
+> `Evaluator` 只有 3 个 —— 全是引擎的 AnimNode 动画求值器，**没有游戏逻辑用的 evaluator**。
+> 所以 `${Evaluators.X.Y}` 这个 scope 在通用工程里几乎没有可用落点：要用它得先有自己的 `FStateTreeEvaluatorBase` 派生类。
+> 权威活列表用 `llmstatetree nodes`（那个直接问当前工程，含你项目自己的类型）。
 
 ### States
 
@@ -143,7 +146,7 @@ StateTree 的核心，定义 AI 状态和转换：
 | `StateTreeDebugTextTask` | 绘制调试文本 |
 | `StateTreeRunParallelStateTreeTask` | 并行运行另一个 StateTree |
 
-> **⚠️ 注**: `StateTreeMoveToTask` 不在 `StateTreeNodeSchema.llmstateschema` 的 Task 列表中（AIModule plugin 提供但需显式 enable）。Schema 默认只暴露上表 3 个。
+> **注**: 节点是否可用取决于**当前工程启用了哪些引擎插件**（例如 `StateTreeMoveToTask` 来自 AIModule）。上表只是常见项，完整列表用 `llmstatetree nodes`。
 
 **Common Task Properties:**
 ```json
@@ -257,11 +260,13 @@ Utility AI 效用计算因子：
 ```
 
 **Binding Scopes:**
-| Scope | Example |
-|-------|---------|
-| `${Parameters.Name}` | 全局参数 |
-| `${Evaluators.Name.Property}` | Evaluator 属性 |
-| `${Context.Name}` | Context 属性（由 Schema 定义） |
+| Scope | Example | 说明 |
+|-------|---------|------|
+| `${Parameters.Name}` | 全局参数 | `Param` 是被接受的别名，解析时归一化成 `Parameters` |
+| `${Evaluators.Name.Property}` | Evaluator 属性 | 必须 3 段；2 段形式 `${Evaluators.X}` 没有来源节点，会直接报错 |
+| `${Context.Name}` | Context 属性（由 Schema 定义） | |
+
+> **⚠️ 报错优先**: 不认识的 scope、或不认识的枚举值（trigger / type / priority / selectionBehavior / operand）现在**会报错**（进 `Errors`），不再静默回落成默认值。写错的草稿会明确报出来，而不是变成一棵"能跑但不是你要的行为"的树。
 
 ## Common Patterns
 
@@ -507,6 +512,11 @@ Utility AI 效用计算因子：
 llmstatetree generate /Game/AI/GuardAI --from GuardAI.llmstate
 ```
 
+预览解析结果（不写任何资产，用于提交前自检）:
+```bash
+llmstatetree preview GuardAI.llmstate
+```
+
 检查 StateTree:
 ```bash
 llmstatetree inspect /Game/AI/GuardAI --states
@@ -522,7 +532,7 @@ llmstatetree export /Game/AI/GuardAI --output C:/Temp/AI.llmstate
 llmstatetree copy /Game/AI/GuardAI /Game/AI/GuardAI_v2
 ```
 
-删除 StateTree 资产 (`--force` 跳过脏数据确认):
+删除 StateTree 资产 (`--force` = 资产有未保存改动时也强制删):
 ```bash
 llmstatetree delete /Game/AI/GuardAI --force
 ```
@@ -532,6 +542,18 @@ llmstatetree delete /Game/AI/GuardAI --force
 llmstatetree compile /Game/AI/GuardAI
 ```
 
+查询本项目可用的节点类型（选节点时先查这个，不要硬编码）:
+```bash
+llmstatetree nodes --category Task
+```
+
+导出节点 schema 快照（刷新随包文件用这个）:
+```bash
+llmstatetree schema --output Plugins/LLMStateTree/Config/Schemas/StateTreeNodeSchema.llmstateschema
+```
+
 <!-- Forensic: see SKILL_CHANGELOG.md §3 (tool-fix-07 session60 3→6 sub-cmd silent-missing closure) -->
+
+<!-- Forensic: see SKILL_CHANGELOG.md §4 (6→8 sub-cmd: preview/nodes 从“文档承诺但代码不存在”到真实交付) -->
 
 <!-- canonical audit count: doc-audit.py --summary runtime; single source of truth (no paired-sync needed) -->

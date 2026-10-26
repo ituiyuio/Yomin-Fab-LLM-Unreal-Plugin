@@ -41,3 +41,25 @@ metadata:
 ---
 
 <!-- canonical audit count: doc-audit.py --summary runtime; single source of truth (no paired-sync needed) -->
+
+## §4: 6→8 sub-cmd — `preview` / `nodes` 从“文档承诺但代码不存在”到真实交付
+
+> Original SKILL.md CLI section extended in the 2026-10-25 contract-hardening pass. Content below is the forensic record of that change.
+
+Root cause: `VERSION-NOTES.md` 已对外承诺 1.1.0 交付 `preview` 与 `nodes` 两个子命令，但
+`LLMStateTreeCommandHandler::HandleStateTreeCommand` 实际只有 generate / inspect / export / copy /
+delete / compile 六个，两个承诺的子命令根本不存在 —— agent 调一下就拿到
+`Unknown statetree subcommand`。根因与 tool-fix-07 session60（3→6 sub-cmd silent-missing）同系，
+但方向相反：那次是代码有文档没有，这次是文档有代码没有 —— 对外已发布的
+Version Notes 承诺属于已交付能力，撤回文档才是正确选择。
+
+Fix: 在 `LLMStateTreeCommandHandler` 实现 `preview`（解析为 JSON 回显，不写资产，复用
+`ULLMStateTreeSerializer::DefinitionToJsonString`）与 `nodes`（反射得到的节点类型 + 属性 schema）；
+同时两个命令必须同时注册进 `LLMStateTreeEditorModule.cpp` 的 ability JSON `commands` 数组，
+否则 LLMEasyShell 的 `ExecuteSingle` 会在 handler 运行前就把它们静默拦下来
+（此机制在 `LLMStateTreeEditorModule.cpp:396-399` 的注释里写明）。
+
+Side effects: 命令总数 6 → 8（preview/nodes 交付）；随后同日 `schema` 子命令交付,终态 = **9**,
+`doc-audit.py` 的 `count-llmstatetree-subcmd-drift` pattern 锚定 9（否则会把新的正确计数误报为 stale）;
+`count-llmstatetree-example-files` 因项目专属内容迁出 LLMStateTree(NpcDialogs 4 枚 → LLMSurvivorShell)
+且样例集加厚(FlatFormatAI + DslLab)终态 = **7**(5 AI 行为 + 2 特性夹具)。
