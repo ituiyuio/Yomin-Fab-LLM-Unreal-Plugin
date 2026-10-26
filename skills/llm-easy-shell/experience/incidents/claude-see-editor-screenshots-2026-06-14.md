@@ -18,6 +18,10 @@ WebBrowser、UI 布局等"必须用眼睛看才知道对不对"的任务。
 
 ### 路径 A: Win32 PrintWindow — 截编辑器**应用窗口**（含 UI/视口/Outliner）
 
+> **路径勘误（2026-10-26）**：本文以下 `.lrh/temp/editor_shot.ps1` 是 2026-06-14 当时的工作
+> 目录路径（历史照录）。脚本的现行住址是 `.claude/skills/llm-easy-shell/scripts/editor_shot.ps1`
+> （发行仓内为 `skills/llm-easy-shell/scripts/editor_shot.ps1`），且已支持 `-Pie` 抓 PIE 窗。
+
 **适用场景**: 看 editor UI、outliner、details panel、菜单、工具栏、关卡视口内容
 **绕开的问题**: UE FViewport::GetSizeXY() 在 headless 模式固定 0×0 的硬约束
 **原理**: 编辑器窗口 visible=True 1607×1101 在桌面上画着，用 GDI 拷窗口像素

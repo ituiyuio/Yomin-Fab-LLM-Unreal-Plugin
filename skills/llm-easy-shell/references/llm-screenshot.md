@@ -135,6 +135,34 @@ PIE 模式下，有 **两个** viewport 候选：
 
 ## 已知陷阱
 
+### 0. 裸调 `take_high_res_screenshot` 抓的是 Editor 视口，不是 PIE（2026-09-03 r770 实证）
+
+PIE 运行中在自定义 python 脚本里直接调
+`unreal.AutomationLibrary.take_high_res_screenshot(w, h, name)` → 落盘的是**编辑器场景视口**
+（引擎视口优先），PIE 画面完全不出现在 PNG 里。症状：截图里是编辑器相机角度的场景、没有 HUD、
+没有玩家 —— 乍看"像游戏画面"极易误判为 PIE 已拍。
+
+**修法**：PIE 画面必须走 `capture_active_viewport(..., use_pie=1, ...)`（与
+`python editor screenshot source=pie` 同一条 C++ 路径）：
+
+```python
+r = unreal.LLMEasyShellEditorLib.capture_active_viewport(path, 1920, 1088, 1, True, True)
+#                                                    path  w    h   pie async show_ui
+```
+
+**两条取舍（2026-10-26 勘误补记）**：
+- **async=True 立刻返回 `success:false`**（"request accepted but not yet written"——
+  包装层的等待轮询会卡游戏线程）——本机 r2229 实测**接受请求但不落盘**；
+  即使落盘也是晚一拍。调用后去 `Saved/Screenshots/` 找最新文件核对，
+  别把 `success:false` 当失败重试，也别指望它必然落盘。
+- **`show_ui=True` 名义上带 Slate UI，但 CEF/WebBrowser 壳面板像素不可靠** ——
+  要 CEF 壳面板像素证据，走 Win32 `-Pie` 路径
+  （见 [editor-shot-win32.md](editor-shot-win32.md)）。
+- `-Pie` 找不到 PIE 窗（独立窗口前置不满足）时 `editor_shot.ps1` 以**退出码 6** 失败，
+  报错信息会说明前置条件（见 [editor-shot-win32.md](editor-shot-win32.md) 退出码表）。
+
+**自检**：拍完后核对 PNG 内容里是否含 HUD/玩家面片；或直接信 `Source` 字段（应为 PIE）。
+
 ### 1. Editor 视口在 headless 模式下是 0×0
 
 UE 编辑器如果是 headless（无人值守、窗口最小化），Editor 视口 `GetSizeXY()` 返回 `(0, 0)`。这是预期的 — 此时只能用 PIE 视口或根本不能截图。
@@ -201,7 +229,10 @@ PIE 启动后需要等 1-2 帧才能拿到 viewport。如果立即截图会得�
 - async 模式只告诉用户"已请求"，实际文件名需要 `dir Saved/Screenshots/` 找最新
 - 同步模式按用户传的精确路径写入
 
-## UE5.7 截图 API 速查
+## UE 截图 API 速查（UE 5.7+ 通用，5.8+ 验证）
+
+下列 API 在 UE 5.7/5.8 都可用，不是 5.7 专属 — 自 UE 4 起的通用截图 API。
+（session29 勘误：原 `## UE5.7 截图 API 速查` header 有误导 —— 下表是跨 5.x 通用 API，非 5.7 专属。）
 
 | API | 用途 | 头文件 |
 |-----|------|--------|
@@ -239,5 +270,5 @@ python reload     # 重新扫描 abilities/ + 清 sys.modules 缓存
 
 - C++ 实现：`Plugins/LLMEasyShell/Source/LLMEasyShell/Private/LLMEasyShellEditorLib.cpp`
 - C++ 接口：`Plugins/LLMEasyShell/Source/LLMEasyShell/Public/LLMEasyShellEditorLib.h`
-- Python 包装：`Plugins/LLMEasyShell/PyAbilities/LLMShellAbilities/abilities/editor.py`
+- Python 包装：`Plugins/LLMEasyShell/Content/Python/LLMShellAbilities/abilities/editor.py`
 - Python 注册：`Plugins/LLMEasyShell/Source/LLMEasyShell/Private/PythonAbilityRegistry.cpp`

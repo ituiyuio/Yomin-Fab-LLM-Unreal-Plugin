@@ -563,7 +563,8 @@ got/want 对照，全绿 exit 0。
 
 > **必须带 `-ExecutionPolicy Bypass`**（2026-09-10 r1209 实测）：本机 PowerShell 执行策略默认禁止运行脚本，
 > 不带该旗标时 `editor_shot.ps1` 直接报 `UnauthorizedAccess` / `SecurityError` 退出，一个像素也截不到。
-> 带上后同���条命令正常输出 `hwnd=... size=1374x856` + `saved: Saved\Screenshots\editor_win32.png`。
+> 带上后同一条命令正常输出 `hwnd=... size=1374x856` + `saved: <解析出的绝对路径>\...\editor_win32.png`
+> （默认输出路径自脚本位置向上找 `*.uproject` 定位工程根解析，不再硬编码）。
 
 **Win32 路径优势**：跟 UE 状态完全无关（Idle/PIE/Compiling 都行），不需要 PIE，能看到 editor UI 全部内容（Outliner、Details Panel、工具栏）。
 

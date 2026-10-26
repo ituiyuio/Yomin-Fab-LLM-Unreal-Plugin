@@ -23,7 +23,8 @@
 **绕开 UE 全部 API，用 Win32 GDI PrintWindow 拷桌面像素**：
 
 ```powershell
-# scripts/editor_shot.ps1
+# 脚本位置: 安装位 .claude/skills/llm-easy-shell/scripts/editor_shot.ps1
+#           （发行仓内: skills/llm-easy-shell/scripts/editor_shot.ps1）
 [Win]::PrintWindow($hwnd, $hdc, 2)  # PW_RENDERFULLCONTENT
 ```
 
@@ -75,6 +76,12 @@ $best = $candidates | Sort-Object -Property Area -Descending | Select-Object -Fi
 **经验**：
 - 截图前先枚举窗口，不要相信 `MainWindowHandle`
 - 永远按面积排序选最大窗口（最可能是主应用窗口）
+
+> **r2229 勘误补记（2026-10-10）**：「永远选最大窗」只对截**编辑器**主窗成立，且正是本教训的
+> 镜像坑 —— 要截 **PIE 玩家画面**时面积最大法恒选编辑器框，那张图没有 PIE 的 UMG/CEF
+> 图层，是更难识破的假阴性。现脚本已内置窗口标题匹配（`NetMode:`）+ `-Pie` 开关：
+> 独立窗口 PIE 直接抓 PIE 窗，详见 [references/editor-shot-win32.md](../references/editor-shot-win32.md)。
+> （另：现代 UE 的 PIE 默认是独立 top-level 窗，非本教训写作时的"嵌入小窗"形态。）
 
 ---
 

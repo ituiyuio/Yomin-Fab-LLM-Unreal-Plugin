@@ -4,7 +4,7 @@ outline: [2, 3]
 
 # LLM Easy Shell
 
-Drive a **running UE editor** from the command line. 27 native commands + 25+ Python sub-commands — query scenes, modify actor properties, call blueprint functions, trigger Live Coding, take screenshots, all from your AI agent.
+Drive a **running UE editor** from the command line. 37 native commands + hundreds of Python sub-commands — query scenes, modify actor properties, call blueprint functions, trigger Live Coding, take screenshots, all from your AI agent.
 
 > **Skill file:** [`skills/llm-easy-shell/SKILL.md`](https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin/blob/main/skills/llm-easy-shell/SKILL.md)
 
@@ -158,17 +158,18 @@ The agent can also **author new Python abilities** by dropping a `.py` file into
 
 ---
 
-## Screenshot — Two Paths
+## Screenshot — Three Paths
 
 | What you want to see | Path | Command |
 |----------------------|------|---------|
-| **Editor application window** (Outliner / Details / toolbars) | **Win32 path** (recommended) | `powershell -File scripts/editor_shot.ps1` |
+| **Editor application window** (Outliner / Details / toolbars) | **Win32 path** (recommended) | `powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/llm-easy-shell/scripts/editor_shot.ps1` |
+| **PIE pixels incl. UMG / CEF panels** (what the player sees) | **Win32 `-Pie`** | same command + ` -Pie` (PIE must run in a separate window — `llm-shell play` does this) |
 | **PIE 3D render** (HUD / animations / dynamic lighting)        | PIE path             | `play` → `sleep 5` → `python editor screenshot source=pie` |
-| Unsure | **Win32 path** (always works) | `powershell -File scripts/editor_shot.ps1` |
+| Unsure | **Win32 path** (always works) | `powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/llm-easy-shell/scripts/editor_shot.ps1` |
 
 **Win32 path advantages:** works regardless of editor state (Idle / PIE / Compiling), no PIE required, captures full editor UI.
 
-**PIE path advantages:** exact pixel path, deterministic, can show HUD / UMG / WebBrowser with `show_ui=true`.
+**PIE path advantages:** exact viewport path, deterministic; `show_ui=true` covers UMG HUD — but CEF/WebBrowser panel pixels are only trustworthy via the Win32 `-Pie` path (and the async wrapper returns before the file lands; see `references/llm-screenshot.md` trap 0).
 
 Full reference: `skills/llm-easy-shell/references/llm-screenshot.md` and `skills/llm-easy-shell/references/editor-shot-win32.md`.
 
