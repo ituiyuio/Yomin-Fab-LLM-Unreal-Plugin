@@ -8,8 +8,8 @@ TCP shell interface for driving the Unreal Editor from any external client
 (LLM agent loop, CLI, test harness). One-line commands in, JSON out — no UE
 editor knowledge required.
 
-**Quick value:** 35+ editor commands · 25+ built-in Python abilities · TCP
-server on ports 15151–15200 · works alongside any LLM agent framework.
+**Quick value:** 37 editor commands · 46 built-in Python abilities · TCP
+server on ports 15151–15200 · any plugin can host its own abilities · works alongside any LLM agent framework.
 
 > 🎯 **For a minimal-dependency, read-only variant**, see
 > [LLM Easy Shell Lite](../llm-easy-shell-lite/) (9 commands, 2 engine plugin
@@ -27,8 +27,8 @@ server on ports 15151–15200 · works alongside any LLM agent framework.
 - **Live Coding** — `livecoding` / `lc` / `reload`, `--restart` editor with crash detection
 - **Logs** — Editor log, error log, compile log, Niagara validation messages
 - **UI introspection** — `uitree` / `uifind` / `uiinfo` / `uipress` / `uitype` / `uishot`
-- **Ability framework** — Plugins register C++ commands at startup (auto-discovered)
-- **PyAbility framework** — Drop a `.py` into `PyAbilities/.../abilities/` to register a command
+- **Ability framework** — Plugins register C++ commands via `RegisterShellCommand()` (auto-discovered)
+- **PyAbility framework** — Drop a `.py` into any plugin's `Content/Python/<Package>/abilities/` to register a command
 - **TCP server** — Plain text in / JSON out, ports 15151–15200
 - **Multi-platform** — Win64, Mac, Linux (Live Coding subcommand: Windows only)
 
@@ -59,12 +59,13 @@ stalls.
 
 ## Technical Information
 
-**Features:** 35+ editor commands (scene read/write, asset read/write,
+**Features:** 37 editor commands (scene read/write, asset read/write,
 property/function discovery, PIE control, Live Coding, logs, UI
 introspection, screenshots), TCP server on ports 15151–15200, Ability
-framework for plugin-registered C++ commands, PyAbility framework for
-`.py`-defined commands, 25+ built-in Python abilities, command trace
-logging.
+framework for plugin-registered C++ commands (`RegisterShellCommand()` /
+`AddPythonAbilityRoot()` extension points), PyAbility framework for
+`.py`-defined commands hosted by any plugin, 46 built-in Python abilities,
+command trace logging.
 
 **Code Modules:** LLMEasyShell (Editor)
 
@@ -85,7 +86,7 @@ reference `.uplugin` / `Documentation.md` and the bundled Python ability
 set)*
 
 **Important/Additional Notes:** Editor-only plugin. For a minimal-dependency,
-read-only variant, see [LLM Easy Shell Lite](../llm-easy-shell-lite/). UE 5.5 / 5.6 / 5.7 / 5.8. For Survivor-gameplay-specific helpers (143+ Python-friendly functions bridging Python abilities to the Survivor Player Character), see the companion **[LLMSurvivorShell plugin](https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin/tree/main/Plugins/LLMSurvivorShell/)** (project-only distribution; depends on host project's `CODEO` module).
+read-only variant, see [LLM Easy Shell Lite](../llm-easy-shell-lite/). UE 5.5–5.8.
 
 ---
 
@@ -107,6 +108,16 @@ compilation. They are declared in `LLMEasyShell.uplugin` and the host
 - **Niagara** — VFX introspection + validation message capture
 - **EditorScriptingUtilities** — asset registry and editor scripting helpers
 
+**Editor-build dependency (host must enable in `.uproject`):**
+
+- **WebBrowserWidget** — required at link time for the CEF-state
+  (`url` / `title` / `page_loaded`) block of `ui info` / `uishot`. Ships
+  with `EnabledByDefault: false`; without it the editor target fails to
+  link.
+- **ModelContextProtocol** (UE 5.8 hosts only) — backs the `mcp` shell
+  command. Experimental, `EnabledByDefault: false`. On UE 5.5–5.7 the
+  plugin builds without it and `mcp` returns a not-available hint.
+
 ### Verifying a Clean Build
 
 ```bash
@@ -126,16 +137,13 @@ errors by marketplace scanners).
 
 ### UE Version Compatibility
 
-- **Engine matrix:** UE 5.5 / 5.6 / 5.7 / 5.8 (one Fab Project Version per UE)
-- **Engine-version-aware features:**
-  - `ModelContextProtocol` (`mcp` command) — UE 5.8+ only, stubbed on 5.5/5.6/5.7
-  - `WebBrowserWidget` — gated by `WITH_LLMEASYSHELL_WEBBROWSER`; host enables in `.uproject` for CEF state block
-  - `Chooser` API — UE 5.8 uses `DeleteRows(TArrayView<int32>)` + `GetDebugSelectedRows()`; UE 5.7 falls back to `TArray<uint32>` + `MatchedRow=INDEX_NONE`
-  - UI E2E helpers (`Simulate*`, `FindUIWidget`, `TriggerWebUICallback`) — gated by `WITH_LLMEASYSHELL_CODEO`; return `{"error":"host_codeo_required"}` JSON when host lacks `CODEO`
+- **Minimum:** UE 5.5
+- **Tested:** UE 5.5, 5.6, 5.7, 5.8 (each Fab Project Version ships an
+  engine-matched package)
 
 ---
 
-## Command Reference (35+ commands)
+## Command Reference (37 commands)
 
 ### Scene
 
@@ -179,7 +187,7 @@ errors by marketplace scanners).
 | `find Asset {pattern}` | Search assets by name |
 | `find /Game {pattern}` | Search assets by path |
 | `info` | Project + editor + PIE state |
-| `gamestate` | PIE game state (wave / health / gold / ...) |
+| `gamestate` | PIE game state summary (reflection-based player / wave stats) |
 | `help` | List all commands |
 
 ### Editor Control
@@ -230,46 +238,63 @@ errors by marketplace scanners).
 
 ---
 
-## Python Abilities (25+ built-in)
+## Python Abilities (46 built-in)
 
 LLMEasyShell ships with a reference set of Python abilities in
-`PyAbilities/LLMShellAbilities/abilities/`. Each ability is a standalone
+`Content/Python/LLMShellAbilities/abilities/`. Each ability is a standalone
 `.py` module that registers one or more `python <name>` subcommands.
 
 Drop your own `.py` into the `abilities/` folder, restart the editor (or run
 `python reload`), and the ability becomes invocable as `python <name>`.
+Any other plugin can host its own ability package the same way —
+`<Plugin>/Content/Python/<Package>/abilities/*.py` is discovered
+automatically; plugin hosts take precedence over the project script
+directory (ordered by plugin name).
 
 | Category | Abilities |
 |----------|-----------|
-| Asset / blueprint | `asset`, `blueprint`, `bpcomp`, `bpprop`, `reparent` |
-| Property / reflection | `property`, `reactive` |
-| Gameplay | `gameplay`, `gameplayability`, `gameplaytag` |
-| Animation | `anim` |
-| Curves / tables | `curve`, `datatable`, `chooser` |
-| Levels / scene | `level`, `scene`, `editor` |
-| Material / VFX | `material`, `vfx`, `umg` |
-| Pose / motion | `posesearch` |
+| Asset / blueprint | `asset`, `blueprint`, `bpcomp`, `bpprop`, `spawn_mesh`, `mesh_check` |
+| Property / reflection | `property`, `inspect_subobject_api`, `dump_rip` |
+| Gameplay / player | `gameplay`, `get_gamestate`, `walk_to`, `set_view_target`, `unpause` |
+| Animation / pose | `anim`, `poseseach` |
+| Tables / choosers | `datatable`, `chooser` |
+| Levels / scene / editor | `level`, `level_load`, `editor`, `editorctl`, `editor_camera` |
+| Materials / VFX | `create_unlit_mat`, `vfx`, `vfxsim`, `bind_niagara_asset`, `open_niagara_editor`, `diag_niagara_actor` |
+| UI | `umg` |
 | Navigation | `navigation` |
 | Performance | `perf` |
-| HD3D demo set | `hd3d`, `hd3dpostprocess`, `hd3dscene` |
+| Test automation | `run_automation`, `automation_check_test`, `automation_dump_api`, `automation_list_tests`, `automation_run_and_wait`, `automation_sanity_check` |
+| Diagnostics | `debug_burst`, `diag_pie`, `diag_subsys`, `pcg_diag`, `voxel_diag`, `quixel_table`, `hd3dscene`, `list_hd3d_methods` |
 
 ### Authoring a New Python Ability
 
 ```python
-# PyAbilities/LLMShellAbilities/abilities/my_ability.py
-from ._base import PyAbilityBase
+# <Plugin>/Content/Python/<Package>/abilities/my_ability.py
+import unreal
+from LLMShellAbilities.registry import Ability, Command
+# (inside this plugin's own package, `from ..registry import ...` also works)
 
-class MyAbility(PyAbilityBase):
+class MyAbility(Ability):
     name = "my_ability"
-    description = "Does something useful"
+    version = "1.0.0"
 
-    def invoke(self, args):
-        # your logic here
-        return {"ok": True, "result": "..."}
+    def get_commands(self):
+        return [
+            Command("my_command", "Does something useful", []),
+        ]
 
-# Auto-register on import
-ABILITY = MyAbility()
+    def execute(self, command, args, context):
+        if command == "my_command":
+            return {"success": True, "output": "..."}
+        return {"success": False, "error": "unknown"}
+
+
+def register(reg):
+    reg.register_ability(MyAbility())
 ```
+
+Restart the editor or run `python reload` — the loader scans every enabled
+plugin for `abilities/*.py` and calls the module-level `register(reg)`.
 
 ---
 
@@ -330,7 +355,8 @@ port is logged at editor startup and recorded in
 5. To author new C++ commands, derive from `ULLMEasyShellAbilityCommandObject`
    and register via the ability registry (auto-discovered at startup).
 6. To author new Python commands, drop a `.py` into
-   `PyAbilities/LLMShellAbilities/abilities/` and run `python reload`.
+   `Content/Python/LLMShellAbilities/abilities/` (or your own plugin's
+   ability package) and run `python reload`.
 
 ---
 
@@ -342,12 +368,12 @@ TCP port ranges and do not conflict at runtime. Install either or both.
 | | LLMEasyShell (this plugin) | LLMEasyShell Lite |
 |---|---|---|
 | Purpose | Full read + write + automation | Read-only exploration |
-| Commands | 35+ (read + write + control) | 9 (query only) |
-| Python abilities | 25+ built-in abilities | Framework + 1 demo |
+| Commands | 37 (read + write + control) | 9 (query only) |
+| Python abilities | 46 built-in abilities | Framework + 1 demo |
 | Screenshots | Yes (PIE + Win32 paths) | No |
 | Live Coding | Yes | No |
 | TCP port | 15151–15200 | 15201–15250 |
-| Engine plugin deps | 9 | 2 |
+| Engine plugin deps | 9 + WebBrowserWidget (+ ModelContextProtocol on UE 5.8) | 2 |
 | CLI binary | `llm-shell.exe` | `llmshelllite.exe` |
 
 ---
@@ -364,8 +390,10 @@ engine plugin dependencies. Use Lite for safe exploration; use the full
 plugin for write automation.
 
 **Q: Can I register my own commands?**
-Yes. C++ commands: derive from `ULLMEasyShellAbilityCommandObject`. Python
-commands: drop a `.py` into `PyAbilities/LLMShellAbilities/abilities/`.
+Yes. C++ commands: `RegisterShellCommand()` on the shell subsystem (or derive
+from `ULLMEasyShellAbilityCommandObject`). Python commands: drop a `.py` into
+`Content/Python/LLMShellAbilities/abilities/` — or host your own ability
+package in your plugin.
 
 **Q: Is this safe to leave running in production?**
 No — this is an editor automation tool. The TCP server exposes full editor
@@ -374,4 +402,4 @@ untrusted networks.
 
 ---
 
-*LLMEasyShell v1.1.0 | YominUnreal*
+*LLMEasyShell v1.2.0 | YominUnreal*
