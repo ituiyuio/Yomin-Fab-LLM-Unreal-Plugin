@@ -16,6 +16,13 @@ metadata:
 ## Bug 2 (W26.2): 编译错被 `Out-Null` 吞掉
 - **症状**: Build 命令以 `2>&1 | Out-Null` 收尾, build 失败时 LLM 只拿到 "Build failed with code 1", 必须手动去 `%LocalAppData%\UnrealBuildTool\Log.txt` 找 UBT 真实错
 - **修复** (commit dc41ca8): 改用 `*> 'C:\Users\...\Temp\llm_shell_build_<pid>.log' 2>&1` 把 build stdout+stderr 全写到 temp 文件. 失败时 tail 最后 60 行 embed 到 `output.buildOutput` + `output.buildLogPath`. 成功时 best-effort 删 temp.
+- **[2026-09-28 r1920 追补] 这条修复自身埋了第二枚坑**: Windows PowerShell 5.1 的 `*>` **默认写 UTF-16LE**,
+  而 tail 提取走 `std::ifstream` 按字节读 ⇒ 每行 NUL 交错, `buildOutput` 里永远碰不到 `error C####`,
+  「tail 里没有 error C#### ⇒ 不是编译错」这句指引**恒真**. 实测对照见
+  `tmp/enc_probe.ps1（源开发仓临时脚本，本仓不含）` (同一条 `cmd /c 'echo x 1>&2 & exit 3'`): `*>` = 760B/`ff fe`/grep 报 binary,
+  `2>&1 | Set-Content -Encoding utf8` = 23B/`ef bb bf`/明文命中, **两分支 ps 退出码都仍是 3**
+  ⇒ 换写法时补 `; exit $LASTEXITCODE` 把退出码显式续上, 别把失败洗成成功.
+  口径教训: **把日志「写出来」当成「读得到」是同一类 bug 的两半** —— W26.2 修了前者, 后者要单独验.
 
 ## Bug 3 (W26.3): 5min game-thread ready wait 永远 timeout
 - **症状**: `WaitForEditorReady` 5min timeout + 1s loop + "info" command 要求 valid JSON. 但 editor 启动初期 LLMEasyShell 接受 TCP 时 game-thread 还没 ready, `SendCommand` 返回 capturedLogs (含 "Field usage was not found" 警告) 而非 valid info JSON. loop retry 5min 才 timeout. 实际 restart = 5min build + 5min wait = 10min.

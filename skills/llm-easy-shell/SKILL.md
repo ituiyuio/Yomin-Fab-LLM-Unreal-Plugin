@@ -548,7 +548,7 @@ got/want 对照，全绿 exit 0。
 > 源码调试经验见 [experience/debugging.md](experience/debugging.md)
 > PIE 截图完整指南见 `references/llm-screenshot.md`
 > **Editor 窗口截图**（Win32 路径，绕开 FViewport 0×0 硬约束）见 [references/editor-shot-win32.md](references/editor-shot-win32.md)
-> 完整经验库（39 个教训）见 [experience/README.md](experience/README.md)
+> 完整经验库（40 个教训）见 [experience/README.md](experience/README.md)（2026-10-26 把 restart 拒建/超时判读蒸馏为 04 规则 7 后 39→40）
 >
 > (tool-fix-137 2026-06-29: SKILL.md L401 fossil '31 个教训' 跟实际 experience/ 9 canonical 文件 grep 1:1 验证的 39 个教训/规则 (6+4+5+6+5+1+4+7+1) 差 8; 9248b59 2026-06-27 当时 31 正确, 但 06-cli-flags.md (+1) + 07-editor-shot-win32.md (+4) + debugging.md 5 个新教训 (5→7 +2 实际是新增, 不是漂移, 累计 +7) + t3-bpcomp-tobjectptr-reflection-fix.md (+1) 累计 +8 加成后 31→39 SKILL.md L401 未同步, experience/README.md L3 也 fossil 38, 本 fix 闭合 2 surfaces 1 rootCause family)
 

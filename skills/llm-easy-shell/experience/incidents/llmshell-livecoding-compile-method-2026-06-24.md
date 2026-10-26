@@ -35,7 +35,7 @@ Result: Failed (OtherCompilationError)
 ./.claude/skills/llm-easy-shell/llm-shell/llm-shell.exe -q -j -c "livecoding"
 
 # 新增 C++ 类 / USTRUCT 改字段 / 继承层次变 / 不确定
-./.claude/skills/llm-easy-shell/llm-shell/llm-shell/llm-shell.exe -q -j --restart
+./.claude/skills/llm-easy-shell/llm-shell/llm-shell.exe -q -j --restart
 ```
 
 **绝对不要**:
@@ -67,6 +67,27 @@ ezue 自模式下编译 C++ 标准流程:
  - 改函数体 / 现有 UPROPERTY → `llm-shell livecoding` (等 30-90s)
 4. 验证: `info` 查 `livecoding.compiling=false` + `livecoding.phase=idle`
 5. 编译失败时**报告 build error 让用户决策**,不要自启 fallback 路径
+
+## 实测成功样本 (2026-09-21, 掉落物面片 billboard 修复)
+
+改 `Source/CODEO/Private/Survivor/Core/LootItem.cpp` 的函数体(`ALootItem::Tick` 内的
+朝向公式)后走 livecoding:
+
+```bash
+# 安装位 .claude/skills/llm-easy-shell/llm-shell/llm-shell.exe（本仓 skills/llm-easy-shell/llm-shell/llm-shell.exe）
+./llm-shell/llm-shell.exe -q -j -c "livecoding"  # 示例按 llm-shell/ 工作目录
+```
+
+返回 `"success": true, "errorCount": 0`,日志里能看到
+`[1/7] Compile [x64] LootItem.cpp [NoUba]` → `Result: Succeeded`,总耗时 **24.22s**。
+`requiresRestart: false` ⇒ **纯函数体改动确实不需要 `--restart`**,流程表是准的。
+
+补充坑:`Build.bat` 失败时报的是
+`Unable to build while Live Coding is active. Exit the editor and game...`
++ `Result: Failed (OtherCompilationError)`,
+同时伴随 `SetFileInformationByHandle (FileDispositionInfo) failed on ... Trace.uba
+(Access is denied.)` —— 看见 `Trace.uba Access is denied` 即可确认是"编辑器占锁",
+不是代码问题,直接转 `livecoding` 通道。
 
 ## livecoding 失败的 Recommendation 修复 (2026-06-24 同一 session)
 

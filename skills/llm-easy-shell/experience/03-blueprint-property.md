@@ -38,7 +38,7 @@ def _args_to_dict(args):
 
 **历史根因**：`FKismetEditorUtilities::CompileBlueprint(BP)` 重新生成 BP class，**重置 C++ 继承的 CDO 默认值**到 C++ class 默认。
 
-**当前实现**（`ShellCommand_Set.cpp:386-407`，条件分支 + 显式 skip）：
+**当前实现**（`ShellCommand_Set.cpp:480-499`，条件分支 + 显式 skip）：
 
 ```cpp
 // Check if this is a C++ inherited property vs Blueprint-defined property
@@ -63,12 +63,14 @@ return FLLMEasyShellResult::Success(FString::Printf(
     *PropertyPath, *Value, bIsCPPProperty ? TEXT("false") : TEXT("true")));
 ```
 
+<!-- [tool-fix-173 2026-06-29] line drift closure: ShellCommand_Set.cpp:386-407 → :480-499 (off-by-94)。痛点: 原 doc 锚定 bIsCPPProperty 条件分支 + 显式 skip 块在 ShellCommand_Set.cpp:386-407, 但 2026-06 中段 refactor (commit 12e4f9d 2026-06-15 'refactor(set): 拆 Set 到 Set/Cat/Property lib + 加 OwnerClass 守卫') 把 SetCommand.cpp 主体下推 94 行, 实际 bIsCPPProperty 检查在 L480, 显式 skip 块在 L482-487, FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified 调用在 L492, CompileBlueprint 在 L493, return FLLMEasyShellResult::Success 在 L499。Source-of-truth 4 重 lock 跟新 claim 1:1 锁定: (1) filesystem `grep -n "bIsCPPProperty" Plugins/LLMEasyShell/Source/LLMEasyShell/Private/ShellCommand_Set.cpp` = L480 exact (跟新 doc claim 1:1); (2) `grep -n "MarkBlueprintAsStructurallyModified" ShellCommand_Set.cpp` = L492 exact; (3) `grep -n "CompileBlueprint" ShellCommand_Set.cpp` = L493 exact; (4) `grep -n "FLLMEasyShellResult::Success" ShellCommand_Set.cpp | tail -3` = L499 exact。Fix scope 实为 **4 处锚点**（2026-10-26 补记归真）: L41+L73 ShellCommand_Set.cpp:386-407→480-499 (off-by-94, span 22→20 行) / L83 LLMEasyShellReflection.cpp:538-570→565-578 (span 33→14 行, **非等宽漂移** — 重构后 FClassProperty 分支收拢, 已对活源码复核命中) / L169 LLMEasyShellPropertyLib.cpp:143-152→143-165 (span 10→23 行, 数组/嵌套 walk 扩段, 同样活源码复核命中)。Paired completion 跟本文件 L81/L167 MetaClass 验证 + FObjectProperty walk 跟 tool-fix-173 experience/02 _call_with_world + tool-fix-173 SKILL.md MaxWaitSeconds 同 family 'doc line ref 跟 source 实际行号错位' 但 sub-pattern 不同 (本 fix 是 refactor 派生 off-by-94, 别人是 setup comment 派生 off-by-3 / refactor 派生 off-by-64)。Runtime e2e 走 (a) full llm-shell.exe --help UE 5.8 binary sanity OK + (b) lite llmshelllite.exe --help UE 5.8 binary sanity OK + (c) source-level 4 重 lock (filesystem grep L480/L492/L493/L499 exact 跟新 doc claim 1:1) 跟 binary sanity e2e 跟 tool-fix-130~172 pattern 1:1 平行。Pre-existing C2369 kCategoryShortNames 跟本 fix 解耦。 -->
+
 **两代方案对比**：
 
 | 代次 | 实现 | 限制 |
 |------|------|------|
 | 第 1 代（旧 memory） | 一律注释掉 `CompileBlueprint` | BP 定义字段也不 compile，可能没生效 |
-| **当前（`ShellCommand_Set.cpp:386-407`）** | 按 `bIsCPPProperty` 条件分支 | BP 定义字段正常 compile，C++ 继承字段 skip |
+| **当前（`ShellCommand_Set.cpp:480-499`）** | 按 `bIsCPPProperty` 条件分支 | BP 定义字段正常 compile，C++ 继承字段 skip |
 
 **配套坑**：响应里加 `"compiled": false` 字段告知调用方，**C++ 继承字段的修改只在内存/runtime 生效，磁盘上不会持久化**（要持久化需要改 C++ 默认值或重新建 BP）。
 
@@ -78,7 +80,7 @@ return FLLMEasyShellResult::Success(FString::Printf(
 
 ### Fix 1：FClassProperty 设值前 MetaClass 校验
 
-**文件**：`LLMEasyShellReflection.cpp:538-570`
+**文件**：`LLMEasyShellReflection.cpp:565-578`
 
 ```cpp
 if (ClassValue) {
@@ -164,7 +166,7 @@ for (FProperty* Prop : TFieldRange<FObjectProperty>(BP->GeneratedClass->GetDefau
 
 **场景**：`python property set_prop /Game/BP_SurvivorPlayer WeaponComponent.WeaponType Range` 失败。
 
-**根因**（`LLMEasyShellPropertyLib.cpp:143-152`）：`ResolvePath()` 只对 `FStructProperty` 继续 walk 嵌套路径，遇到 `FObjectProperty`（`TObjectPtr<WeaponBaseComponent>`）就 return failure。
+**根因**（`LLMEasyShellPropertyLib.cpp:143-165`）：`ResolvePath()` 只对 `FStructProperty` 继续 walk 嵌套路径，遇到 `FObjectProperty`（`TObjectPtr<WeaponBaseComponent>`）就 return failure。
 
 **修复**（`LLMEasyShellPropertyLib.cpp`）：
 

@@ -18,6 +18,7 @@
 | **继承层次变化** | `restart` | 需重新实例化 |
 | **Build.cs 加新 PrivateDependencyModuleName** | `restart` | `livecoding` 报 success 但 UBT 全量 build 仍会 fatal error |
 | 不确定 | `restart` | 安全选择（5-10 分钟完整启动） |
+| **restart 本身的报错**（拒建 / 树杀超时 / hung） | — | 不是编译错误，见下方**规则 7** 分治判读 |
 
 ---
 
@@ -190,6 +191,22 @@ importlib.reload()   # ability 内部自行 reload 其它模块 (同 session 缓
 **功能**：每个命令用 `GLog->AddOutputDevice/RemoveOutputDevice` 包裹执行，捕获的 Warning+ 日志作为 `capturedLogs` JSON 字段附加到响应。
 
 **Why**：Python 端 SyntaxError/异常本来要 grep log file 才能看到，现在直接出现在响应里。
+
+---
+
+## 规则 7：`--restart` 拒建与超时判读（2026-10-26 自 restart 加固系列蒸馏，llm-shell.exe 2026-10-25 构建）
+
+**场景 A：`ERROR: cannot link, target module is held by another process`**
+`--restart` 在 Link 前会先用 `CreateFileA(GENERIC_WRITE, share=0)` 写锁探测目标模块镜像 —— 被占用（典型：孤悬的 `-unattended` 编辑器攥着 `UnrealEditor-<Project>.dll`）就**点名 PID 拒建**，不再烧 20 分钟报一个与真编译错误同形的 LNK1104。处置：按点名的 PID 判读是活会话还是可收的尸（取证判据见 `incidents/orphaned-unattended-editor-holds-dll-2026-09-29.md`），确认后收尸重跑。
+两个弯路别再踩：模块名取**项目名**不是 target 名；探测面必须用**写权限**（`DELETE/share=0` 对加载中的镜像**放行**）。
+
+**场景 B：`Build cap reached after N min - NOT a compile failure. Not restarting editor.`**
+这是**树杀超时**的判语，不是编译错误 —— 别去改代码。预算由环境变量控：`LLMSHELL_BUILD_TIMEOUT_MIN`（默认 60）、`LLMSHELL_RESTART_HARD_CAP_MIN`（默认 = build + 15）、`LLMSHELL_HOLDER_WAIT_MIN`。全量重建后首启的资产构建可能以**小时**计（4 核 VM 实测 >2h），readiness cap 只有 300s —— 此时 `--restart` 报 `hung` 而**编辑器其实活着**，正确处置是等、预算按小时（判读方法见 `incidents/llmeshell-first-boot-asset-build-outlasts-restart-readiness-window-2026-09-29.md`）。
+
+**场景 C：restart 交付的编辑器自己连不上**
+VMware/`-d3d11` 分支曾给交互式编辑器追加 `-unattended`，触发 `ShouldSuppressControlChannel()` 不绑控制端口。需要 unattended 下仍开通道时用 `-LLMEasyShellEnableInUnattended=1`（详见 `incidents/llmeshell-restart-unattended-kills-own-channel-2026-09-28.md`）。
+
+**How to apply**：见上三场景分治；判据/复现命令在各 incident 档内（本仓不发布 `tools/compile/*` 工具）。
 
 ---
 

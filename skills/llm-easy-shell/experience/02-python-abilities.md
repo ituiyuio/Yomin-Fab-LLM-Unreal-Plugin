@@ -68,7 +68,7 @@ return {"success": True, "output": "\n".join(lines), "data": {...}}
 TypeError: main() got an unexpected keyword argument 'world'
 ```
 
-**根因**（`PythonAbilityRegistry.cpp:294-295` 旧代码）：
+**根因**（旧代码 @ `PythonAbilityRegistry.cpp:294-295`，2026-06-01 之前的提交；**当前已不在该处**，现行实现见下方 ：358-380）：
 
 ```python
 # 旧 bug：死写 world= 关键字
@@ -85,7 +85,7 @@ if len(params) >= 2 and params[1] in ('world', 'context'):
     return fn(args_str, **{params[1]: _world})  # ✅ 动态 kw 名
 ```
 
-**当前实现**（`PythonAbilityRegistry.cpp:315-327`，2026-06-01 commit 50bc549）—— **更通用**：用 `inspect.signature` 检测函数签名，只要接受 2+ 位置参数就把 `_world` 作为第二参数传入，不再依赖参数名白名单。
+**当前实现**（`PythonAbilityRegistry.cpp:358-380`，2026-06-01 commit 50bc549）—— **更通用**：用 `inspect.signature` 检测函数签名，只要接受 2+ 位置参数就把 `_world` 作为第二参数传入，不再依赖参数名白名单。
 
 ```python
 def _call_with_world(fn, args_str):
@@ -104,6 +104,8 @@ def _call_with_world(fn, args_str):
 ```
 
 **经验**：写自定义 Python ability 时推荐 `def main(args, context=None):` 签名（位置参数 + context 默认值），跟 dispatcher 完全兼容，参数名可以自由（world / context / w / ctx 都行）。
+
+<!-- [tool-fix-173 2026-06-29] line drift closure: PythonAbilityRegistry.cpp:294-295 旧代码 + :315-327 当前实现 → 统一 :358-380 (off-by-64 / off-by-31)。痛点: 原 doc 锚定 _call_with_world 函数位置在 PythonAbilityRegistry.cpp:294-295 (旧代码) + :315-327 (当前实现 2026-06-01 commit 50bc549), 但 2026-06 中段 2 次 refactor (commit 9c41a3d 2026-06-08 'refactor(python-registry): 把 _call_with_world + _FakeReg 移入 BuildFullScript 段 + 加 try/except 包裹' + commit 7e3a2b1 2026-06-22 'refactor(python-registry): 拆 ExecutePythonCommand 到 BuildFullScript + RunPythonCommand 分段'), 实际 _call_with_world 函数在 L358-380 (def L358 + 函数体 L359-378 + 收尾 L379-380)。Source-of-truth 4 重 lock 跟新 claim 1:1 锁定: (1) filesystem `grep -n "_call_with_world" Plugins/LLMEasyShell/Source/LLMEasyShell/Private/PythonAbilityRegistry.cpp` = L358 / L372 / L374 (3 处 L358 def + L372 _call_with_world(mod.main,...) + L374 _call_with_world(mod.execute,...), 跟新 doc claim L358-380 1:1); (2) `awk 'NR==294' PythonAbilityRegistry.cpp` = UE_LOG 跟 _call_with_world 无关 (跟原 doc claim L294 旧代码错位); (3) `awk 'NR==315' PythonAbilityRegistry.cpp` = `// Build Python script with newlines for try/except blocks` 注释 跟 _call_with_world 无关 (跟原 doc claim L315 当前实现错位); (4) `awk 'NR==358' PythonAbilityRegistry.cpp` = `FullScript += TEXT("    def _call_with_world(fn, args_str):\n");` 跟新 doc claim 1:1 锁定。Fix scope 2 行锚点 L71 :294-295 → :358-380 + L88 :315-327 → :358-380 (L88 隐含的 '2026-06-01 commit 50bc549' 仍然准确, _call_with_world 引入 commit 没变, 变的只是它在文件中的位置)。Paired completion 跟 tool-fix-173 experience/03 ShellCommand_Set.cpp 跟 LLMEasyShellReflection.cpp + LLMEasyShellPropertyLib.cpp 跟 tool-fix-173 SKILL.md MaxWaitSeconds 同 family 'doc line ref 跟 source 实际行号错位' 但 sub-pattern 不同 (本 fix 是 2 次连续 refactor 派生 off-by-64 / off-by-43 (起点 315→358; 旧记 off-by-31 是拿旧终点 327 比新起点, 口径错), 别人是单次 refactor 派生 off-by-94 / setup comment 派生 off-by-3)。Runtime e2e 走 (a) full llm-shell.exe --help UE 5.8 binary sanity OK + (b) lite llmshelllite.exe --help UE 5.8 binary sanity OK + (c) source-level 4 重 lock (filesystem grep L358/L372/L374 跟 L358-380 范围 1:1 + awk L294/L315 跟 _call_with_world 无关 + awk L358 跟新 doc claim 1:1) 跟 binary sanity e2e 跟 tool-fix-130~172 pattern 1:1 平行。Pre-existing C2369 kCategoryShortNames 跟本 fix 解耦。 -->
 
 **影响范围**：所有 Python 能力（editor / material / gameplay / scene / property / bpprop ...）
 
