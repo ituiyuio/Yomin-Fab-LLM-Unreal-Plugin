@@ -1,0 +1,334 @@
+{
+  "$comment": [
+    "Cover manifest for the YominUnreal plugin suite.",
+    "Colours were measured off the original Photoshop covers in raw/ (the frame",
+    "gradient from the canvas edges, the title fill and stroke from the glyph",
+    "bands). The title fill always equals frameTop; titleStroke is the",
+    "per-plugin contrast colour.",
+    "Each alternative headline carries its OWN background screenshot and crop,",
+    "matching the Photoshop originals: the gallery image that says 'User-friendly",
+    "GUI' shows a different capture than the one that says 'One chat'. The",
+    "correspondence was recovered by correlating each original cover's frame",
+    "interior (upper half only - the lower band is covered by the headline and",
+    "the scrim) against every candidate capture, then checked by eye.",
+    "One command renders everything:  python tools/cover/generate.py"
+  ],
+  "root": "../..",
+  "output": "docs/public/covers",
+  "font": "tools/cover/fonts/Montserrat-Black.woff2",
+  "variants": {
+    "fab": {
+      "w": 1920,
+      "h": 1080,
+      "inset": 20,
+      "radius": 120,
+      "padX": 96,
+      "padY": 30,
+      "baseFontSize": 190,
+      "lineHeight": 1.1,
+      "maxHeightRatio": 0.54,
+      "strokeRatio": 0.035,
+      "scrimStart": 36,
+      "align": "center",
+      "tracking": -0.015
+    },
+    "hero": {
+      "w": 1280,
+      "h": 640,
+      "inset": 14,
+      "radius": 80,
+      "padX": 64,
+      "padY": 20,
+      "baseFontSize": 128,
+      "lineHeight": 1.1,
+      "maxHeightRatio": 0.54,
+      "strokeRatio": 0.035,
+      "scrimStart": 36,
+      "align": "center",
+      "tracking": -0.015
+    },
+    "og": {
+      "w": 1200,
+      "h": 630,
+      "inset": 13,
+      "radius": 74,
+      "padX": 60,
+      "padY": 18,
+      "baseFontSize": 120,
+      "lineHeight": 1.1,
+      "maxHeightRatio": 0.54,
+      "strokeRatio": 0.035,
+      "scrimStart": 36,
+      "align": "center",
+      "tracking": -0.015
+    }
+  },
+  "covers": [
+    {
+      "slug": "llm-dynamic-ui",
+      "source": "raw/llmui/screenshot-20260411-213906.png",
+      "shot": {
+        "zoom": 1.14,
+        "focusX": 0.5,
+        "focusY": 0.53
+      },
+      "palette": {
+        "frameTop": "#876DDB",
+        "frameBottom": "#8DA9E3",
+        "titleFill": "#876DDB",
+        "titleStroke": "#8ED9E7"
+      },
+      "lines": [
+        "One chat",
+        "to rule them all"
+      ],
+      "style": {
+        "kicker": "LLM Dynamic UI",
+        "kickerStyle": "rule",
+        "kickerColor": "#EDF1FF",
+        "kickerRule": "#876DDB",
+        "titleColor": "#FFFFFF",
+        "subColor": "#876DDB",
+        "heroLine": 0,
+        "heroScale": 1.0,
+        "subScale": 0.6,
+        "baseMix": 0.28,
+        "grain": 0.0,
+        "ao": 0.28,
+        "acid": 0.32,
+        "laser": 0.3,
+        "prism": 0.25,
+        "gloss": 0.72,
+        "glint": 0.8,
+        "sparkle": 0.75
+      },
+      "alt": [
+        {
+          "name": "gui",
+          "lines": [
+            "User-friendly",
+            "GUI"
+          ],
+          "source": "raw/llmui/screenshot-20260411-213358.png",
+          "shot": {
+            "zoom": 0.92,
+            "focusX": 0.0,
+            "focusY": 0.47
+          }
+        },
+        {
+          "name": "commonui",
+          "lines": [
+            "CommonUI",
+            "Support"
+          ],
+          "source": "raw/llmui/screenshot-20260411-214032.png",
+          "shot": {
+            "zoom": 1.0,
+            "focusX": 0.0,
+            "focusY": 0.47
+          }
+        }
+      ]
+    },
+    {
+      "slug": "llm-material",
+      "source": "raw/llmmat/Screenshot_20260422211840.png",
+      "shot": {
+        "zoom": 1.12,
+        "focusX": 0.0,
+        "focusY": 0.43
+      },
+      "palette": {
+        "frameTop": "#8EC3E6",
+        "frameBottom": "#8A89DF",
+        "titleFill": "#8EC3E6",
+        "titleStroke": "#8353D7"
+      },
+      "lines": [
+        "One chat",
+        "to rule them all"
+      ],
+      "style": {
+        "kicker": "LLM Material",
+        "kickerStyle": "rule",
+        "kickerColor": "#EDF1FF",
+        "kickerRule": "#8EC3E6",
+        "titleColor": "#FFFFFF",
+        "subColor": "#8EC3E6",
+        "heroLine": 0,
+        "heroScale": 1.0,
+        "subScale": 0.6,
+        "baseMix": 0.28,
+        "grain": 0.0,
+        "ao": 0.28,
+        "acid": 0.32,
+        "laser": 0.3,
+        "prism": 0.25,
+        "gloss": 0.72,
+        "glint": 0.8,
+        "sparkle": 0.75
+      },
+      "alt": [
+        {
+          "name": "gui",
+          "lines": [
+            "User-friendly",
+            "GUI"
+          ],
+          "source": "raw/llmmat/Screenshot_20260422211713.png",
+          "shot": {
+            "zoom": 1.08,
+            "focusX": 0.47,
+            "focusY": 0.0
+          }
+        },
+        {
+          "name": "domains",
+          "lines": [
+            "ALL DOMAIN",
+            "Support"
+          ],
+          "source": "raw/llmmat/Screenshot_20260422212004.png",
+          "shot": {
+            "zoom": 1.4,
+            "focusX": 0.37,
+            "focusY": 0.43
+          }
+        }
+      ]
+    },
+    {
+      "slug": "llm-metasound",
+      "source": "raw/llmmetasound/Screenshot_20260503181218.png",
+      "shot": {
+        "zoom": 1.04,
+        "focusX": 0.5,
+        "focusY": 0.0
+      },
+      "palette": {
+        "frameTop": "#3DA9BC",
+        "frameBottom": "#415890",
+        "titleFill": "#3DA9BC",
+        "titleStroke": "#330D69"
+      },
+      "lines": [
+        "One chat",
+        "to rule them all"
+      ],
+      "style": {
+        "kicker": "LLM MetaSound",
+        "kickerStyle": "rule",
+        "kickerColor": "#EDF1FF",
+        "kickerRule": "#3DA9BC",
+        "titleColor": "#FFFFFF",
+        "subColor": "#3DA9BC",
+        "heroLine": 0,
+        "heroScale": 1.0,
+        "subScale": 0.6,
+        "baseMix": 0.28,
+        "grain": 0.0,
+        "ao": 0.28,
+        "acid": 0.32,
+        "laser": 0.3,
+        "prism": 0.25,
+        "gloss": 0.72,
+        "glint": 0.8,
+        "sparkle": 0.75
+      },
+      "alt": [
+        {
+          "name": "gui",
+          "lines": [
+            "User-friendly",
+            "GUI"
+          ],
+          "source": "raw/llmmetasound/Screenshot_20260503181124.png",
+          "shot": {
+            "zoom": 1.0,
+            "focusX": 0.0,
+            "focusY": 0.0
+          }
+        },
+        {
+          "name": "examples",
+          "lines": [
+            "RICH Examples"
+          ],
+          "source": "raw/llmmetasound/Screenshot_20260503181106.png",
+          "shot": {
+            "zoom": 1.0,
+            "focusX": 0.5,
+            "focusY": 0.49
+          }
+        }
+      ]
+    },
+    {
+      "slug": "llm-statetree",
+      "source": "raw/llmstatetree/Screenshot_20260502210800.png",
+      "shot": {
+        "zoom": 1.02,
+        "focusX": 0.53,
+        "focusY": 0.43
+      },
+      "palette": {
+        "frameTop": "#5BD5D9",
+        "frameBottom": "#3BB7EF",
+        "titleFill": "#5BD5D9",
+        "titleStroke": "#209CFF"
+      },
+      "lines": [
+        "One chat",
+        "to rule them all"
+      ],
+      "style": {
+        "kicker": "LLM StateTree",
+        "kickerStyle": "rule",
+        "kickerColor": "#EDF1FF",
+        "kickerRule": "#5BD5D9",
+        "titleColor": "#FFFFFF",
+        "subColor": "#5BD5D9",
+        "heroLine": 0,
+        "heroScale": 1.0,
+        "subScale": 0.6,
+        "baseMix": 0.28,
+        "grain": 0.0,
+        "ao": 0.28,
+        "acid": 0.32,
+        "laser": 0.3,
+        "prism": 0.25,
+        "gloss": 0.72,
+        "glint": 0.8,
+        "sparkle": 0.75
+      },
+      "alt": [
+        {
+          "name": "gui",
+          "lines": [
+            "User-friendly",
+            "GUI"
+          ],
+          "source": "raw/llmstatetree/Screenshot_20260502210717.png",
+          "shot": {
+            "zoom": 0.96,
+            "focusX": 0.0,
+            "focusY": 0.47
+          }
+        },
+        {
+          "name": "examples",
+          "lines": [
+            "RICH Examples"
+          ],
+          "source": "raw/llmstatetree/Screenshot_20260502210741.png",
+          "shot": {
+            "zoom": 1.02,
+            "focusX": 0.0,
+            "focusY": 0.47
+          }
+        }
+      ]
+    }
+  ]
+}

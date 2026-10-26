@@ -30,3 +30,11 @@
 # Python cache
 /__pycache__/
 **/__pycache__/
+
+# Cover source material — untracked local scratch (PSD layers + UE captures).
+# Only the rendered outputs under docs/public/covers/ are committed;
+# see tools/cover/README.md "Source material".
+/raw/
+
+# Cover editor scratch file
+/tools/cover/.editor-render.tmp.html

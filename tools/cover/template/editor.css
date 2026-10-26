@@ -1,0 +1,189 @@
+/* ============================================================================
+   Cover editor chrome. The canvas itself is styled by cover.css — this file
+   only dresses the tool around it.
+   ========================================================================== */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  color-scheme: dark;
+  --bg: #0c0c11;
+  --panel: #131319;
+  --panel-2: #191921;
+  --line: #26262f;
+  --line-2: #32323e;
+  --text: #e9e9f2;
+  --dim: #8b8b9e;
+  --dim-2: #5f5f72;
+  --accent: #6ea8ff;
+  --accent-2: #b47cff;
+  --danger: #ff6b6b;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.5 ui-sans-serif, system-ui, "Segoe UI", "Microsoft YaHei", sans-serif;
+  overflow: hidden;
+}
+
+/* ---- top bar ------------------------------------------------------------ */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 14px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+.brand {
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin-right: 4px;
+}
+.brand span { color: var(--dim-2); font-weight: 400; margin-left: 7px; font-size: 12px; }
+.spacer { flex: 1; }
+
+select, input[type="text"], textarea {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line-2);
+  border-radius: 7px;
+  padding: 6px 9px;
+  font: inherit;
+  outline: none;
+}
+select:focus, input:focus, textarea:focus { border-color: var(--accent); }
+textarea { resize: vertical; width: 100%; font-family: ui-monospace, Consolas, monospace; }
+
+button {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line-2);
+  border-radius: 7px;
+  padding: 6px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+button:hover { border-color: var(--accent); }
+button.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: none; color: #0b0b12; font-weight: 650; }
+button.primary:hover { filter: brightness(1.1); }
+button.on { border-color: var(--accent); color: var(--accent); }
+
+.tabs { display: flex; gap: 2px; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 7px; padding: 2px; }
+.tabs button { border: none; background: transparent; padding: 4px 11px; border-radius: 5px; color: var(--dim); }
+.tabs button.sel { background: var(--accent); color: #0b0b12; font-weight: 650; }
+
+#status { font-size: 12px; color: var(--dim); min-width: 120px; }
+#status.ok { color: #56d68a; }
+#status.err { color: var(--danger); }
+
+/* ---- layout ------------------------------------------------------------- */
+main {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: calc(100% - 52px);
+}
+
+#panel {
+  overflow-y: auto;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  padding: 6px 0 40px;
+}
+#panel::-webkit-scrollbar { width: 10px; }
+#panel::-webkit-scrollbar-thumb { background: #26262f; border-radius: 6px; border: 3px solid var(--panel); }
+
+section.group { border-bottom: 1px solid var(--line); }
+section.group > h3 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--dim-2);
+  padding: 14px 16px 8px;
+  font-weight: 650;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 104px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 16px;
+}
+.row > label { color: var(--dim); font-size: 12px; }
+.row.wide { grid-template-columns: 1fr; }
+.row .val { color: var(--dim-2); font-size: 11px; font-variant-numeric: tabular-nums; }
+
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+input[type="color"] {
+  width: 100%; height: 26px; padding: 0;
+  background: var(--panel-2);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  cursor: pointer;
+}
+input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; }
+
+.hint { padding: 4px 16px 10px; color: var(--dim-2); font-size: 11px; line-height: 1.45; }
+
+/* ---- canvas ------------------------------------------------------------- */
+#viewport {
+  position: relative;
+  overflow: auto;
+  background:
+    linear-gradient(45deg, #101016 25%, transparent 25%) 0 0/24px 24px,
+    linear-gradient(-45deg, #101016 25%, transparent 25%) 0 12px/24px 24px,
+    linear-gradient(45deg, transparent 75%, #101016 75%) 12px -12px/24px 24px,
+    linear-gradient(-45deg, transparent 75%, #101016 75%) -12px 0/24px 24px,
+    #0a0a0e;
+  display: grid;
+  place-items: center;
+  padding: 26px;
+}
+#canvasWrap {
+  position: relative;
+  overflow: hidden;          /* the stage is laid out at full size, then scaled */
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+}
+#stage {
+  transform-origin: top left;
+  cursor: default;
+}
+#stage.dragging { cursor: grabbing; }
+#stage.over-shot { cursor: move; }
+#stage.over-title { cursor: move; }
+
+#guides {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .12s;
+}
+#guides.on { opacity: 1; }
+#guides .safe {
+  position: absolute;
+  border: 1px dashed rgba(110, 168, 255, 0.7);
+  border-radius: 4px;
+}
+#guides .mid {
+  position: absolute;
+  background: rgba(180, 124, 255, 0.45);
+}
+
+.hintbar {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  color: var(--dim-2);
+  font-size: 11px;
+  background: rgba(10, 10, 14, 0.8);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 7px 11px;
+  line-height: 1.7;
+}
+.hintbar b { color: var(--dim); font-weight: 600; }

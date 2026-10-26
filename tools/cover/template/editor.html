@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cover Editor — YominUnreal</title>
+<link rel="stylesheet" href="/static/cover.css">
+<link rel="stylesheet" href="/static/editor.css">
+<style>
+  /* the editor renders the cover with the vendored face */
+  @font-face {
+    font-family: "CoverDisplay";
+    src: url("__FONT_URL__") format("woff2");
+    font-weight: 900;
+    font-style: normal;
+  }
+</style>
+</head>
+<body>
+  <header class="bar">
+    <div class="brand">Cover Editor<span>YominUnreal</span></div>
+    <select id="coverSel" title="Cover"></select>
+    <div class="tabs" id="variantTabs"></div>
+    <select id="headlineSel" title="Headline"></select>
+    <span class="spacer"></span>
+    <button id="guidesBtn" title="Toggle safe-area guides">Guides</button>
+    <button id="resetBtn">Reset</button>
+    <button id="renderBtn">Export PNG</button>
+    <button id="saveBtn" class="primary">Save</button>
+    <span id="status"></span>
+  </header>
+
+  <main>
+    <aside id="panel"></aside>
+    <section id="viewport">
+      <div id="canvasWrap">
+        <div id="stage" class="stage"></div>
+        <div id="guides">
+          <div class="safe"></div>
+          <div class="mid v"></div>
+          <div class="mid h"></div>
+        </div>
+      </div>
+      <div class="hintbar">
+        <b>drag</b> the screenshot to reposition · <b>drag</b> the headline to move it ·
+        <b>wheel</b> over the screenshot to zoom · <b>shift+wheel</b> to zoom the headline
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/cover.js"></script>
+  <script src="/static/editor.js"></script>
+</body>
+</html>

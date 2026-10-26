@@ -4,6 +4,10 @@
 > Define your intent in JSON — the plugin turns it into a real engine asset.
 
 <p align="center">
+  <img src="./docs/public/covers/llm-dynamic-ui-hero.png" alt="YominUnreal Plugins — one chat to rule them all" width="100%">
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/YominUnreal%20Plugins-UMG%20%C2%B7%20Material%20%C2%B7%20StateTree%20%C2%B7%20MetaSound-0d6efd?style=for-the-badge&logo=unrealengine&logoColor=white" alt="YominUnreal Plugins — UMG · Material · StateTree · MetaSound"/>
 </p>
 
