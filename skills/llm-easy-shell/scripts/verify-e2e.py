@@ -208,7 +208,7 @@ def compute_check_count(full_only: bool, lite_only: bool) -> int:
     n += 4   # UIWebBridge DevTools help-text locks: preview_server help start/stop + playwright_ui_test help run/list
     n += 1   # git diff --stat
     n += 1   # session86 fossil-cleanup regression lock: legacy llm-shell/ dir must not exist
-    n += 1   # session90 ue-bridge coverage lock: every ue:// HTML widget must include the shim
+    n += 1   # session90+r2161 ue-bridge coverage lock: ue:// HTML widgets missing the shim must stay <= ratchet ceiling (0)
     n += 1   # session107 abandoned-plans cleanup: docs/superpowers/plans/*.md must be tracked OR self-marked WIP
     n += 1   # session108 tool-fix-07 workSummary budget: every workSummary entry in tool-fix-07.json must be ≤2000 chars (MEMORY.md budget rule mirror)
     n += 1   # session109 tool-fix-07 TBD-placeholder: every evolutionHistory/verifiedHistory commits array must be resolved (no TBD-AFTER-COMMIT residue)
@@ -460,72 +460,128 @@ def main() -> int:
         # last 60s and surface `livecoding.requiresRestart=true` in the JSON
         # response. Pre-fix the preflight only scanned *.h, leaving the
         # LiveCoding false-green gap for Build.cs PrivateDependency changes
-        # (experience/04-build-and-restart.md 规则 3). Lock mechanics:
-        # (a) Touch a real .Build.cs file (Plugins/LLMEasyShell/*.Build.cs),
-        #     set mtime to now → triggers 60s window
-        # (b) Run `reload --status` (preflight runs before --status branch)
-        # (c) Assert JSON contains `"requiresRestart": true` + a reason
-        #     mentioning Build.cs / uplugin (NOT just the compile-failure
-        #     reason, which is a different code path)
-        # Touch+restore to keep the file's mtime unchanged on average; we
-        # briefly set it to now, query, then restore. If the test crashes
-        # between touch and restore, the next run will still pass (60s
-        # window) — the file content is untouched, only mtime.
+        # (experience/04-build-and-restart.md 规则 3).
+        #
+        # r2331 2026-10-26 判据勘误: 旧断言 "reason 子串含 Build.cs" 是恒真式 ——
+        # 服务端 reason (ShellCommand_Reload.cpp 符号 PreflightReason) 把三类
+        # 标签**无条件**打印: "%d restart-required file(s) modified in last 60s
+        # (%d .h, %d .Build.cs/.Target.cs, %d .uplugin/.uproject)", 且
+        # requiresRestart 的分母含 .h —— 只改一个 .h 就能让旧断言全绿, Build.cs
+        # 检测面完全死掉。正确判据 = 解析计数, 要求触碰后 .Build.cs/.Target.cs
+        # 计数相对**触碰前基线**至少 +1:
+        #   (a) 每树取基线: reload --status, 解析 Build.cs 计数
+        #   (b) Touch 该树一枚 .Build.cs (mtime→now, 进 60s 窗)
+        #   (c) 再查: requiresRestart=true 且 计数 ≥ 基线+1 ⇒ 该树检测面活着
+        # 每树独立判定 —— 服务端虽把 Source/+Plugins/ 合并进一个计数, 触碰的
+        # 只有本树那枚文件, 增量即本树贡献 (r771b 2026-09-03 双树修复的初哀
+        # "Plugins-only 锁抓不到 Source 树" 只有在增量判定下才真正成立)。
+        # 附带勘误: 旧 quiet-log [preflight] 兜底已删 —— 服务端 stderr 发生在
+        # **编辑器进程**, -q 只重定向 CLI 自身 stderr, 标记永远到不了这里
+        # (04-build-and-restart.md 同步删该说法)。
+        # Touch+restore 保持 mtime 平均不变; 崩在窗口内下一次仍过 (只动 mtime
+        # 不动内容)。mtime 已在 60s 窗内的目标树跳过 (计数无法再增, 会假红)。
         import os as _os_lock
-        _build_cs_lock = next(
-            (p for p in (Path(PROJECT_ROOT) / "Plugins").rglob("*.Build.cs")
-             if p.is_file()),
-            None,
-        )
-        if _build_cs_lock is not None:
-            _orig_mtime = _build_cs_lock.stat().st_mtime
+
+        def _preflight_counts():
+            """One reload --status round-trip.
+
+            Returns (requiresRestart, build_cs_count, reason):
+            requiresRestart None = query/JSON failure (count/-1, reason=diagnostic).
+            """
+            _r = subprocess.run(
+                [str(LLM_SHELL), "-q", "-j", "-c", "reload --status"],
+                cwd=LLM_SHELL.parent, capture_output=True,
+                text=True, timeout=15,
+                encoding="utf-8", errors="replace",
+            )
+            _m = re.search(r'\{[\s\S]*\}', _r.stdout or "")
+            if not _m:
+                return None, -1, f"no JSON (stdout tail: {(_r.stdout or '')[-200:]!r})"
             try:
-                _os_lock.utime(_build_cs_lock, (time.time(), time.time()))
-                _r_lock = subprocess.run(
-                    [str(LLM_SHELL), "-q", "-j", "-c", "reload --status"],
-                    cwd=LLM_SHELL.parent, capture_output=True,
-                    text=True, timeout=15,
-                )
-                _m_lock = re.search(r'\{[\s\S]*\}', _r_lock.stdout or "")
-                _payload_ok = False
-                _reason_msg = "no JSON"
-                if _m_lock:
+                _j = json.loads(_m.group(0))
+            except json.JSONDecodeError as e:
+                return None, -1, f"JSONDecodeError: {e.msg}"
+            _lc = _j.get("livecoding", {})
+            _reason = str(_lc.get("reason", ""))
+            _cm = re.search(r'(\d+)\s+\.Build\.cs/\.Target\.cs', _reason)
+            return (_lc.get("requiresRestart") is True,
+                    int(_cm.group(1)) if _cm else 0, _reason)
+
+        # Deterministic canaries, one per tree: pin the plugin's own build
+        # file (NOT "first rglob hit" — OS-order dependent, may land on a
+        # third-party plugin), else the lexicographically-first in that tree.
+        _plugins_pinned = (Path(PROJECT_ROOT) / "Plugins" / "LLMEasyShell"
+                           / "Source" / "LLMEasyShell"
+                           / "LLMEasyShell.Build.cs")
+        _lock_targets = [
+            _plugins_pinned if _plugins_pinned.is_file() else next(
+                (p for p in sorted((Path(PROJECT_ROOT) / "Plugins")
+                                   .rglob("*.Build.cs"))
+                 if p.is_file()), None),
+            Path(PROJECT_ROOT) / "Source" / "CODEO" / "CODEO.Build.cs",
+        ]
+        _lock_targets = [t for t in _lock_targets
+                         if t is not None and t.is_file()]
+        if _lock_targets:
+            _tree_results = []
+            for _build_cs_lock in _lock_targets:
+                _rel = _build_cs_lock.relative_to(PROJECT_ROOT)
+                try:
+                    _orig_mtime = _build_cs_lock.stat().st_mtime
+                    if time.time() - _orig_mtime < 120:
+                        # Already inside the 60s window (margin 2x): the count
+                        # cannot increase, a delta lock would false-red.
+                        _tree_results.append((
+                            False,
+                            f"{_rel}: SKIP mtime inside the 120s guard (2x the 60s window; "
+                            f"count cannot rise — tree is hot, re-run after it cools)",
+                        ))
+                        continue
                     try:
-                        _j_lock = json.loads(_m_lock.group(0))
-                        _lc = _j_lock.get("livecoding", {})
-                        # Status path returns {started, enabled, compiling,
-                        # canEnable} WITHOUT livecoding block — preflight
-                        # signal must surface via stderr which -q redirects
-                        # to llm-shell-quiet.log. So check the quiet log
-                        # for the [preflight] Build.cs marker.
-                        _quiet_log = (LLM_SHELL.parent
-                                      / "llm-shell-quiet.log")
-                        _quiet_tail = ""
-                        if _quiet_log.exists():
-                            _quiet_tail = _quiet_log.read_text(
-                                encoding="utf-8", errors="replace"
-                            )[-2000:]
-                        _has_preflight = (
-                            "preflight" in _quiet_tail
-                            and ("Build.cs" in _quiet_tail
-                                 or "uplugin" in _quiet_tail
-                                 or "build/" in _quiet_tail)
-                        )
-                        _payload_ok = _has_preflight
-                        _reason_msg = (
-                            f"preflight-detected={_has_preflight} "
-                            f"tail={_quiet_tail[-200:]!r}"
-                        )
-                    except json.JSONDecodeError as e:
-                        _reason_msg = f"JSONDecodeError: {e.msg}"
-                ok = _payload_ok
-                msg = f"PASS preflight Build.cs detected" if ok \
-                    else f"FAIL {_reason_msg}"
-            finally:
-                _os_lock.utime(_build_cs_lock,
-                               (_orig_mtime, _orig_mtime))
+                        _b_restart, _b_count, _b_reason = _preflight_counts()
+                    except (OSError, subprocess.TimeoutExpired) as e:
+                        _tree_results.append((False, f"{_rel}: baseline query failed: {e!r}"))
+                        continue
+                    if _b_restart is None:
+                        _tree_results.append((False, f"{_rel}: baseline {_b_reason}"))
+                        continue
+                    try:
+                        _os_lock.utime(_build_cs_lock, (time.time(), time.time()))
+                        try:
+                            _a_restart, _a_count, _a_reason = _preflight_counts()
+                        finally:
+                            _os_lock.utime(_build_cs_lock,
+                                           (_orig_mtime, _orig_mtime))
+                    except (OSError, subprocess.TimeoutExpired) as e:
+                        _tree_results.append((False, f"{_rel}: post-touch query failed: {e!r}"))
+                        continue
+                    if _a_restart is None:
+                        _tree_results.append((False, f"{_rel}: post-touch {_a_reason}"))
+                        continue
+                    # exact +1, fail-closed: the server counter merges Source/+Plugins/, so
+                    # a concurrent agent touching a DIFFERENT Build.cs can supply the
+                    # +1 while this tree's detection face is dead — delta > 1 means
+                    # the window is polluted; re-run rather than pass.
+                    _payload_ok = _a_restart and _a_count == _b_count + 1
+                    _tree_results.append((
+                        _payload_ok,
+                        f"{_rel} "
+                        + (f"ok (Build.cs count {_b_count}->{_a_count})" if _payload_ok
+                           else f"FAIL restart={_a_restart} "
+                                f"count {_b_count}->{_a_count} "
+                                f"reason={_a_reason[:160]!r}"),
+                    ))
+                except OSError as e:
+                    # e.g. utime on a read-only plugin checkout — one tree's
+                    # failure must not kill the other 30 checks.
+                    _tree_results.append((False, f"{_rel}: {e!r}"))
+            ok = all(t_ok for t_ok, _ in _tree_results)
+            msg = (f"{'PASS' if ok else 'FAIL'} preflight Build.cs delta detected "
+                   f"({sum(1 for t_ok, _ in _tree_results if t_ok)}"
+                   f"/{len(_tree_results)} trees): "
+                   + "; ".join(t_msg for _, t_msg in _tree_results))
         else:
-            ok, msg = False, "SKIP no .Build.cs found in Plugins/"
+            ok, msg = False, "SKIP no .Build.cs found in Plugins/ or Source/"
         checks.append(("full reload preflight detects Build.cs", ok, msg))
 
     # 6-9. lite llmshelllite
@@ -615,23 +671,40 @@ def main() -> int:
             f"absent: {fossil_dir.relative_to(PROJECT_ROOT)} (session86 cleanup verified)",
         ))
 
-    # tool-fix-07 session90: ue-bridge coverage lock. Every HUD/Html/*.html
-    # that fires `ue://` (inline window.location.href, or a function ue/ueAction
-    # helper, or navigate/fadeThenNavigate passing 'ue://' as arg) MUST include
-    # `_shared/ue-bridge.js`. Without this, UE 5.8 + CEF silently drops the
-    # OnUrlChanged event (WebUIBase.cpp:516 known limitation) and the click
-    # never reaches GameMode::HandleMainMenuCallback. The shim installs a
-    # 50ms console.log('__UE_BRIDGE__|...') fallback transport so every
-    # widget gets dual-transport by construction. Catches drift class:
-    # new HTML widget added without the include line, OR a future PR
-    # refactor that drops the include.
-    # session94: extended `pat_ue_legacy` regex to also catch
-    # `function uecallback(`, `ue.answercallback(...)`, and bare
-    # `window.ue.uebridge.broadcast(` — legacy per-widget bridge helpers
-    # (predating session91's shim rollout) that silently bypass the
-    # location.href setter override and therefore need the shim too.
+    # tool-fix-07 session90 + r2161: ue-bridge coverage lock. Every HUD/Html
+    # *.html — RECURSIVELY (r2161 fixed glob→rglob: since the 2026-08-28 Html
+    # restructure the top level holds 0 .html, so the old glob scanned an
+    # empty set and this lock had never looked at what it claims to guard) —
+    # that fires `ue://` (inline window.location.href, ue/ueAction helper,
+    # navigate/fadeThenNavigate/navTo/goto with a 'ue://' arg, or a session94
+    # legacy per-widget helper) MUST include `_shared/ue-bridge.js`.
+    #
+    # r2161 勘误 (2026-10-03, 引用修正 2026-10-26): 旧文案把机制讲反了两次。
+    #   (1) ue-bridge.js 不是可选双保险 —— r2161 PIE 实测它是唯一观测到在工作的
+    #       transport: shim 劫持 window.location.href setter, ue:// 前缀一律走
+    #       console.log('__UE_BRIDGE__|...') → CEF console 管道 →
+    #       OnConsoleMessage_Handler → HandleMainMenuCallback。ue:// scheme 在
+    #       UE 5.8 CEF 未注册 ⇒ OnUrlChanged 那条腿不触发 (真因记于 ue-bridge.js
+    #       头注释 r51 vUEBRIDGE-NO-NAV-DEV; 旧文案引的 "WebUIBase.cpp:516
+    #       known limitation" 实为 Hidden→Visible 一次性 ticker, 现居
+    #       WebUIBase_band_Lifecycle.cpp 的 lifecycle 段)。树内若干 "双
+    #       transport" 注释仍称 OnUrlChanged 可用 —— 以 r2161 PIE 实测为准,
+    #       那些是 stale。
+    #   (2) 漏掉 include 的真实后果 = 该 widget 的按钮哑火 (console 腿也没了),
+    #       不是"掉回 OnUrlChanged"。
+    # Catches drift class: new HTML widget added without the include line, OR a
+    # future PR refactor that drops the include.
     html_dir = PROJECT_ROOT / "Content" / "Features" / "Survivor" / "HUD" / "Html"
     bridge_inc = "_shared/ue-bridge.js"
+    # r2161 B1 → 2026-10-26 复测棘轮: 2026-10-03 rglob 首测记 272+ html 中
+    #   378 fire ue:// / 303 缺 include (当时读数, 未 PIE 实测定损);
+    #   2026-10-26 复测同一树 (devpre): 272 .html 全在 16 子目录、顶层 0,
+    #   37 fire ue://, 缺 include = **0** —— 303 存量债期间已被清偿,
+    #   上限随复测下调为 0 (真零债锁): 新增任何缺 include 的 ue:// 页面立即判红。
+    #   (消费树是多 agent 共享, 数量只代表复测日; 上限只应下调, 上调需记档。)
+    # 取舍(如实记账): 纯计数棘轮看不见"修好 A 同时弄坏 B"的等量置换 —— 真要那道
+    #   守卫得把缺失集合本身钉成基线文件。本轮不引入那个新实体, 留作下轮。
+    k_uebridge_known_debt_ceiling = 0
     pat_ue_inline = re.compile(r"window\.location\.href\s*=.*ue://")
     pat_ue_helper = re.compile(r"function\s+(ue|ueAction)\s*\(")
     pat_ue_indirect = re.compile(
@@ -644,8 +717,17 @@ def main() -> int:
         r"|window\.ue\.uebridge\.broadcast\s*\("
     )
     drift_files: list[str] = []
-    if html_dir.exists():
-        for hp in sorted(html_dir.glob("*.html")):
+    n_ue = 0
+    if not html_dir.exists():
+        # Distribution copy running outside a consumer project: the tree is
+        # absent — say so instead of vacuously reporting "OK 0/0".
+        checks.append((
+            "ue-bridge coverage",
+            False,
+            f"SKIP content tree absent: {html_dir} (run inside a consumer project)",
+        ))
+    else:
+        for hp in sorted(html_dir.rglob("*.html")):
             try:
                 hc = hp.read_text(encoding="utf-8")
             except Exception:
@@ -658,35 +740,24 @@ def main() -> int:
             )
             if not has_ue:
                 continue
+            n_ue += 1
             if bridge_inc not in hc:
                 drift_files.append(str(hp.relative_to(PROJECT_ROOT)))
-    if drift_files:
-        checks.append((
-            "ue-bridge coverage",
-            False,
-            f"FAIL {len(drift_files)} files using ue:// but missing {bridge_inc}: {drift_files[:3]}{'...' if len(drift_files) > 3 else ''}",
-        ))
-    else:
-        # Count total ue:// files for the success message
-        n_ue = 0
-        if html_dir.exists():
-            for hp in html_dir.glob("*.html"):
-                try:
-                    hc = hp.read_text(encoding="utf-8")
-                except Exception:
-                    continue
-                if (
-                    pat_ue_inline.search(hc)
-                    or pat_ue_helper.search(hc)
-                    or pat_ue_indirect.search(hc)
-                    or pat_ue_legacy.search(hc)
-                ):
-                    n_ue += 1
-        checks.append((
-            "ue-bridge coverage",
-            True,
-            f"OK {n_ue} ue:// HTML widgets all include {bridge_inc} (session90 dual-transport lock)",
-        ))
+        if len(drift_files) > k_uebridge_known_debt_ceiling:
+            checks.append((
+                "ue-bridge coverage",
+                False,
+                f"FAIL {len(drift_files)} files using ue:// but missing {bridge_inc} "
+                f"(ceiling {k_uebridge_known_debt_ceiling}): {drift_files[:3]}{'...' if len(drift_files) > 3 else ''}",
+            ))
+        else:
+            checks.append((
+                "ue-bridge coverage",
+                True,
+                f"OK {n_ue} ue:// HTML widgets scanned (rglob, r2161); "
+                f"{len(drift_files)} missing {bridge_inc} "
+                f"(<= ceiling {k_uebridge_known_debt_ceiling})",
+            ))
 
     # tool-fix-07 session107: abandoned plans cleanup anchor lock. Scans
     # docs/superpowers/plans/*.md for untracked files lacking WIP/DRAFT/
