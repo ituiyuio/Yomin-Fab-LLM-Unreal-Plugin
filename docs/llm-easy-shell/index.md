@@ -65,7 +65,7 @@ introspection, screenshots), TCP server on ports 15151–15200, Ability
 framework for plugin-registered C++ commands (`RegisterShellCommand()` /
 `AddPythonAbilityRoot()` extension points), PyAbility framework for
 `.py`-defined commands hosted by any plugin, 46 built-in Python abilities,
-command trace logging.
+command trace logging, and a live Trace Tab window (v1.3.0).
 
 **Code Modules:** LLMEasyShell (Editor)
 
@@ -224,7 +224,7 @@ errors by marketplace scanners).
 | `uitree` | Dump current UMG widget tree |
 | `uifind {pattern}` | Find UMG widget by name |
 | `uiinfo /Widget/{name}` | Inspect widget properties |
-| `uipress /Widget/{name}` | Simulate click on a button |
+| `uipress /Widget/{name}` | Simulate click on a button (`--root <class>` picks the resolution root, v1.3.0) |
 | `uitype /Widget/{name} "text"` | Simulate text input |
 | `uishot` | Slate composite screenshot |
 
@@ -359,6 +359,28 @@ port is logged at editor startup and recorded in
 
 ---
 
+## Trace Tab
+
+Every command the shell executes is traced to JSONL under
+`Saved/LLMEasyShell/traces/`. Since v1.3.0 you can also watch them live
+in the editor:
+
+- **LLM Shell Trace tab** — a live list of executed commands with a
+  detail pane (Input / Output / Error) for the selected row, a filter
+  box, a failures-only toggle, auto-scroll, and Clear.
+- **Opening it** — click the port status widget on the Play toolbar
+  (the copy-port action moved to a *Copy port* button in the tab
+  header). The tab also auto-opens once per editor session when the
+  first traced command arrives; disable with
+  `LLMEasyShell.TraceAutoOpen 0`. Closing it manually keeps it closed
+  for the rest of the session.
+- **C++ data plane** — the subsystem keeps a 500-entry in-memory ring
+  buffer (`GetRecentTraces()`, display-truncated) and broadcasts
+  `FOnShellCommandTraced` after each command. The JSONL archive remains
+  the full-fidelity record.
+
+---
+
 ## Comparison: Easy Shell vs Lite
 
 LLMEasyShell ships in two **independent** variants. They listen on disjoint
@@ -401,4 +423,4 @@ untrusted networks.
 
 ---
 
-*LLMEasyShell v1.2.0 | YominUnreal*
+*LLMEasyShell v1.3.0 | YominUnreal*

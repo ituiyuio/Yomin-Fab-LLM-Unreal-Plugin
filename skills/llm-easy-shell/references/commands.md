@@ -137,6 +137,8 @@ editor play
 | `ui tick` | 轮询直到出现匹配的 widget 或超时 | `ui tick --text "Wave 5" --timeout 30` |
 
 > 这 7 个命令的 C++ 类在 `LLMEasyShellTypes.h` 声明（`UShellCommand_UITree`/`UIFind`/`UIInfo`/`UIShot`/`UIPress`/`UIType`/`UITick`，首 declarations 自 ~L1954 起 —— 2026-10-26 复核; 原 `:1900-2055` 区间截尾三个类），所有 `GetCommandName()` 返回 `"ui <subcmd>"` 带空格，复合 dispatcher 优先匹配。源码 `Plugins/LLMEasyShell/Source/LLMEasyShell/Private/ShellCommand_UI*.cpp`。
+>
+> `ui press mouse|key` 可追加 `--root <UClass>`，从指定根解析路径；不传时保持原主根选择。例：`ui press key --path WebMainMenuShellWidget_0 --key Tab --root WebMainMenuShellWidget`。匹配是 class 短名**精确**比较（区分大小写；BP 生成类要带 `_C` 后缀）；0 命中时报 `0 of N UUserWidget match root class` 并给出对照总数。多根场景用 `ui find --all --visible-only false` 先取路径，避免主根与实际目标不一致。（v1.3.0）
 
 ---
 
