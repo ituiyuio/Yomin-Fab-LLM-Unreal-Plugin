@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" class="page-fit">
+<head>
+<meta charset="utf-8">
+<title>cover</title>
+<style>/*__CSS__*/</style>
+</head>
+<body>
+  <div class="stage" id="stage"></div>
+
+  <script>window.__COVER__ = /*__CONFIG__*/ null;</script>
+  <script>/*__JS__*/</script>
+  <script>
+    (function () {
+      const cfg = window.__COVER__;
+      const stage = document.getElementById('stage');
+
+      function render() {
+        window.CoverRender.render(stage, cfg);
+      }
+
+      function ready() {
+        window.CoverRender.placeShot(stage, cfg);
+        const m = window.CoverRender.fit(stage, cfg);
+        window.__COVER_METRICS__ = {
+          fontSize: m.fontSize,
+          widest: m.widest,
+          height: m.height,
+          fontLoaded: !!(document.fonts && document.fonts.check('900 100px CoverDisplay'))
+        };
+        window.__READY__ = true;
+      }
+
+      // Build first so the <img> exists and has its src; then wait for the
+      // webfont and the screenshot before measuring the headline.
+      const built = window.CoverRender.build(stage, cfg);
+      const shot = built.root.querySelector('.shot');
+
+      // The webfont must be resident before we measure: measuring against a
+      // fallback face yields a narrower width, and the headline then overflows
+      // the canvas once the real face swaps in.
+      const fontsReady = (document.fonts && document.fonts.ready)
+        ? document.fonts.load('900 100px CoverDisplay').then(() => document.fonts.ready)
+        : Promise.resolve();
+
+      // The screenshot must be decoded before we place it: a half-loaded image
+      // would leave the frame empty. A cover with no screenshot (the suite
+      // card) resolves straight away.
+      const shotReady = !cfg.source
+        ? Promise.resolve()
+        : shot.complete && shot.naturalWidth > 0
+          ? (shot.decode ? shot.decode() : Promise.resolve())
+          : new Promise((res, rej) => {
+              shot.addEventListener('load', res, { once: true });
+              shot.addEventListener('error', () => rej(new Error('screenshot failed to load')), { once: true });
+            });
+
+      fontsReady.then(() => shotReady).then(ready, (err) => {
+        window.__COVER_ERROR__ = String((err && err.message) || err);
+        window.__READY__ = true;
+      });
+    })();
+  </script>
+</body>
+</html>

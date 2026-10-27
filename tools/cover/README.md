@@ -19,24 +19,47 @@ python tools/cover/editor.py                       # live editor (the PS replace
 primary headlines, it does not add to them:
 
 ```
-python tools/cover/generate.py                            # 12 primary PNGs
-python tools/cover/generate.py --alt all --variant fab    # 8 alt-gallery PNGs
+python tools/cover/generate.py                            # 24 primary PNGs
+python tools/cover/generate.py --alt all --variant fab    # 14 alt-gallery PNGs
 ```
 
 ## Source material
 
-`raw/` is **local, untracked scratch** — UE captures (one folder per plugin)
-plus the PSD working file. It is not in the repo: a fresh clone does not have
-it, and `--check` will fail on the missing screenshots until you supply them.
+`raw/` is **local, untracked scratch** — UE captures, one folder per product,
+plus `reference/` for the Photoshop originals (the PSD working file and the
+two hand-made title cards). It is not in the repo: a fresh clone does not
+have it, and `--check` will fail on the missing screenshots until you supply
+them.
 Manifest `source` paths are repo-root-relative. Only the rendered outputs
 under `docs/public/covers/` are committed.
 
+```
+raw/
+├── llmdynamicui/     # the UMG captures
+├── llmmaterial/      # the material captures
+├── llmmetasound/     # the audio captures
+├── llmstatetree/     # the AI captures
+├── llmeasyshells/    # the shell captures
+└── reference/        # 99.png, 999.png, the .psd — the Photoshop originals
+```
+
 ## Scope
 
-Covers exist for the four Fab-listed plugins (llm-dynamic-ui, llm-material,
-llm-statetree, llm-metasound). `llm-easy-shell` / `-lite` are CLI skills with
-no Fab listing — they deliberately get no cover; the README banner and the
-site OG card reuse `llm-dynamic-ui`.
+Covers exist for every product in the suite: the four asset plugins
+(llm-dynamic-ui, llm-material, llm-statetree, llm-metasound), the two
+editor-control shells (llm-easy-shell, llm-easy-shell-lite) and the
+publisher card (yominunreal-plugins).
+
+`llm-easy-shell-lite` is a **plate card**: it has no screenshot yet, so
+`source` is empty and the frame is a flat plate (see "The suite card").
+Point `source` at a Lite capture and the card grows a background like every
+other cover.
+
+`llm-easy-shell-works-with` is the Full shell's **plate promo card**: the
+same benefit headline as its screenshot cover, plus the WORKS WITH list.
+The Full card's own image is a screenshot of the Trace window, and four list
+rows on top of that would not read — the compatibility story gets its own
+frame instead.
 
 ## The type system
 
@@ -66,6 +89,35 @@ Two decisions do most of the work:
 The keyline around the glyphs is the deep base colour and is deliberately thin
 (`strokeRatio`, default 0.035). The old thick accent-coloured outline ate the
 counters and made small sizes blobby.
+
+### Per-line treatments — `style.lineStyles`
+
+`style.titleGradient` is global: set it and every line wears the same
+gradient. A lockup often needs the opposite — a white iridescent hero next to
+a gradient subtitle — so `style.lineStyles` overrides individual lines. It is
+an array aligned with the headline lines; an empty slot means "no override".
+
+| key        | what it does                                                     |
+|------------|------------------------------------------------------------------|
+| `gradient` | an explicit CSS gradient for this line                           |
+| `acidScale`| multiplier on the cover's `acid` knob (hero takes it whole, the supporting lines take 45% by default) |
+| `color`    | overrides the hero/sub colour                                    |
+| `scale`    | overrides the hero/sub size ratio                                |
+
+```jsonc
+"style": {
+  "acid": 0.3,
+  "lineStyles": [
+    { "acidScale": 1 },                                              // white + iridescent
+    { "acidScale": 1 },                                              // white + iridescent
+    { "gradient": "linear-gradient(96deg, #FF6FA8 0%, #FF9A5C 46%, #FFD000 100%)" }
+  ]
+}
+```
+
+`acidScale` is a multiplier, not an absolute value, so the global **Acid**
+slider still moves those lines. An alternative headline that overrides
+`lineStyles` replaces the whole array — give it a complete one.
 
 ## Acid & laser
 
@@ -139,6 +191,12 @@ the same `cover.css` / `cover.js` the CLI exports with — so the preview is the
 export, not an approximation. Changes are written straight back into
 `covers.json` by **Save**; **Export PNG** renders a single file immediately.
 
+The vendored font is served from the editor's own origin (`/static/font.woff2`).
+It used to be linked as a `file://` URL, which Chromium refuses to pull into
+an `http://` page — the preview silently fell back to the system face, so the
+headline was measured against the wrong metrics and the preview drifted away
+from the export.
+
 | gesture | effect |
 |---------|--------|
 | drag the screenshot | reposition the background image |
@@ -152,12 +210,53 @@ source screenshot (any PNG under `raw/`), crop zoom/focus, frame margin and
 corner radius, scrim position, the four palette colours, and the finish pass
 (glow, grain, vignette, sweep, light beam, text shadow, badge).
 
+The **Card** group covers the plate layout: layout (screenshot vs. flat
+plate), plate colour, the plugin list, the chips, the call to action and
+their colours. The **hero line** picker lists the headline's own lines, so
+the punch can go on the third line of a three-line lockup — a fixed
+first/second/none list used to mislabel it and quietly lie about what was
+being rendered. **Line gradients** gives one CSS-gradient field per line,
+backed by `style.lineStyles`; empty means the line keeps the hero/sub
+colour.
+
 **Guides** overlays the safe area and centre lines.
+
+### The editor is the product
+
+The panel is only worth trusting if what it draws is what ships. Both paths
+share `cover.css` / `cover.js`, but the editor assembles its config in
+`editor.js` while the CLI assembles it in `generate.py` — so the guarantee
+has to be checked on real output, not assumed from the shared code:
+
+```
+python tools/cover/editor.py --port 8821 &
+python tools/cover/check_editor.py 8821
+```
+
+`check_editor.py` renders every cover through the editor's own `/api/render`
+endpoint and compares the bytes against the committed PNGs.
 
 ## Output
 
 `docs/public/covers/` (the VitePress public dir, so the docs site and the
-README serve the same files):
+README serve the same files), **one folder per cover**:
+
+```
+docs/public/covers/
+├── index.html
+├── llm-dynamic-ui/          # fab.png  hero.png  og.png  gui-fab.png  …
+├── llm-easy-shell/          # + agent-fab.png  native-fab.png  trace-fab.png  …
+├── llm-easy-shell-lite/
+├── llm-easy-shell-works-with/
+├── llm-material/
+├── llm-metasound/
+├── llm-statetree/
+└── yominunreal-plugins/
+```
+
+The folder is the cover's slug — one Fab listing's image set. The file name
+is the variant, with the alternative headline as a prefix (`gui-fab.png` is
+the "User-friendly GUI" gallery image).
 
 | variant | size      | used for                                  |
 |---------|-----------|-------------------------------------------|
@@ -166,7 +265,8 @@ README serve the same files):
 | `og`    | 1200×630  | Open Graph / Twitter card for the docs site |
 
 Every run also writes `index.html` next to the images — a browsable contact
-sheet of the whole set. It lands in the docs site as `/covers/`.
+sheet of the whole set, one section per cover. It lands in the docs site as
+`/covers/`.
 
 ## Requirements
 
@@ -258,6 +358,116 @@ interior against every candidate capture in its folder — and then checked by
 eye, because the correlation is easy to fool: a high-contrast content browser
 correlates well with almost any dark screenshot.
 
+## The suite card
+
+`"layout": "suite"` renders a different shape — a centred stack of
+**kicker → headline → plugin list → call to action** on a flat plate, with the
+accent gradient showing as a border around it. That is the "Intelligence
+Available" card, rebuilt so the headline can no longer run off the top of the
+canvas and so all four plugins are listed:
+
+```jsonc
+{
+  "slug": "yominunreal-plugins",
+  "layout": "suite",
+  "plate": "#08080C",              // the plate colour; no screenshot needed
+  "source": "",                    // empty = solid plate instead of a capture
+  "lines": ["Intelligence", "Available"],
+  "list": [
+    "LLM Dynamic UI", "LLM Material", "LLM StateTree", "LLM MetaSound",
+    "LLM Easy Shell", "LLM Easy Shell Lite"
+  ],
+  "chips": ["UE 5.5 → 5.8"],
+  "cta": "Get it now",
+  "style": {
+    "titleGradient": "linear-gradient(96deg, #FF6FA8 0%, #FF9A5C 46%, #FFD000 100%)",
+    "listColor": "#FFD000"
+  }
+}
+```
+
+`style.titleGradient` overrides the generated headline fill with an explicit
+CSS gradient — the suite card wants one pink→gold sweep across every line.
+`style.listColor` and `style.ctaGradient` style the list and the CTA.
+`chips` renders a row of small pills under the list — the suite card uses it
+for the supported engine range (`UE 5.5 → 5.8`); `style.chipColor` /
+`chipBorder` / `chipBg` style them.
+
+### `listLabel` — saying what the list *is*
+
+A bare list of plugin names under a headline reads as "these are included".
+For the Lite card that is wrong: the LLM plugin family is sold separately and
+Lite only drives it. `listLabel` puts a marker above the list so the
+relationship is explicit — `Works with` says compatible, not bundled.
+
+```jsonc
+"listLabel": "Works with",
+"list": ["LLM Dynamic UI", "LLM Material", "LLM StateTree", "LLM MetaSound"]
+```
+
+The label inherits the kicker colour (`style.listLabelColor` overrides it)
+and disappears when empty, so cards that really do list their own contents —
+the publisher card — carry no label.
+
+The layout is not tied to the suite card. Any cover can drop its screenshot
+and become a plate card — `llm-easy-shell-lite` is one: it sells a price
+point, so the headline carries the punch (`heroLine` picks the line, and
+`-1` makes every line equal) and the plate does the rest.
+
+**Two colours, one job each.** The gold (`#FFD000`) is the family's identity
+— it owns the frame, the kicker rule and the version chip, so the Lite card
+reads as the same product as the Full card next to it. The cyan (`#4FE8C4`)
+is the Lite accent and only ever appears on the supporting layer: the
+supporting lines, the plugin list, the chips, the call to action. Fusing the
+two into one gradient reads worse — cyan → gold passes through a muddy green
+— so keep them on separate elements.
+
+**The headline is white.** Across the whole set the big type is near-white:
+the asset plugins, the Full shell and the Lite shell all use it. Colour
+belongs to the frame and the supporting layer, so the headline stays legible
+at thumbnail size on a Fab listing.
+
+**The big line is iridescent, the subtitle carries a gradient.** The Easy
+Shell cards run `acid` at 0.3, so the white headline catches the laser
+sheen, and the subtitle wears a per-line gradient: gold → pink on the Full
+card, gold → cyan on the Lite card. Gold → cyan passes through a bright
+cream midpoint, so it never touches the muddy green that gold → mint would
+give in RGB.
+
+```jsonc
+{
+  "slug": "llm-easy-shell-lite",
+  "layout": "suite",
+  "plate": "#06090B",
+  "source": "",
+  "palette": {
+    "frameTop": "#FFD000",      // the Full version's gold — same family
+    "frameBottom": "#8A5A10",
+    "titleFill": "#FFD000",
+    "titleStroke": "#FF6FA8"
+  },
+  "lines": ["Gain Intelligence", "Unreal Engine", "Free"],
+  "list": ["LLM Dynamic UI", "LLM Material", "LLM StateTree", "LLM MetaSound"],
+  "chips": ["UE 5.5 → 5.8"],
+  "cta": "Get it free",
+  "style": {
+    "heroLine": 2,            // the third line carries the punch
+    "heroScale": 1.2,
+    "subScale": 0.6,
+    "titleColor": "#FFFFFF",  // the hero line — white, like every other cover
+    "subColor": "#4FE8C4",    // the supporting lines — the cyan accent
+    "acid": 0.3,              // the laser sheen on the big line
+    "lineStyles": [
+      { "gradient": "linear-gradient(96deg, #FFD000 0%, #FFF3C4 44%, #4FE8C4 100%)" },
+      { "gradient": "linear-gradient(96deg, #FFD000 0%, #FFF3C4 44%, #4FE8C4 100%)" }
+    ],
+    "listColor": "#4FE8C4",
+    "chipColor": "#4FE8C4",
+    "ctaGradient": "linear-gradient(96deg, #4FE8C4, #7BFFEA)"
+  }
+}
+```
+
 ### `shot` — the crop of the source screenshot
 
 `zoom` and `focusX`/`focusY` describe **which window of the source image** ends
@@ -281,8 +491,14 @@ tune the hero but not the fab. Anything not overridden falls back to
 
 ## How the template works — `template/`
 
-`cover.css` + `cover.js` are the single source of truth, shared by the CLI
-renderer and the editor. Layers, bottom to top:
+```
+template/
+├── cover/     # cover.css  cover.js  cover.html — the shared renderer
+└── editor/    # editor.css  editor.js  editor.html — the editor's own UI
+```
+
+`template/cover/cover.css` + `cover.js` are the single source of truth, shared
+by the CLI renderer and the editor. Layers, bottom to top:
 
 1. **Backdrop** — a vertical gradient from `frameTop` to `frameBottom`, plus a
    soft coloured bloom behind the frame.

@@ -25,6 +25,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 HERE = pathlib.Path(__file__).resolve().parent
 TEMPLATE = HERE / "template"
+RENDER_TEMPLATE = TEMPLATE / "cover"      # the shared renderer (cover.*)
+EDITOR_TEMPLATE = TEMPLATE / "editor"    # the editor's own UI (editor.*)
 MANIFEST = HERE / "covers.json"
 
 sys.path.insert(0, str(HERE))
@@ -70,7 +72,8 @@ def file_url(path: pathlib.Path) -> str:
 
 
 def build_config(manifest: dict, cover: dict, variant_name: str, lines: list[str],
-                 source: str | None = None, shot: dict | None = None) -> dict:
+                 source: str | None = None, shot: dict | None = None,
+                 style: dict | None = None) -> dict:
     variant = dict(manifest["variants"][variant_name])
     variant.update(cover.get("variantOverrides", {}).get(variant_name, {}))
     return {
@@ -88,22 +91,29 @@ def build_config(manifest: dict, cover: dict, variant_name: str, lines: list[str
         "scrimStart": variant["scrimStart"],
         "align": variant.get("align", "center"),
         "lines": lines,
+        "layout": cover.get("layout", "cover"),
+        "plate": cover.get("plate"),
+        "list": cover.get("list", []),
+        "listLabel": cover.get("listLabel", ""),
+        "chips": cover.get("chips", []),
+        "cta": cover.get("cta", ""),
         "titleOffset": cover.get("titleOffset", {}),
         "palette": cover.get("palette", {}),
         "shot": shot if shot is not None else cover.get("shot", {}),
-        "style": cover.get("style", {}),
-        "source": file_url(REPO_ROOT / (source or cover["source"])),
+        "style": style if style is not None else cover.get("style", {}),
+        "source": file_url(REPO_ROOT / (source or cover["source"])) if (source or cover.get("source")) else "",
     }
 
 
 def render_png(manifest: dict, cover: dict, variant_name: str, lines: list[str], out: pathlib.Path,
-               source: str | None = None, shot: dict | None = None) -> pathlib.Path:
+               source: str | None = None, shot: dict | None = None,
+               style: dict | None = None) -> pathlib.Path:
     from playwright.sync_api import sync_playwright
 
-    cfg = build_config(manifest, cover, variant_name, lines, source, shot)
-    tpl = (TEMPLATE / "cover.html").read_text(encoding="utf-8")
-    css = (TEMPLATE / "cover.css").read_text(encoding="utf-8")
-    js = (TEMPLATE / "cover.js").read_text(encoding="utf-8")
+    cfg = build_config(manifest, cover, variant_name, lines, source, shot, style)
+    tpl = (RENDER_TEMPLATE / "cover.html").read_text(encoding="utf-8")
+    css = (RENDER_TEMPLATE / "cover.css").read_text(encoding="utf-8")
+    js = (RENDER_TEMPLATE / "cover.js").read_text(encoding="utf-8")
     html = (
         tpl.replace("/*__CSS__*/", css)
         .replace("/*__JS__*/", js)
@@ -166,15 +176,19 @@ class Handler(BaseHTTPRequestHandler):
             if path in ("/", "/index.html"):
                 return self._editor_page()
             if path == "/static/cover.css":
-                css = (TEMPLATE / "cover.css").read_text(encoding="utf-8")
+                css = (RENDER_TEMPLATE / "cover.css").read_text(encoding="utf-8")
                 css = css.replace("__FONT_URL__", self._font_url())
                 return self._send(200, css.encode("utf-8"), "text/css; charset=utf-8")
             if path == "/static/cover.js":
-                return self._send(200, (TEMPLATE / "cover.js").read_bytes(), "application/javascript; charset=utf-8")
+                return self._send(200, (RENDER_TEMPLATE / "cover.js").read_bytes(), "application/javascript; charset=utf-8")
             if path == "/static/editor.css":
-                return self._send(200, (TEMPLATE / "editor.css").read_bytes(), "text/css; charset=utf-8")
+                return self._send(200, (EDITOR_TEMPLATE / "editor.css").read_bytes(), "text/css; charset=utf-8")
             if path == "/static/editor.js":
-                return self._send(200, (TEMPLATE / "editor.js").read_bytes(), "application/javascript; charset=utf-8")
+                return self._send(200, (EDITOR_TEMPLATE / "editor.js").read_bytes(), "application/javascript; charset=utf-8")
+            if path == "/static/font.woff2":
+                return self._font()
+            if path == "/favicon.ico":
+                return self._send(204, b"", "image/x-icon")
             if path == "/api/manifest":
                 return self._manifest()
             if path.startswith("/asset/"):
@@ -184,11 +198,22 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"error": repr(exc)}, 500)
 
     def _font_url(self) -> str:
+        # The live editor is served over http, and Chromium refuses to pull a
+        # file:// subresource into an http:// page — the preview would then
+        # render in the fallback face and measure the headline against the
+        # wrong metrics, so the preview would not match the export. Serve the
+        # vendored face over the same origin instead.
+        return "/static/font.woff2"
+
+    def _font(self):
         manifest = load_manifest()
-        return file_url(REPO_ROOT / manifest.get("font", "tools/cover/fonts/Montserrat-Black.woff2"))
+        font = (REPO_ROOT / manifest.get("font", "tools/cover/fonts/Montserrat-Black.woff2")).resolve()
+        if not font.is_file():
+            return self._json({"error": "font not found", "path": str(font)}, 404)
+        return self._send(200, font.read_bytes(), "font/woff2")
 
     def _editor_page(self):
-        html = (TEMPLATE / "editor.html").read_text(encoding="utf-8")
+        html = (EDITOR_TEMPLATE / "editor.html").read_text(encoding="utf-8")
         html = html.replace("__FONT_URL__", self._font_url())
         self._send(200, html.encode("utf-8"), "text/html; charset=utf-8")
 
@@ -258,19 +283,25 @@ class Handler(BaseHTTPRequestHandler):
             return self._json({"error": "slug and cover are required"}, 400)
         with _lock:
             manifest = load_manifest()
-        # The name is caller-controlled JSON: keep only the final path
-        # component, then verify the resolved parent IS the output dir —
-        # a plain relative_to() on the unnormalised join lets "../../x.png"
-        # through and any page open in the browser can POST here (a
-        # text/plain cross-origin POST needs no CORS preflight).
-        name = pathlib.PurePosixPath(str(body.get("name") or f"{slug}-{variant}.png")).name
-        target_dir = out_dir()
+        # The folder comes from the slug, never from the caller's file name —
+        # and the slug has to be a cover the manifest knows, so a crafted
+        # value cannot walk out of the output directory. The name is only the
+        # file inside that folder.
+        folder = pathlib.PurePosixPath(str(slug)).name
+        known = {c.get("slug") for c in manifest.get("covers", [])}
+        if folder not in known:
+            return self._json({"error": f"unknown cover '{slug}'"}, 400)
+        name = pathlib.PurePosixPath(str(body.get("name") or f"{variant}.png")).name
+        target_dir = (out_dir() / folder).resolve()
+        target_dir.mkdir(parents=True, exist_ok=True)
         out = (target_dir / name).resolve()
-        if not out.parent == target_dir.resolve():
+        if out.parent != target_dir:
             return self._json({"error": "invalid name"}, 400)
         render_png(manifest, cover, variant, lines, out,
-                   source=body.get("source"), shot=body.get("shot"))
-        write_preview(target_dir)
+                   source=body.get("source"), shot=body.get("shot"),
+                   style=body.get("style"))
+        # the contact sheet belongs to the whole set, not to one cover folder
+        write_preview(out_dir())
         self._json({"ok": True, "path": out.relative_to(REPO_ROOT).as_posix(),
                     "url": "/asset/" + out.relative_to(REPO_ROOT).as_posix()})
 

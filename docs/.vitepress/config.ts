@@ -294,7 +294,7 @@ function newsSidebar(prefix: '/news/' | '/en/news/', entries: NewsEntryMeta[]) {
 // the locale-redirect inline script, and the social-card absolute URLs below.
 const BASE = '/Yomin-Fab-LLM-Unreal-Plugin/'
 const SITE_ORIGIN = 'https://ituiyuio.github.io'
-const OG_IMAGE = `${SITE_ORIGIN}${BASE}covers/llm-dynamic-ui-og.png`
+const OG_IMAGE = `${SITE_ORIGIN}${BASE}covers/llm-dynamic-ui/og.png`
 
 export default defineConfig({
   title: 'YominUnreal Plugins',

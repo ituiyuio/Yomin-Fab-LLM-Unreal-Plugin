@@ -1,0 +1,545 @@
+/* ============================================================================
+   Cover visual system — shared by the CLI renderer (tools/cover/generate.py)
+   and the live editor (tools/cover/editor.py). One stylesheet, one look.
+
+   Every value is a CSS custom property so the editor can drive it by
+   mutating inline styles on the stage element.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+}
+
+/* The display face is vendored next to this template so a cover renders
+   identically on any machine, with no font install and no network. */
+@font-face {
+  font-family: "CoverDisplay";
+  src: url("__FONT_URL__") format("woff2");
+  font-weight: 900;
+  font-style: normal;
+}
+
+/* The CLI shell marks <html class="page-fit"> so the page is exactly the
+   cover's size — the editor leaves it off and lays out its own chrome. */
+html.page-fit,
+html.page-fit body {
+  width: var(--w);
+  height: var(--h);
+  overflow: hidden;
+  margin: 0;
+  background: transparent;
+}
+
+/* ---- 1. stage: accent backdrop ------------------------------------------- */
+.stage {
+  position: relative;
+  width: var(--w);
+  height: var(--h);
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    linear-gradient(180deg, var(--frame-top) 0%, var(--frame-bottom) 100%);
+}
+
+/* soft coloured bloom behind the frame — reads as light spilling around it */
+.glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    var(--glow-size) var(--glow-size) at var(--glow-x) var(--glow-y),
+    var(--glow-color) 0%,
+    transparent 70%
+  );
+  opacity: var(--glow-strength);
+  mix-blend-mode: screen;
+}
+
+/* acid: an iridescent wash over the backdrop. Hard-light keeps the value
+   structure of the gradient while the hue swings through the spectrum. */
+.acid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: calc(var(--acid) * 0.5);
+  mix-blend-mode: hard-light;
+  background: conic-gradient(
+    from 205deg at 26% 14%,
+    #00ffc6 0deg,
+    #7b2bff 78deg,
+    #ff2e9a 156deg,
+    #c8ff00 232deg,
+    #00ffc6 360deg
+  );
+}
+
+/* film grain — kills gradient banding and stops the frame reading as flat.
+   The turbulence is quantised to three levels: continuous noise is
+   incompressible and added ~330 kB per PNG for a texture nobody can see.
+   Three discrete steps give a visible print-like grain that still compresses. */
+.grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--grain);
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'>\
+<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='2' stitchTiles='stitch'/>\
+<feColorMatrix type='saturate' values='0'/>\
+<feComponentTransfer><feFuncA type='discrete' tableValues='0 0.55 1'/></feComponentTransfer>\
+</filter>\
+<rect width='256' height='256' filter='url(%23n)'/></svg>");
+  background-size: 256px 256px;
+}
+
+/* ---- 2. frame: the editor screenshot -------------------------------------- */
+.frame {
+  position: absolute;
+  inset: var(--inset);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--plate, #0b0b10);
+  /* The plate is a physical object sitting on the accent backdrop: it casts a
+     shadow. Needs room to fall into, which is why --inset is not 0. */
+  box-shadow:
+    0 34px 80px -22px rgba(0, 0, 0, 0.9),
+    0 8px 22px -10px rgba(0, 0, 0, 0.55);
+}
+
+.shot {
+  position: absolute;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* vignette — pushes the eye toward the middle of the frame */
+.frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    118% 96% at 50% 30%,
+    transparent 44%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+  opacity: var(--vignette);
+}
+
+/* Bevel + hairline + ambient occlusion.
+   Light comes from the top-left: the top edge catches a rim, the bottom edge
+   falls into shadow, and the plate darkens into its own frame. */
+.frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.32),
+    inset 0 2px 0 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    inset 0 0 110px 0 rgba(0, 0, 0, var(--ao));
+}
+
+/* Specular sweep across the plate — the single biggest "designed" upgrade
+   over a flat screenshot. Two streaks: a broad sheen and a tight glint.
+   With --prism the sheen splits into R/G/B, which is the prism/laser look:
+   a rainbow fringe rides the edge of the highlight. */
+.sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      108deg,
+      transparent calc(48% - var(--prism)),
+      rgba(255, 64, 96, var(--sweep)) calc(49.2% - var(--prism)),
+      transparent calc(56% - var(--prism))
+    ),
+    linear-gradient(
+      110deg,
+      transparent calc(47.5% - var(--prism) * 0.5),
+      rgba(64, 255, 150, var(--sweep)) calc(49.6% - var(--prism) * 0.5),
+      transparent calc(56.5% - var(--prism) * 0.5)
+    ),
+    linear-gradient(
+      112deg,
+      transparent calc(47% + var(--prism)),
+      rgba(96, 140, 255, var(--sweep)) calc(49% + var(--prism)),
+      transparent calc(57% + var(--prism))
+    ),
+    linear-gradient(
+      112deg,
+      transparent 26%,
+      rgba(255, 255, 255, calc(var(--sweep) * 0.7)) 45%,
+      transparent 66%
+    ),
+    /* the glint: one sharp, narrow specular line riding the broad sheen */
+    linear-gradient(
+      96deg,
+      transparent 46%,
+      rgba(255, 255, 255, var(--glint)) 49.4%,
+      transparent 52.6%
+    );
+  mix-blend-mode: soft-light;
+}
+
+/* Star glints on the plate — the small hard specular points a lens makes. */
+.sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--sparkle, 0);
+  mix-blend-mode: screen;
+}
+.spark {
+  position: absolute;
+  width: 0;
+  height: 0;
+  transform: scale(var(--spark-scale, 1));
+}
+.spark::before,
+.spark::after {
+  content: "";
+  position: absolute;
+  background: linear-gradient(var(--spark-dir, 180deg), transparent, #fff, transparent);
+  opacity: 0.9;
+}
+.spark::before {
+  left: -1px;
+  top: -38px;
+  width: 2px;
+  height: 76px;
+}
+.spark::after {
+  left: -38px;
+  top: -1px;
+  width: 76px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #fff, transparent);
+}
+.spark i {
+  position: absolute;
+  left: -11px;
+  top: -11px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.98) 0, rgba(255, 255, 255, 0.35) 32%, transparent 70%);
+}
+
+/* laser: volumetric beams crossing the whole cover, and a lens artefact
+   (hot spot + horizontal streak) in the upper left. */
+.lasers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--laser);
+  mix-blend-mode: screen;
+  /* Wide, soft-falloff beams — a narrow bright band reads as a stripe, not as
+     light in the air. */
+  background:
+    linear-gradient(
+      72deg,
+      transparent 32%,
+      rgba(255, 255, 255, 0.14) 42%,
+      rgba(196, 246, 255, 0.26) 50%,
+      rgba(255, 255, 255, 0.1) 58%,
+      transparent 70%
+    ),
+    linear-gradient(
+      104deg,
+      transparent 52%,
+      rgba(255, 150, 235, 0.18) 62%,
+      rgba(255, 255, 255, 0.08) 68%,
+      transparent 78%
+    );
+}
+
+.flare {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: calc(var(--laser) * 0.9);
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(
+      circle at 17% 13%,
+      rgba(255, 255, 255, 0.95) 0 1.5px,
+      rgba(255, 255, 255, 0.4) 2.5px,
+      transparent 11%
+    ),
+    radial-gradient(circle at 17% 13%, var(--flare-color) 0, transparent 19%);
+}
+.flare::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 13%;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent 6%,
+    rgba(255, 255, 255, 0.32) 15%,
+    rgba(255, 255, 255, 0.85) 17.2%,
+    rgba(255, 255, 255, 0.32) 19.4%,
+    transparent 31%
+  );
+  filter: blur(1.2px);
+}
+
+/* ---- 3. scrim: the screenshot dissolves into a DEEP base ---------------- */
+/* The base is the accent colour pushed most of the way to black. Fading to
+   the raw accent (a light blue / teal) left the headline fighting a light
+   background — that was the readability bug. The deep base gives every
+   plugin the same contrast floor while keeping the accent hue. */
+.scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) var(--scrim-start),
+    var(--base) 100%
+  );
+}
+
+/* ---- 5. headline --------------------------------------------------------- */
+.title {
+  position: absolute;
+  left: var(--pad-x);
+  right: var(--pad-x);
+  bottom: var(--pad-y);
+  display: flex;
+  flex-direction: column;
+  align-items: var(--align);
+  transform: translate(var(--title-x), var(--title-y));
+  /* Two shadows: a tight contact shadow so the type sits ON the image, and a
+     wide ambient one for the light from above. */
+  filter:
+    drop-shadow(0 3px 2px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 18px 40px rgba(0, 0, 0, var(--title-shadow)));
+}
+
+/* a soft beam of light behind the words so they separate from the screenshot */
+.beam {
+  position: absolute;
+  left: -6%;
+  right: -6%;
+  bottom: -14%;
+  height: 78%;
+  pointer-events: none;
+  background: radial-gradient(
+    60% 100% at 50% 70%,
+    var(--beam-color) 0%,
+    transparent 72%
+  );
+  opacity: var(--beam);
+  mix-blend-mode: screen;
+}
+
+.line {
+  position: relative;
+  font-family: "CoverDisplay", "CoverDisplay Fallback", sans-serif;
+  font-weight: var(--line-weight, 900);
+  font-size: calc(var(--fs) * var(--line-scale, 1));
+  line-height: var(--line-height);
+  letter-spacing: var(--line-tracking, var(--tracking));
+  white-space: nowrap;
+}
+
+/* Two stacked copies of the same text:
+   the back one paints only the keyline, the front one paints only the fill.
+   Stacking them keeps the outline strictly OUTSIDE the glyph — a single
+   stroked element would eat into the fill and blob up the counters.
+   The keyline is the deep base colour, so it reads as a cut-out edge on any
+   background the headline lands on. */
+.line .stroke {
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: transparent;
+  -webkit-text-stroke: var(--stroke) var(--stroke-color);
+  paint-order: stroke fill;
+}
+
+.line .fill {
+  position: relative;
+  display: block;
+  color: transparent;
+  /* Flat-ish fill with a diagonal sheen; --line-fill is built in JS (the acid
+     stops are mixed there, because color-mix() is not in every Chromium). */
+  background: var(--line-fill, none);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Gloss: a specular band across the upper part of the glyphs, the way a
+   wet/chrome surface catches the light. Sits on top of the fill. */
+.line .gloss {
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: transparent;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(255, 255, 255, 0.78) 32%,
+    rgba(255, 255, 255, 0.22) 40%,
+    rgba(255, 255, 255, 0) 46%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  opacity: var(--gloss, 0);
+}
+
+/* ---- 6. kicker: the advertising label above the headline ----------------- */
+/* A rule + tracked uppercase name reads like a poster lockup; the pill is a
+   softer, glassier alternative. */
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  align-self: var(--align);
+  /* The gap has to scale with the headline, not with the kicker's own tiny
+     size — otherwise the label collides with the hero's ascenders. */
+  margin-bottom: calc(var(--fs) * 0.1);
+  font-family: "CoverDisplay", "CoverDisplay Fallback", sans-serif;
+  font-weight: 800;
+  font-size: calc(var(--fs) * 0.1);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--kicker-color);
+  white-space: nowrap;
+  display: var(--kicker-display, flex);
+}
+.kicker::before {
+  content: "";
+  width: 2.6em;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--kicker-rule);
+  box-shadow: 0 0 10px 0 var(--kicker-rule);
+}
+.kicker.pill {
+  gap: 10px;
+  padding: 8px 16px 8px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  background: rgba(10, 11, 20, 0.42);
+  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+  letter-spacing: 0.18em;
+}
+.kicker.pill::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--kicker-rule);
+  box-shadow: 0 0 12px 2px var(--kicker-rule);
+}
+
+/* ---- 7. suite layout ---------------------------------------------------- */
+/* The "suite" card is a different shape from a plugin cover: a centred stack
+   of headline -> plugin list -> call to action on a flat plate. */
+.stage.suite .title {
+  top: 0;
+  bottom: 0;
+  justify-content: center;
+  align-items: center;
+}
+.stage.suite .line {
+  text-align: center;
+}
+.stage.suite .kicker {
+  margin-bottom: 0.5em;
+}
+
+/* The label above the plugin list — it says what the list IS. Without it a
+   bare list of plugin names reads as "these are included"; "Works with" says
+   the products are separate and this one drives them. */
+.suite-list-label {
+  font-family: "CoverDisplay", "CoverDisplay Fallback", sans-serif;
+  font-weight: 800;
+  font-size: calc(var(--fs) * 0.125);
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--list-label-color, #fff4cc);
+  opacity: 0.8;
+  margin-top: 2.2em;
+  margin-bottom: 0.7em;
+}
+
+.suite-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.34em;
+  margin-top: 0.34em;
+}
+.suite-list .item {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  font-family: "CoverDisplay", "CoverDisplay Fallback", sans-serif;
+  font-weight: 800;
+  font-size: calc(var(--fs) * 0.17);
+  letter-spacing: 0.1em;
+  color: var(--list-color, #ffd000);
+}
+.suite-list .item::before {
+  content: "";
+  width: 1.7em;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.85;
+}
+
+.suite-cta {
+  margin-top: 1.1em;
+  font-family: "CoverDisplay", "CoverDisplay Fallback", sans-serif;
+  font-weight: 900;
+  font-size: calc(var(--fs) * 0.2);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  background: var(--cta-gradient, linear-gradient(96deg, #ff6fa8, #ffd000));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Chips: small pills for facts like the supported engine range. */
+.suite-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.55em;
+  margin-top: 1em;
+}
+/* On a plugin cover the chip is a version stamp at the top of the type
+   block; on the suite card it sits inside the centred stack. */
+.stage:not(.suite) .title > .suite-chips {
+  order: -1;
+  margin: 0 0 calc(var(--fs) * 0.11);
+}
+.suite-chips .chip {
+  font-family: "CoverDisplay", "CoverDisplay Fallback", sans-serif;
+  font-weight: 800;
+  font-size: calc(var(--fs) * 0.125);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.62em 1.15em;
+  border-radius: 999px;
+  border: 1px solid var(--chip-border, rgba(255, 255, 255, 0.3));
+  background: var(--chip-bg, rgba(255, 255, 255, 0.07));
+  color: var(--chip-color, #fff);
+  white-space: nowrap;
+}

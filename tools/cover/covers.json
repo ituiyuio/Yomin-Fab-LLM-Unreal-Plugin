@@ -65,8 +65,80 @@
   },
   "covers": [
     {
+      "slug": "yominunreal-plugins",
+      "layout": "suite",
+      "plate": "#08080C",
+      "source": "",
+      "shot": {},
+      "palette": {
+        "frameTop": "#FFD000",
+        "frameBottom": "#6E5306",
+        "titleFill": "#FFD000",
+        "titleStroke": "#FF6FA8"
+      },
+      "lines": [
+        "Intelligence",
+        "Available"
+      ],
+      "list": [
+        "LLM Dynamic UI",
+        "LLM Material",
+        "LLM StateTree",
+        "LLM MetaSound",
+        "LLM Easy Shell",
+        "LLM Easy Shell Lite"
+      ],
+      "cta": "Get it now",
+      "style": {
+        "kicker": "YominUnreal Plugins",
+        "kickerStyle": "rule",
+        "kickerColor": "#FFF4CC",
+        "kickerRule": "#FFD000",
+        "titleColor": "#FFD000",
+        "subColor": "#FFD000",
+        "heroLine": 0,
+        "heroScale": 1.0,
+        "subScale": 1.0,
+        "titleGradient": "linear-gradient(96deg, #FF6FA8 0%, #FF9A5C 46%, #FFD000 100%)",
+        "baseMix": 0.35,
+        "grain": 0.0,
+        "ao": 0.16,
+        "acid": 0.0,
+        "laser": 0.18,
+        "prism": 0.06,
+        "gloss": 0.6,
+        "glint": 0.5,
+        "sparkle": 0.5,
+        "listColor": "#FFD000",
+        "chipColor": "#FFD000",
+        "chipBorder": "rgba(255, 208, 0, 0.45)",
+        "chipBg": "rgba(255, 208, 0, 0.08)"
+      },
+      "variantOverrides": {
+        "fab": {
+          "inset": 26,
+          "baseFontSize": 178,
+          "maxHeightRatio": 0.66
+        },
+        "hero": {
+          "inset": 18,
+          "baseFontSize": 120,
+          "maxHeightRatio": 0.66
+        },
+        "og": {
+          "inset": 17,
+          "baseFontSize": 112,
+          "maxHeightRatio": 0.66
+        }
+      },
+      "alt": [],
+      "chips": [
+        "UE 5.5 → 5.8"
+      ]
+    },
+    {
       "slug": "llm-dynamic-ui",
-      "source": "raw/llmui/screenshot-20260411-213906.png",
+      "source": "raw/llmdynamicui/screenshot-20260411-213906.png",
       "shot": {
         "zoom": 1.14,
         "focusX": 0.5,
@@ -100,7 +172,10 @@
         "prism": 0.25,
         "gloss": 0.72,
         "glint": 0.8,
-        "sparkle": 0.75
+        "sparkle": 0.75,
+        "chipColor": "#876DDB",
+        "chipBorder": "#876DDB73",
+        "chipBg": "#876DDB14"
       },
       "alt": [
         {
@@ -109,7 +184,7 @@
             "User-friendly",
             "GUI"
           ],
-          "source": "raw/llmui/screenshot-20260411-213358.png",
+          "source": "raw/llmdynamicui/screenshot-20260411-213358.png",
           "shot": {
             "zoom": 0.92,
             "focusX": 0.0,
@@ -122,18 +197,21 @@
             "CommonUI",
             "Support"
           ],
-          "source": "raw/llmui/screenshot-20260411-214032.png",
+          "source": "raw/llmdynamicui/screenshot-20260411-214032.png",
           "shot": {
             "zoom": 1.0,
             "focusX": 0.0,
             "focusY": 0.47
           }
         }
+      ],
+      "chips": [
+        "UE 5.5 → 5.8"
       ]
     },
     {
       "slug": "llm-material",
-      "source": "raw/llmmat/Screenshot_20260422211840.png",
+      "source": "raw/llmmaterial/Screenshot_20260422211840.png",
       "shot": {
         "zoom": 1.12,
         "focusX": 0.0,
@@ -167,7 +245,10 @@
         "prism": 0.25,
         "gloss": 0.72,
         "glint": 0.8,
-        "sparkle": 0.75
+        "sparkle": 0.75,
+        "chipColor": "#8EC3E6",
+        "chipBorder": "#8EC3E673",
+        "chipBg": "#8EC3E614"
       },
       "alt": [
         {
@@ -176,7 +257,7 @@
             "User-friendly",
             "GUI"
           ],
-          "source": "raw/llmmat/Screenshot_20260422211713.png",
+          "source": "raw/llmmaterial/Screenshot_20260422211713.png",
           "shot": {
             "zoom": 1.08,
             "focusX": 0.47,
@@ -189,13 +270,16 @@
             "ALL DOMAIN",
             "Support"
           ],
-          "source": "raw/llmmat/Screenshot_20260422212004.png",
+          "source": "raw/llmmaterial/Screenshot_20260422212004.png",
           "shot": {
             "zoom": 1.4,
             "focusX": 0.37,
             "focusY": 0.43
           }
         }
+      ],
+      "chips": [
+        "UE 5.5 → 5.8"
       ]
     },
     {
@@ -234,7 +318,10 @@
         "prism": 0.25,
         "gloss": 0.72,
         "glint": 0.8,
-        "sparkle": 0.75
+        "sparkle": 0.75,
+        "chipColor": "#3DA9BC",
+        "chipBorder": "#3DA9BC73",
+        "chipBg": "#3DA9BC14"
       },
       "alt": [
         {
@@ -262,6 +349,9 @@
             "focusY": 0.49
           }
         }
+      ],
+      "chips": [
+        "UE 5.7 → 5.8"
       ]
     },
     {
@@ -300,7 +390,10 @@
         "prism": 0.25,
         "gloss": 0.72,
         "glint": 0.8,
-        "sparkle": 0.75
+        "sparkle": 0.75,
+        "chipColor": "#5BD5D9",
+        "chipBorder": "#5BD5D973",
+        "chipBg": "#5BD5D914"
       },
       "alt": [
         {
@@ -328,7 +421,371 @@
             "focusY": 0.47
           }
         }
+      ],
+      "chips": [
+        "UE 5.5 → 5.8"
       ]
+    },
+    {
+      "slug": "llm-easy-shell",
+      "source": "raw/llmeasyshells/Screenshot_20261027134203.png",
+      "shot": {
+        "zoom": 1.0,
+        "focusX": 0.5,
+        "focusY": 0.3
+      },
+      "palette": {
+        "frameTop": "#FFD000",
+        "frameBottom": "#8A5A10",
+        "titleFill": "#FFD000",
+        "titleStroke": "#FF6FA8"
+      },
+      "lines": [
+        "Gain Intelligence",
+        "Unreal Engine",
+        "for Agent"
+      ],
+      "style": {
+        "kicker": "LLM Easy Shell",
+        "kickerStyle": "rule",
+        "kickerColor": "#FFF4CC",
+        "kickerRule": "#FFD000",
+        "titleColor": "#FFFFFF",
+        "subColor": "#FFFFFF",
+        "heroLine": -1,
+        "heroScale": 1.0,
+        "subScale": 1.0,
+        "baseMix": 0.3,
+        "grain": 0.0,
+        "ao": 0.3,
+        "acid": 0.3,
+        "laser": 0.25,
+        "prism": 0.06,
+        "gloss": 0.72,
+        "glint": 0.7,
+        "sparkle": 0.6,
+        "chipColor": "#FFD000",
+        "chipBorder": "#FFD00073",
+        "chipBg": "#FFD00014",
+        "lineStyles": [
+          {
+            "acidScale": 1
+          },
+          {
+            "acidScale": 1
+          },
+          {
+            "gradient": "linear-gradient(96deg, #FF6FA8 0%, #FF9A5C 46%, #FFD000 100%)"
+          }
+        ]
+      },
+      "alt": [
+        {
+          "name": "agent",
+          "lines": [
+            "Unreal Engine",
+            "for Your Agent"
+          ],
+          "source": "raw/llmeasyshells/Screenshot_20261027134203.png",
+          "shot": {
+            "zoom": 1.0,
+            "focusX": 0.5,
+            "focusY": 0.3
+          },
+          "style": {
+            "heroLine": 0,
+            "heroScale": 1.0,
+            "subScale": 0.62,
+            "subColor": "#FFD000",
+            "lineStyles": [
+              {},
+              {
+                "gradient": "linear-gradient(96deg, #FF6FA8 0%, #FF9A5C 46%, #FFD000 100%)"
+              }
+            ]
+          }
+        },
+        {
+          "name": "native",
+          "lines": [
+            "37 native",
+            "commands"
+          ],
+          "source": "raw/llmeasyshells/Screenshot_20261027134203.png",
+          "shot": {
+            "zoom": 1.9,
+            "focusX": 0.3,
+            "focusY": 0.82
+          },
+          "style": {
+            "heroLine": 0,
+            "heroScale": 1.0,
+            "subScale": 0.62,
+            "subColor": "#FFD000",
+            "lineStyles": [
+              {},
+              {
+                "gradient": "linear-gradient(96deg, #FF6FA8 0%, #FF9A5C 46%, #FFD000 100%)"
+              }
+            ]
+          }
+        },
+        {
+          "name": "trace",
+          "lines": [
+            "Every call",
+            "traced"
+          ],
+          "source": "raw/llmeasyshells/Screenshot_20261027134221.png",
+          "shot": {
+            "zoom": 1.55,
+            "focusX": 0.1,
+            "focusY": 0.18
+          },
+          "style": {
+            "heroLine": 0,
+            "heroScale": 1.0,
+            "subScale": 0.62,
+            "subColor": "#FFD000",
+            "lineStyles": [
+              {},
+              {
+                "gradient": "linear-gradient(96deg, #FF6FA8 0%, #FF9A5C 46%, #FFD000 100%)"
+              }
+            ]
+          }
+        },
+        {
+          "name": "info",
+          "lines": [
+            "Engine state",
+            "in one call"
+          ],
+          "source": "raw/llmeasyshells/Screenshot_20261027113037.png",
+          "shot": {
+            "zoom": 1.9,
+            "focusX": 0.42,
+            "focusY": 0.86
+          },
+          "style": {
+            "heroLine": 0,
+            "heroScale": 1.0,
+            "subScale": 0.62,
+            "subColor": "#FFD000",
+            "lineStyles": [
+              {},
+              {
+                "gradient": "linear-gradient(96deg, #FF6FA8 0%, #FF9A5C 46%, #FFD000 100%)"
+              }
+            ]
+          }
+        }
+      ],
+      "chips": [
+        "UE 5.5 → 5.8"
+      ]
+    },
+    {
+      "slug": "llm-easy-shell-lite",
+      "layout": "suite",
+      "plate": "#06090B",
+      "source": "",
+      "shot": {},
+      "palette": {
+        "frameTop": "#FFD000",
+        "frameBottom": "#8A5A10",
+        "titleFill": "#FFD000",
+        "titleStroke": "#FF6FA8"
+      },
+      "lines": [
+        "Gain Intelligence",
+        "Unreal Engine",
+        "Free"
+      ],
+      "list": [
+        "LLM Dynamic UI",
+        "LLM Material",
+        "LLM StateTree",
+        "LLM MetaSound"
+      ],
+      "cta": "Get it free",
+      "chips": [
+        "UE 5.5 → 5.8"
+      ],
+      "style": {
+        "kicker": "LLM Easy Shell Lite",
+        "kickerStyle": "rule",
+        "kickerColor": "#FFF4CC",
+        "kickerRule": "#FFD000",
+        "titleColor": "#FFFFFF",
+        "subColor": "#4FE8C4",
+        "heroLine": 2,
+        "heroScale": 1.2,
+        "subScale": 0.6,
+        "baseMix": 0.32,
+        "grain": 0.0,
+        "ao": 0.3,
+        "acid": 0.3,
+        "laser": 0.25,
+        "prism": 0.25,
+        "gloss": 0.72,
+        "glint": 0.72,
+        "sparkle": 0.7,
+        "sweep": 0.62,
+        "glowStrength": 0.16,
+        "listColor": "#4FE8C4",
+        "chipColor": "#4FE8C4",
+        "chipBorder": "#4FE8C473",
+        "chipBg": "#4FE8C414",
+        "ctaGradient": "linear-gradient(96deg, #4FE8C4, #7BFFEA)",
+        "lineStyles": [
+          {
+            "gradient": "linear-gradient(96deg, #FFD000 0%, #FFF3C4 44%, #4FE8C4 100%)"
+          },
+          {
+            "gradient": "linear-gradient(96deg, #FFD000 0%, #FFF3C4 44%, #4FE8C4 100%)"
+          }
+        ]
+      },
+      "variantOverrides": {
+        "fab": {
+          "inset": 26,
+          "baseFontSize": 178,
+          "maxHeightRatio": 0.66
+        },
+        "hero": {
+          "inset": 18,
+          "baseFontSize": 120,
+          "maxHeightRatio": 0.66
+        },
+        "og": {
+          "inset": 17,
+          "baseFontSize": 112,
+          "maxHeightRatio": 0.66
+        }
+      },
+      "alt": [
+        {
+          "name": "free",
+          "lines": [
+            "Free Shell",
+            "Full Intelligence"
+          ],
+          "style": {
+            "heroLine": 0,
+            "heroScale": 1.15,
+            "subScale": 0.68,
+            "lineStyles": [
+              {},
+              {
+                "gradient": "linear-gradient(96deg, #FFD000 0%, #FFF3C4 44%, #4FE8C4 100%)"
+              }
+            ]
+          }
+        },
+        {
+          "name": "family",
+          "lines": [
+            "Every LLM Plugin",
+            "One Free Shell"
+          ],
+          "style": {
+            "heroLine": 0,
+            "heroScale": 0.92,
+            "subScale": 0.62,
+            "lineStyles": [
+              {},
+              {
+                "gradient": "linear-gradient(96deg, #FFD000 0%, #FFF3C4 44%, #4FE8C4 100%)"
+              }
+            ]
+          }
+        }
+      ],
+      "listLabel": "Works with"
+    },
+    {
+      "slug": "llm-easy-shell-works-with",
+      "layout": "suite",
+      "plate": "#06090B",
+      "source": "",
+      "shot": {},
+      "palette": {
+        "frameTop": "#FFD000",
+        "frameBottom": "#8A5A10",
+        "titleFill": "#FFD000",
+        "titleStroke": "#FF6FA8"
+      },
+      "lines": [
+        "Gain Intelligence",
+        "Unreal Engine",
+        "for Agent"
+      ],
+      "listLabel": "Works with",
+      "list": [
+        "LLM Dynamic UI",
+        "LLM Material",
+        "LLM StateTree",
+        "LLM MetaSound"
+      ],
+      "cta": "Get it now",
+      "chips": [
+        "UE 5.5 → 5.8"
+      ],
+      "style": {
+        "kicker": "LLM Easy Shell",
+        "kickerStyle": "rule",
+        "kickerColor": "#FFF4CC",
+        "kickerRule": "#FFD000",
+        "titleColor": "#FFFFFF",
+        "subColor": "#FFFFFF",
+        "heroLine": -1,
+        "heroScale": 1.0,
+        "subScale": 1.0,
+        "baseMix": 0.32,
+        "grain": 0.0,
+        "ao": 0.3,
+        "acid": 0.3,
+        "laser": 0.25,
+        "prism": 0.25,
+        "gloss": 0.72,
+        "glint": 0.7,
+        "sparkle": 0.6,
+        "lineStyles": [
+          {
+            "acidScale": 1
+          },
+          {
+            "acidScale": 1
+          },
+          {
+            "gradient": "linear-gradient(96deg, #FF6FA8 0%, #FF9A5C 46%, #FFD000 100%)"
+          }
+        ],
+        "listColor": "#FFD000",
+        "chipColor": "#FFD000",
+        "chipBorder": "#FFD00073",
+        "chipBg": "#FFD00014",
+        "ctaGradient": "linear-gradient(96deg, #FF6FA8, #FFD000)"
+      },
+      "variantOverrides": {
+        "fab": {
+          "inset": 26,
+          "baseFontSize": 178,
+          "maxHeightRatio": 0.66
+        },
+        "hero": {
+          "inset": 18,
+          "baseFontSize": 120,
+          "maxHeightRatio": 0.66
+        },
+        "og": {
+          "inset": 17,
+          "baseFontSize": 112,
+          "maxHeightRatio": 0.66
+        }
+      },
+      "alt": []
     }
   ]
 }

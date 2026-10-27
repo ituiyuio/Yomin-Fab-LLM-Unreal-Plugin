@@ -4,7 +4,7 @@
 > Define your intent in JSON — the plugin turns it into a real engine asset.
 
 <p align="center">
-  <img src="./docs/public/covers/llm-dynamic-ui-hero.png" alt="YominUnreal Plugins — one chat to rule them all" width="100%">
+  <img src="./docs/public/covers/llm-dynamic-ui/hero.png" alt="YominUnreal Plugins — one chat to rule them all" width="100%">
 </p>
 
 <p align="center">
@@ -12,7 +12,7 @@
 </p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.7%2B-blue.svg)](https://www.unrealengine.com/)
+[![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.5%2B-blue.svg)](https://www.unrealengine.com/)
 [![Available on Fab](https://img.shields.io/badge/Available%20on-Epic%20Fab-8a3ffc.svg)](https://www.fab.com/listings/d84f1501-b45a-49c2-8069-40132482d0fd)
 [![Docs](https://img.shields.io/badge/Docs-VitePress-success.svg)](https://ituiyuio.github.io/Yomin-Fab-LLM-Unreal-Plugin/)
 
@@ -38,12 +38,12 @@ Three plugins are published on **Epic Fab** — the official Unreal Engine marke
 
 ## The Four Plugins
 
-| | Plugin | What It Makes | Highlights |
-|---|--------|---------------|------------|
-| 🎨 | **LLM Dynamic UI** | UMG Widget Blueprints | Full UMG + CommonUI, layout / animation / SDF effects |
-| 🎭 | **LLM Material**   | Material assets | Expression graph, UE5 **Substrate**, inline `.ush` HLSL |
-| 🌲 | **LLM StateTree**  | StateTree AI assets | Tasks, conditions, Utility-AI considerations, parameter binding |
-| 🔊 | **LLM MetaSound**  | `UMetaSoundSource` / `UMetaSoundPatch` | Generators, filters, envelopes, mixers, bus IO |
+| | Plugin | What It Makes | Highlights | Engine |
+|---|--------|---------------|------------|--------|
+| 🎨 | **LLM Dynamic UI** | UMG Widget Blueprints | Full UMG + CommonUI, layout / animation / SDF effects | 5.5 – 5.8 |
+| 🎭 | **LLM Material**   | Material assets | Expression graph, UE5 **Substrate**, inline `.ush` HLSL | 5.5 – 5.8 |
+| 🌲 | **LLM StateTree**  | StateTree AI assets | Tasks, conditions, Utility-AI considerations, parameter binding | 5.5 – 5.8 |
+| 🔊 | **LLM MetaSound**  | `UMetaSoundSource` / `UMetaSoundPatch` | Generators, filters, envelopes, mixers, bus IO | **5.7 – 5.8** |
 
 Every plugin ships with:
 - A **documented DSL** (`.llmui` / `.llmmat` / `.llmstate` / `.llmmetasound`)

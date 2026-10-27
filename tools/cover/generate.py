@@ -30,7 +30,7 @@ from PIL import Image
 
 HERE = pathlib.Path(__file__).resolve().parent
 DEFAULT_MANIFEST = HERE / "covers.json"
-TEMPLATE = HERE / "template" / "cover.html"
+TEMPLATE = HERE / "template" / "cover" / "cover.html"
 
 
 def die(msg: str, code: int = 1):
@@ -97,17 +97,19 @@ def check_env(manifest: dict, root: pathlib.Path) -> None:
     if not font.is_file():
         die(f"vendored font not found: {font}")
 
-    template = HERE / "template" / "cover.html"
+    template = HERE / "template" / "cover" / "cover.html"
     if not template.is_file():
         die(f"template not found: {template}")
 
     for cover in manifest["covers"]:
+        if not cover.get("source"):
+            continue
         src = root / cover["source"]
         if not src.is_file():
             die(f"source screenshot not found for '{cover['slug']}': {src}")
 
 
-def headline_sets(cover: dict, alt_filter) -> list[tuple[str, list[str], str, dict]]:
+def headline_sets(cover: dict, alt_filter) -> list[tuple[str, list[str], str, dict, dict]]:
     """(file-suffix, lines, source, shot) tuples for one cover, honouring --alt.
 
     An alternative headline may carry its own background screenshot and crop —
@@ -115,7 +117,7 @@ def headline_sets(cover: dict, alt_filter) -> list[tuple[str, list[str], str, di
     different capture, framed differently, with a different tagline.
     """
     if not alt_filter:
-        return [("", cover["lines"], cover["source"], cover.get("shot", {}))]
+        return [("", cover["lines"], cover["source"], cover.get("shot", {}), cover.get("style", {}))]
     picks = []
     for alt in cover.get("alt", []):
         if "all" in alt_filter or alt["name"] in alt_filter:
@@ -124,12 +126,13 @@ def headline_sets(cover: dict, alt_filter) -> list[tuple[str, list[str], str, di
                 alt["lines"],
                 alt.get("source", cover["source"]),
                 alt.get("shot", cover.get("shot", {})),
+                {**cover.get("style", {}), **alt.get("style", {})},
             ))
     return picks
 
 
 def build_config(cover: dict, variant: dict, lines: list[str], source: str,
-                 shot: dict, root: pathlib.Path) -> dict:
+                 shot: dict, style: dict, root: pathlib.Path) -> dict:
     merged = dict(variant)
     merged.update(cover.get("variantOverrides", {}).get(variant["name"], {}))
 
@@ -150,11 +153,17 @@ def build_config(cover: dict, variant: dict, lines: list[str], source: str,
         "scrimStart": merged["scrimStart"],
         "align": merged.get("align", "center"),
         "lines": lines,
+        "layout": cover.get("layout", "cover"),
+        "plate": cover.get("plate"),
+        "list": cover.get("list", []),
+        "listLabel": cover.get("listLabel", ""),
+        "chips": cover.get("chips", []),
+        "cta": cover.get("cta", ""),
         "titleOffset": cover.get("titleOffset", {}),
         "palette": cover.get("palette", {}),
         "shot": shot or {},
-        "style": cover.get("style", {}),
-        "source": file_url(root / source),
+        "style": style,
+        "source": file_url(root / source) if source else "",
     }
 
 
@@ -163,8 +172,8 @@ def render(manifest, root, out_dir, covers, variants, alt_filter) -> list[pathli
 
     font_url = file_url(root / manifest.get("font", "tools/cover/fonts/Montserrat-Black.woff2"))
     template = TEMPLATE.read_text(encoding="utf-8")
-    css = (HERE / "template" / "cover.css").read_text(encoding="utf-8")
-    js = (HERE / "template" / "cover.js").read_text(encoding="utf-8")
+    css = (HERE / "template" / "cover" / "cover.css").read_text(encoding="utf-8")
+    js = (HERE / "template" / "cover" / "cover.js").read_text(encoding="utf-8")
     out_dir.mkdir(parents=True, exist_ok=True)
     written: list[pathlib.Path] = []
 
@@ -174,11 +183,11 @@ def render(manifest, root, out_dir, covers, variants, alt_filter) -> list[pathli
         try:
             page = browser.new_page(viewport={"width": 1920, "height": 1080}, device_scale_factor=1)
             for cover in covers:
-                for suffix, lines, source, shot in headline_sets(cover, alt_filter):
+                for suffix, lines, source, shot, style in headline_sets(cover, alt_filter):
                     for vname, variant in manifest["variants"].items():
                         if variants and vname not in variants:
                             continue
-                        cfg = build_config(cover, {**variant, "name": vname}, lines, source, shot, root)
+                        cfg = build_config(cover, {**variant, "name": vname}, lines, source, shot, style, root)
                         html = (
                             template.replace("/*__CSS__*/", css)
                             .replace("/*__JS__*/", js)
@@ -191,16 +200,18 @@ def render(manifest, root, out_dir, covers, variants, alt_filter) -> list[pathli
                         page.goto(html_path.as_uri())
                         page.wait_for_function("window.__READY__ === true", timeout=20000)
                         metrics = page.evaluate("window.__COVER_METRICS__ || null")
-                        stem = f"{cover['slug']}-{suffix}-{vname}" if suffix else f"{cover['slug']}-{vname}"
-                        target = out_dir / f"{stem}.png"
+                        stem = f"{suffix}-{vname}" if suffix else vname
+                        target = out_dir / cover["slug"] / f"{stem}.png"
+                        target.parent.mkdir(parents=True, exist_ok=True)
                         page.screenshot(path=str(target))
                         optimize_png(target)
                         written.append(target)
                         fs = metrics["fontSize"] if metrics else "?"
                         widest = metrics["widest"] if metrics else "?"
                         loaded = metrics.get("fontLoaded") if metrics else "?"
+                        rel = target.relative_to(out_dir).as_posix()
                         print(
-                            f"  {target.name:42} {cfg['width']}x{cfg['height']}"
+                            f"  {rel:42} {cfg['width']}x{cfg['height']}"
                             f"  font={fs}px  widest={widest}  fontLoaded={loaded}"
                         )
         finally:
@@ -209,33 +220,37 @@ def render(manifest, root, out_dir, covers, variants, alt_filter) -> list[pathli
 
 
 def write_preview(out_dir: pathlib.Path) -> pathlib.Path:
-    """Write a browsable contact sheet of everything that was rendered."""
-    files = sorted(out_dir.glob("*.png"))
-    cards = []
+    """Write a browsable contact sheet of everything that was rendered.
+
+    The sheet mirrors the taxonomy on disk: one section per cover, one tile
+    per image inside it. Files starting with "_" are scratch (the editor's
+    export check) and never make it into the sheet.
+    """
+    files = sorted(
+        p for p in out_dir.rglob("*.png")
+        if not p.name.startswith("_") and p.parent != out_dir
+    )
+    groups: dict[str, list[tuple[str, int, int]]] = {}
     for f in files:
         with Image.open(f) as im:
             w, h = im.size
-        cards.append((f.name, w, h))
-
-    groups: dict[str, list[tuple[str, int, int]]] = {}
-    for name, w, h in cards:
-        stem = name[:-4]
-        variant = stem.rsplit("-", 1)[-1]
-        groups.setdefault(variant, []).append((name, w, h))
+        rel = f.relative_to(out_dir).as_posix()
+        groups.setdefault(f.parent.name, []).append((rel, w, h))
 
     sections = []
-    for variant, items in groups.items():
+    for group, items in groups.items():
         tiles = "\n".join(
             f"""      <a class="card" href="{name}" target="_blank" rel="noreferrer">
         <img src="{name}" loading="lazy" alt="{name}">
-        <span class="meta">{name}<br>{w}×{h}</span>
+        <span class="meta">{name.split('/')[-1]}<br>{w}×{h}</span>
       </a>"""
             for name, w, h in items
         )
         sections.append(
-            f'  <section>\n    <h2>{variant} <em>{len(items)}</em></h2>\n    <div class="grid">\n{tiles}\n    </div>\n  </section>'
+            f'  <section>\n    <h2>{group} <em>{len(items)}</em></h2>\n    <div class="grid">\n{tiles}\n    </div>\n  </section>'
         )
 
+    count = sum(len(v) for v in groups.values())
     html = f"""<!doctype html>
 <html lang="en">
 <head>
@@ -274,7 +289,7 @@ def write_preview(out_dir: pathlib.Path) -> pathlib.Path:
 </head>
 <body>
   <h1>YominUnreal — cover set</h1>
-  <div class="sub">{len(cards)} file(s) in {out_dir.name}/ — generated by <code>tools/cover/generate.py</code></div>
+  <div class="sub">{count} file(s) in {out_dir.name}/ — generated by <code>tools/cover/generate.py</code></div>
 {chr(10).join(sections)}
 </body>
 </html>
