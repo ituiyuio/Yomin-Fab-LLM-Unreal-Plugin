@@ -19,8 +19,8 @@ python tools/cover/editor.py                       # live editor (the PS replace
 primary headlines, it does not add to them:
 
 ```
-python tools/cover/generate.py                            # 24 primary PNGs
-python tools/cover/generate.py --alt all --variant fab    # 14 alt-gallery PNGs
+python tools/cover/generate.py                            # 27 primary PNGs
+python tools/cover/generate.py --alt all --variant fab    # 16 alt-gallery PNGs
 ```
 
 ## Source material
@@ -40,6 +40,7 @@ raw/
 ├── llmmetasound/     # the audio captures
 ├── llmstatetree/     # the AI captures
 ├── llmeasyshells/    # the shell captures
+├── llmwhitebox/      # the level whitebox captures
 └── reference/        # 99.png, 999.png, the .psd — the Photoshop originals
 ```
 
@@ -47,8 +48,9 @@ raw/
 
 Covers exist for every product in the suite: the four asset plugins
 (llm-dynamic-ui, llm-material, llm-statetree, llm-metasound), the two
-editor-control shells (llm-easy-shell, llm-easy-shell-lite) and the
-publisher card (yominunreal-plugins).
+editor-control shells (llm-easy-shell, llm-easy-shell-lite), the level
+whitebox tool (llm-white-box) and the publisher card
+(yominunreal-plugins).
 
 `llm-easy-shell-lite` is a **plate card**: it has no screenshot yet, so
 `source` is empty and the frame is a flat plate (see "The suite card").
@@ -251,6 +253,7 @@ docs/public/covers/
 ├── llm-material/
 ├── llm-metasound/
 ├── llm-statetree/
+├── llm-white-box/        # fab.png  hero.png  og.png  sample-fab.png  gate-fab.png
 └── yominunreal-plugins/
 ```
 

@@ -786,6 +786,79 @@
         }
       },
       "alt": []
+    },
+    {
+      "slug": "llm-white-box",
+      "source": "raw/llmwhitebox/hero.png",
+      "shot": {
+        "zoom": 1.32,
+        "focusX": 0.55,
+        "focusY": 0.52
+      },
+      "palette": {
+        "frameTop": "#F2A64A",
+        "frameBottom": "#7C4214",
+        "titleFill": "#F2A64A",
+        "titleStroke": "#7A4FD6"
+      },
+      "lines": [
+        "Block out levels",
+        "in one command"
+      ],
+      "style": {
+        "kicker": "LLM White Box",
+        "kickerStyle": "rule",
+        "kickerColor": "#EDF1FF",
+        "kickerRule": "#F2A64A",
+        "titleColor": "#FFFFFF",
+        "subColor": "#F2A64A",
+        "heroLine": 0,
+        "heroScale": 1.0,
+        "subScale": 0.62,
+        "baseMix": 0.3,
+        "grain": 0.0,
+        "ao": 0.3,
+        "acid": 0.32,
+        "laser": 0.3,
+        "prism": 0.25,
+        "gloss": 0.72,
+        "glint": 0.8,
+        "sparkle": 0.75,
+        "chipColor": "#F2A64A",
+        "chipBorder": "#F2A64A73",
+        "chipBg": "#F2A64A14"
+      },
+      "chips": [
+        "UE 5.5 → 5.8"
+      ],
+      "alt": [
+        {
+          "name": "sample",
+          "lines": [
+            "Sample level",
+            "included"
+          ],
+          "source": "raw/llmwhitebox/aerial.png",
+          "shot": {
+            "zoom": 1.08,
+            "focusX": 0.57,
+            "focusY": 0.42
+          }
+        },
+        {
+          "name": "gate",
+          "lines": [
+            "Real BSP geometry",
+            "saves to your .umap"
+          ],
+          "source": "raw/llmwhitebox/gate.png",
+          "shot": {
+            "zoom": 1.0,
+            "focusX": 0.5,
+            "focusY": 0.42
+          }
+        }
+      ]
     }
   ]
 }
