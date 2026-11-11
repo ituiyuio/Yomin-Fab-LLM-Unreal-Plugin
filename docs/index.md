@@ -14,6 +14,12 @@ hero:
       link: https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin
 
 features:
+  - icon: 🧱
+    title: LLM White Box
+    details: BSP 关卡白盒生成系统。15 条命令铺出真正的 BSP 几何体 —— 房间、墙体、门洞、楼梯、减法开洞,每条都返回 JSON,附可复现的山谷 + 中世纪城堡示例关卡。
+    link: /llm-white-box/
+    linkText: 了解
+
   - icon: 🎨
     title: LLM Dynamic UI
     details: DSL 驱动的 UMG Widget 生成系统。从 JSON 生成完整的 UMG Widget 蓝图,包含布局、动画和 SDF 视觉效果。

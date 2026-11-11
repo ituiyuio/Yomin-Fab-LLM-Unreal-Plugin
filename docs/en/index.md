@@ -14,6 +14,12 @@ hero:
       link: https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin
 
 features:
+  - icon: 🧱
+    title: LLM White Box
+    details: BSP level whiteboxing. 15 commands lay out real BSP geometry — rooms, walls, doorways, stairs, subtractive cuts — each returning JSON, plus a reproducible valley-and-castle sample level.
+    link: /en/llm-white-box/
+    linkText: Explore
+
   - icon: 🎨
     title: LLM Dynamic UI
     details: DSL-Driven UMG Widget Generation System. Generate complete UMG Widget Blueprints from JSON with layout, animations, and SDF visual effects.

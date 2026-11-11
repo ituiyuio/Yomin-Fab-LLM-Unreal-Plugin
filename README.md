@@ -52,6 +52,19 @@ Every plugin ships with:
 
 ---
 
+## 🧱 Plus: LLM White Box
+
+Not a DSL plugin — a **command surface** for level design. 15 JSON-returning
+commands lay out real BSP geometry (rooms, walls, doorways, stairs, subtractive
+cuts) in the running editor, with named-group material filtering, BSP recompile,
+and a reproducible castle-in-a-valley sample generator. Engine 5.5 – 5.8.
+
+| | Plugin | What it makes | Highlights | Engine |
+|---|--------|---------------|------------|--------|
+| 🧱 | **LLM White Box** | Native BSP level geometry | 15 commands, one-shot rooms and wall segments, group material filtering, `python castle build` sample generator | 5.5 – 5.8 |
+
+---
+
 ## Why YominUnreal?
 
 | | |
@@ -63,7 +76,7 @@ Every plugin ships with:
 
 ## 🤖 AI Agent Skills
 
-Six **AI agent skills** live under the [`skills/`](./skills/) directory — drop-in instructions that LLM-powered coding assistants (Claude Code, Cursor, Codex, OpenCode, etc.) can load to author assets or drive the editor. Point your agent at the right `SKILL.md` and it knows the full DSL schema, supported nodes, and authoring patterns — no editor scraping required.
+Seven **AI agent skills** live under the [`skills/`](./skills/) directory — drop-in instructions that LLM-powered coding assistants (Claude Code, Cursor, Codex, OpenCode, etc.) can load to author assets or drive the editor. Point your agent at the right `SKILL.md` and it knows the full DSL schema, supported nodes, and authoring patterns — no editor scraping required.
 
 ### 🎨 Asset Authoring Skills (write JSON → editor compiles to asset)
 
@@ -80,6 +93,7 @@ Six **AI agent skills** live under the [`skills/`](./skills/) directory — drop
 |--------|-----------|--------------|
 | 🛠️ LLM Easy Shell      | [`skills/llm-easy-shell/SKILL.md`](./skills/llm-easy-shell/SKILL.md)         | 37 native commands + hundreds of Python sub-commands — spawn actors, edit properties, call blueprint functions, trigger Live Coding, take screenshots |
 | 🛠️ LLM Easy Shell Lite | [`skills/llm-easy-shell-lite/SKILL.md`](./skills/llm-easy-shell-lite/SKILL.md) | Read-only subset — 9 safe exploration commands + self-maintenance `livecoding` (alias `reload`, Windows only) + 4 bundled Python abilities (`gamestate`/`mesh_check`/`vfx_coverage` read-only, `simple` is a demo); the PyAbility runtime itself is an open surface, not sandboxed |
+| 🧱 LLM White Box       | [`skills/llm-white-box/SKILL.md`](./skills/llm-white-box/SKILL.md)           | BSP level whiteboxing — 15 commands, the two-step rendering rule, and the measured BSP pitfalls that silently produce wrong geometry |
 
 **How to install:** drop the skill folders into your project's `<tool>/skills/` directory (e.g. `<your-ue-project>/.claude/skills/` for Claude Code). See the [full installation guide →](https://ituiyuio.github.io/Yomin-Fab-LLM-Unreal-Plugin/skills/installation).
 
@@ -126,6 +140,8 @@ Full guides, schema references and example projects:
 | [Get Started →](./docs/llm-dynamic-ui/getting-started.md) | [Get Started →](./docs/llm-material/getting-started.md) |
 | 🌲 **LLM StateTree**<br>AI behavior from JSON | 🔊 **LLM MetaSound**<br>Audio graphs from JSON |
 | [Get Started →](./docs/llm-statetree/getting-started.md) | [Get Started →](./docs/llm-metasound/getting-started.md) |
+| 🧱 **LLM White Box**<br>BSP level whiteboxing for agents | |
+| [Overview →](./docs/llm-white-box/index.md) | |
 | 🤖 **AI Agent Skills**<br>How to load skills into Claude Code / OpenCode / Cursor / Codex | |
 | [Skills Guide →](./docs/skills/index.md) | |
 

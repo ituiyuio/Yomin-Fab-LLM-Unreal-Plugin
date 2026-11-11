@@ -8,7 +8,7 @@ Each YominUnreal plugin ships with a dedicated **AI agent skill** — a `SKILL.m
 
 ---
 
-## The Six Skills
+## The Seven Skills
 
 ### 🎨 Asset Authoring Skills (DSL Generation)
 
@@ -29,6 +29,7 @@ These skills teach the agent how to **drive a running UE editor** through the LL
 |---|-------|-----------------|-------------|
 | 🛠️ | **llm-easy-shell**     | Full read/write access — 37 native commands + hundreds of Python sub-commands | [`skills/llm-easy-shell/SKILL.md`](https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin/blob/main/skills/llm-easy-shell/SKILL.md) |
 | 🛠️ | **llm-easy-shell-lite** | Read-only subset — 9 safe exploration commands | [`skills/llm-easy-shell-lite/SKILL.md`](https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin/blob/main/skills/llm-easy-shell-lite/SKILL.md) |
+| 🧱 | **llm-white-box**       | BSP level whiteboxing — 15 commands that lay out real BSP geometry | [`skills/llm-white-box/SKILL.md`](https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin/blob/main/skills/llm-white-box/SKILL.md) |
 
 ---
 
@@ -64,7 +65,9 @@ The short version:
         │   └── SKILL.md
         ├── llm-easy-shell/
         │   └── SKILL.md
-        └── llm-easy-shell-lite/
+        ├── llm-easy-shell-lite/
+        │   └── SKILL.md
+        └── llm-white-box/
             └── SKILL.md
 ```
 
@@ -82,3 +85,4 @@ Once installed, see the per-skill pages for triggers, examples, and the exact co
 - [LLM MetaSound →](./llm-metasound)
 - [LLM Easy Shell →](./llm-easy-shell)
 - [LLM Easy Shell Lite →](./llm-easy-shell-lite)
+- [LLM White Box →](./llm-white-box)

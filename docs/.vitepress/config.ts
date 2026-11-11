@@ -140,6 +140,14 @@ const zhPluginSidebars: Record<string, SidebarItem[]> = {
       ]
     }
   ],
+  '/llm-white-box/': [
+    {
+      text: 'LLM White Box',
+      items: [
+        { text: 'Overview', link: '/llm-white-box/' }
+      ]
+    }
+  ],
   '/skills/': [
     {
       text: 'AI Agent Skills',
@@ -151,7 +159,8 @@ const zhPluginSidebars: Record<string, SidebarItem[]> = {
         { text: 'LLM StateTree', link: '/skills/llm-statetree' },
         { text: 'LLM MetaSound', link: '/skills/llm-metasound' },
         { text: 'LLM Easy Shell', link: '/skills/llm-easy-shell' },
-        { text: 'LLM Easy Shell Lite', link: '/skills/llm-easy-shell-lite' }
+        { text: 'LLM Easy Shell Lite', link: '/skills/llm-easy-shell-lite' },
+        { text: 'LLM White Box', link: '/skills/llm-white-box' }
       ]
     }
   ]
@@ -229,6 +238,14 @@ const enPluginSidebars: Record<string, SidebarItem[]> = {
       ]
     }
   ],
+  '/en/llm-white-box/': [
+    {
+      text: 'LLM White Box',
+      items: [
+        { text: 'Overview', link: '/en/llm-white-box/' }
+      ]
+    }
+  ],
   '/en/skills/': [
     {
       text: 'AI Agent Skills',
@@ -240,7 +257,8 @@ const enPluginSidebars: Record<string, SidebarItem[]> = {
         { text: 'LLM StateTree', link: '/en/skills/llm-statetree' },
         { text: 'LLM MetaSound', link: '/en/skills/llm-metasound' },
         { text: 'LLM Easy Shell', link: '/en/skills/llm-easy-shell' },
-        { text: 'LLM Easy Shell Lite', link: '/en/skills/llm-easy-shell-lite' }
+        { text: 'LLM Easy Shell Lite', link: '/en/skills/llm-easy-shell-lite' },
+        { text: 'LLM White Box', link: '/en/skills/llm-white-box' }
       ]
     }
   ]
@@ -253,6 +271,7 @@ const zhNav = [
   { text: 'LLM StateTree', link: '/llm-statetree/' },
   { text: 'LLM MetaSound', link: '/llm-metasound/' },
   { text: 'LLM Easy Shell', link: '/llm-easy-shell/' },
+  { text: 'LLM White Box', link: '/llm-white-box/' },
   { text: 'AI Agent Skills', link: '/skills/' },
   { text: 'News', link: '/news/' }
 ]
@@ -268,6 +287,7 @@ const enNav = [
   { text: 'LLM StateTree', link: '/en/llm-statetree/' },
   { text: 'LLM MetaSound', link: '/en/llm-metasound/' },
   { text: 'LLM Easy Shell', link: '/en/llm-easy-shell/' },
+  { text: 'LLM White Box', link: '/en/llm-white-box/' },
   { text: 'AI Agent Skills', link: '/en/skills/' },
   { text: 'News', link: '/en/news/' }
 ]

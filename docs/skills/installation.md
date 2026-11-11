@@ -19,8 +19,8 @@ SKILLS_SRC=./skills
 # Target: <your UE project>/.claude/skills
 TARGET=/path/to/YourUEProject/.claude/skills
 
-# Copy all six skills
-for s in llm-dynamic-ui llm-material llm-statetree llm-metasound llm-easy-shell llm-easy-shell-lite; do
+# Copy all seven skills
+for s in llm-dynamic-ui llm-material llm-statetree llm-metasound llm-easy-shell llm-easy-shell-lite llm-white-box; do
   cp -r "$SKILLS_SRC/$s" "$TARGET/$s"
 done
 ```
@@ -31,7 +31,7 @@ If your tool uses a different folder name (`.opencode/`, `.cursor/`, etc.), repl
 
 ## How to Get the Skills
 
-The plugin repo ([github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin](https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin)) contains the full UE plugin source, the docs site, and all six skills. Three ways to get just the skill folders:
+The plugin repo ([github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin](https://github.com/ituiyuio/Yomin-Fab-LLM-Unreal-Plugin)) contains the full UE plugin source, the docs site, and all seven skills. Three ways to get just the skill folders:
 
 ### Option A — Full clone (simplest, recommended for most users)
 
@@ -47,7 +47,8 @@ You can then copy the folders you want, or symlink them all:
 TARGET=/path/to/YourUEProject/.claude/skills
 mkdir -p "$TARGET"
 for s in skills/llm-dynamic-ui skills/llm-material skills/llm-statetree \
-         skills/llm-metasound skills/llm-easy-shell skills/llm-easy-shell-lite; do
+         skills/llm-metasound skills/llm-easy-shell skills/llm-easy-shell-lite \
+         skills/llm-white-box; do
   ln -s "$(pwd)/$s" "$TARGET/$(basename $s)"
 done
 ```
@@ -93,13 +94,14 @@ cp -r <plugin-repo>/skills/llm-statetree     .claude/skills/
 cp -r <plugin-repo>/skills/llm-metasound     .claude/skills/
 cp -r <plugin-repo>/skills/llm-easy-shell    .claude/skills/   # optional
 cp -r <plugin-repo>/skills/llm-easy-shell-lite .claude/skills/ # optional
+cp -r <plugin-repo>/skills/llm-white-box     .claude/skills/   # optional
 ```
 
 **Verify it works:** Start Claude Code in the project root and ask:
 
 > "What skills do you have available?"
 
-The agent should list all six skills it found. If a skill is missing, check that the folder name matches the `name:` field in the skill's frontmatter.
+The agent should list all seven skills it found. If a skill is missing, check that the folder name matches the `name:` field in the skill's frontmatter.
 
 **Docs:** [Claude Code — Skills](https://docs.claude.com/en/docs/claude-code/skills)
 
@@ -160,7 +162,7 @@ Codex also supports a `~/.codex/skills/` global location for skills shared acros
 | Project-scoped | `<project>/.claude/skills/` | That project only | Yes — commit it to share with your team |
 | User-scoped (global) | `~/.claude/skills/` | All your projects | Survives, but is per-machine |
 
-**Recommendation:** Install the asset-authoring skills (**llm-dynamic-ui**, **llm-material**, **llm-statetree**, **llm-metasound**) per-project, so the agent never confuses which DSL is in use. Install **llm-easy-shell** per-user if you work on multiple UE projects, since its command set is editor-driven and not tied to any one asset.
+**Recommendation:** Install the asset-authoring skills (**llm-dynamic-ui**, **llm-material**, **llm-statetree**, **llm-metasound**) per-project, so the agent never confuses which DSL is in use. Install **llm-easy-shell** per-user if you work on multiple UE projects, since its command set is editor-driven and not tied to any one asset. **llm-white-box** is editor-driven too and pairs with llm-easy-shell.
 
 ---
 
@@ -181,6 +183,7 @@ for tool in .claude .cursor .opencode .codex; do
   cp -r "$SRC/llm-metasound"     "$PROJECT/$tool/skills/"
   cp -r "$SRC/llm-easy-shell"    "$PROJECT/$tool/skills/"
   cp -r "$SRC/llm-easy-shell-lite" "$PROJECT/$tool/skills/"
+  cp -r "$SRC/llm-white-box"     "$PROJECT/$tool/skills/"
 done
 ```
 
