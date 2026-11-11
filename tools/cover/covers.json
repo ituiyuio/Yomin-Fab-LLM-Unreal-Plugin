@@ -833,6 +833,19 @@
       ],
       "alt": [
         {
+          "name": "onechat",
+          "lines": [
+            "One chat",
+            "to rule them all"
+          ],
+          "source": "raw/llmwhitebox/flank.png",
+          "shot": {
+            "zoom": 1.12,
+            "focusX": 0.52,
+            "focusY": 0.4
+          }
+        },
+        {
           "name": "sample",
           "lines": [
             "Sample level",

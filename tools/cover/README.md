@@ -20,7 +20,7 @@ primary headlines, it does not add to them:
 
 ```
 python tools/cover/generate.py                            # 27 primary PNGs
-python tools/cover/generate.py --alt all --variant fab    # 16 alt-gallery PNGs
+python tools/cover/generate.py --alt all --variant fab    # 17 alt-gallery PNGs
 ```
 
 ## Source material
@@ -253,7 +253,7 @@ docs/public/covers/
 ├── llm-material/
 ├── llm-metasound/
 ├── llm-statetree/
-├── llm-white-box/        # fab.png  hero.png  og.png  sample-fab.png  gate-fab.png
+├── llm-white-box/        # fab.png  hero.png  og.png  onechat-fab.png  sample-fab.png  gate-fab.png
 └── yominunreal-plugins/
 ```
 
@@ -360,6 +360,13 @@ The correspondence was recovered by correlating each original cover's frame
 interior against every candidate capture in its folder — and then checked by
 eye, because the correlation is easy to fool: a high-contrast content browser
 correlates well with almost any dark screenshot.
+
+**One alt carries the family headline.** The four DSL plugins all open with
+"One chat to rule them all" over their own screenshot, so the White Box cover
+takes a gallery image with the same lockup (`llm-white-box/onechat-fab.png`) —
+that is how a single product reads as part of the family instead of a separate
+brand. It is an alt, not a second primary: the product's own promise
+("Block out levels in one command") stays on the listing cover.
 
 ## The suite card
 
